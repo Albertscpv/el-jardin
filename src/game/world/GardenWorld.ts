@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { celdaAMundo, celdaId, parseCeldaId } from '../../state/config';
 import { ANIMAL_SPECIES } from '../../state/content';
-import { celdasExpandibles, celdaEnMundo, limitesMundo } from '../../state/islas';
+import { celdaCercana, celdasExpandibles, celdaEnMundo, limitesMundo } from '../../state/islas';
 import { stageOf } from '../../state/sim';
 import { useGame } from '../../state/store';
 import type { GameState, IslaState } from '../../state/types';
@@ -292,6 +292,7 @@ export class GardenWorld {
           animal,
           texturaAnimal(animal.variante),
           texturaComida(ANIMAL_SPECIES[animal.especie].comidaFavorita),
+          (x, z, radio) => celdaCercana(useGame.getState().estado.islas, x, z, radio),
         );
         this.engine.escena.add(nueva.grupo);
         this.animales.set(animal.uid, nueva);

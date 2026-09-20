@@ -46,7 +46,20 @@ export class AnimalMesh {
   private gesto: 'ninguno' | 'salto' | 'giro' | 'comer' = 'ninguno';
   private gestoRestante = 0;
 
-  constructor(estado: AnimalState, textura: THREE.Texture, texturaComida: THREE.Texture) {
+  /**
+   * Devuelve un destino pisable cerca de un punto. Lo provee el mundo, que
+   * es quien conoce la forma de las islas; sin esto los animales se iban
+   * caminando al vacio.
+   */
+  private buscarDestino: (x: number, z: number, radio: number) => { x: number; z: number };
+
+  constructor(
+    estado: AnimalState,
+    textura: THREE.Texture,
+    texturaComida: THREE.Texture,
+    buscarDestino: (x: number, z: number, radio: number) => { x: number; z: number },
+  ) {
+    this.buscarDestino = buscarDestino;
     this.uid = estado.uid;
     this.estado = estado;
 
@@ -132,12 +145,12 @@ export class AnimalMesh {
   /* ---------------------------------------------------------------- */
 
   private elegirDestino(inmediato = false): void {
-    // Pasea alrededor de su querencia, no por todo el mapa: con varias islas,
-    // un destino global lo mandaria a caminar por el aire.
+    // Siempre sobre tierra firme, y cerca de su querencia.
+    const punto = this.buscarDestino(this.querencia.x, this.querencia.z, RADIO_PASEO);
     this.destino.set(
-      this.querencia.x + (Math.random() - 0.5) * 2 * RADIO_PASEO,
+      punto.x,
       this.vuela ? VUELO_MIN + Math.random() * (VUELO_MAX - VUELO_MIN) : 0,
-      this.querencia.z + (Math.random() - 0.5) * 2 * RADIO_PASEO,
+      punto.z,
     );
     this.esperaHasta = inmediato ? 0 : this.tiempo + 0.4 + Math.random() * 2.4;
   }

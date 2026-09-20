@@ -221,3 +221,36 @@ export function ruidoCelda(semilla: string, col: number, row: number): number {
   }
   return ((h >>> 0) % 100000) / 100000;
 }
+
+/**
+ * Una celda de tierra cerca de un punto, para que los animales deambulen
+ * sin irse al vacio. Si no hay nada en el radio, devuelve la celda mas
+ * cercana del mundo: nunca deja a nadie flotando en el aire.
+ */
+export function celdaCercana(
+  islas: IslaState[],
+  x: number,
+  z: number,
+  radio: number,
+  rng = Math.random,
+): { x: number; z: number } {
+  const candidatas: Array<{ x: number; z: number }> = [];
+  let mejor: { x: number; z: number; d: number } | null = null;
+
+  for (const isla of islas) {
+    for (const local of isla.suelo) {
+      const { col, row } = parseCeldaLocal(local);
+      if (esAgua(isla, col, row)) continue;
+
+      const cx = isla.ox + col + 0.5;
+      const cz = isla.oz + row + 0.5;
+      const d = Math.hypot(cx - x, cz - z);
+
+      if (d <= radio) candidatas.push({ x: cx, z: cz });
+      if (!mejor || d < mejor.d) mejor = { x: cx, z: cz, d };
+    }
+  }
+
+  if (candidatas.length > 0) return candidatas[Math.floor(rng() * candidatas.length)];
+  return mejor ? { x: mejor.x, z: mejor.z } : { x, z };
+}

@@ -27,7 +27,7 @@ credenciales de Supabase, la partida se guarda en `localStorage`.
 
 ## Cómo se juega
 
-1. **Sembrá.** Elegí una semilla en la barra de abajo y tocá una parcela.
+1. **Sembrá.** Elegí una semilla en la barra de abajo y tocá una parcela arada.
 2. **Regá.** Sin agua la planta deja de crecer y termina marchitándose. El color
    de la tierra te dice si tiene humedad.
 3. **Cosechá.** Cuando la flor se abre, cosechala por monedas. A veces te
@@ -35,8 +35,11 @@ credenciales de Supabase, la partida se guarda en `localStorage`.
 4. **Cuidá a los animales.** Llegan solos si hay flores abiertas: una mariposa
    con la primera, un zorro recién con dieciséis. Dales de comer y acariciálos
    hasta ganarte su confianza; ahí podés adoptarlos y ponerles nombre.
+5. **Hacé crecer el jardín.** En *Construir* le ganás terreno al vacío celda por
+   celda, arás césped para sembrar y fundás islas nuevas.
 
-Teclas `Q` y `E` (o los botones del canvas) giran la cámara un cuarto de vuelta.
+**Cámara libre:** arrastrá para orbitar en cualquier ángulo y altura, Shift (o
+el botón derecho) para desplazarte, rueda para acercar, ⌖ para encuadrar todo.
 
 ## Decisiones técnicas
 

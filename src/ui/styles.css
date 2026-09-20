@@ -4,14 +4,14 @@
 
 :root {
   /* Vidrio cálido: el jardín se ve a través de los paneles. */
-  --vidrio: rgba(52, 33, 24, 0.46);
-  --vidrio-alto: rgba(70, 46, 33, 0.62);
+  --vidrio: rgba(44, 28, 20, 0.62);
+  --vidrio-alto: rgba(52, 34, 24, 0.74);
   --vidrio-solido: rgba(38, 25, 18, 0.9);
-  --borde: rgba(255, 226, 190, 0.22);
+  --borde: rgba(255, 226, 190, 0.26);
   --borde-fuerte: rgba(255, 226, 190, 0.38);
 
   --crema: #fdf3e7;
-  --tenue: rgba(253, 243, 231, 0.62);
+  --tenue: rgba(253, 243, 231, 0.7);
   --tinta: #2b1d16;
 
   --ambar: #f2a03d;
@@ -221,10 +221,22 @@ input {
 
 .hud-acciones {
   display: flex;
-  gap: 6px;
+  gap: 4px;
   padding: 6px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   justify-content: flex-end;
+  max-width: 100%;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.hud-acciones::-webkit-scrollbar {
+  display: none;
+}
+
+.hud-acciones .chip {
+  white-space: nowrap;
+  padding: 8px 13px;
 }
 
 /* ------------------------------------------------------------------ */
@@ -494,7 +506,7 @@ input {
 
 .pista-camara {
   position: absolute;
-  top: 132px;
+  top: 178px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 15;
