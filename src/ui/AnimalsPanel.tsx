@@ -101,7 +101,7 @@ function FichaAnimal({ animal }: { animal: AnimalState }) {
 
       <div className="fila-acciones">
         <button
-          className="comprar secundario"
+          className="boton suave"
           onClick={() => {
             setComida(especie.comidaFavorita);
             setHerramienta('alimentar');
@@ -112,7 +112,7 @@ function FichaAnimal({ animal }: { animal: AnimalState }) {
         </button>
         {adoptado && (
           <button
-            className="comprar peligro"
+            className="boton peligro"
             onClick={() => liberar(animal.uid)}
             title="Lo devolvés a la naturaleza"
           >

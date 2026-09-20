@@ -1,8 +1,10 @@
 # Jardín Pixel
 
-Un jardín virtual en pixel art 3D. Sembrás flores, las regás, las cosechás, y
-los animales que van llegando se pueden alimentar, mimar, adoptar y bautizar.
-Todo avanza con el reloj real: si cerrás la pestaña, el jardín sigue creciendo.
+Un jardín virtual en pixel art 3D, sobre islas flotantes. Sembrás flores, las
+regás, las cosechás, y los animales que van llegando se pueden alimentar, mimar,
+adoptar y bautizar. Le ganás terreno al vacío celda por celda, fundás islas
+nuevas y armás tu propio personaje. Todo avanza con el reloj real: si cerrás la
+pestaña, el jardín sigue creciendo.
 
 ![Stack](https://img.shields.io/badge/Three.js-r186-black) ![Stack](https://img.shields.io/badge/React-19-blue) ![Stack](https://img.shields.io/badge/TypeScript-strict-3178c6)
 
@@ -74,10 +76,35 @@ desincronizan.
   el truco de Octopath Traveler: conserva el dibujo hecho a mano dentro de una
   escena con luz y sombras reales.
 
+- **El personaje** es otro billboard, con su textura generada desde las mismas
+  matrices: el sombrero es una matriz aparte que se superpone al cuerpo.
+
 El pixelado es genuino, no un filtro: la escena se renderiza en un buffer de
 unos 400×300 píxeles y el canvas se estira por CSS con `image-rendering:
-pixelated`. La cámara es ortográfica a exactamente 16 píxeles por unidad de
-mundo, que es la misma resolución a la que están dibujados los sprites.
+pixelated`. La cámara es ortográfica y con zoom 1 pone exactamente 16 píxeles
+por unidad de mundo, la misma resolución a la que están dibujados los sprites.
+Al orbitar, lo que cambia es cuánto mundo entra en cuadro; el tamaño del píxel
+en pantalla no se mueve.
+
+### El territorio es dato, no geometría
+
+No hay un mapa fijo. El mundo es una lista de islas, y cada isla es un conjunto
+de celdas `"col,row"`. De ahí se derivan todas las cosas que parecerían tener
+que modelarse a mano:
+
+- **La cerca** sale de [`bordesDeIsla`](src/state/islas.ts): los lados de celda
+  que dan al vacío. El jugador extiende tierra y la valla se reacomoda sola —
+  por eso no hay una herramienta para mover vallas, y no hace falta.
+- **La panza de las islas** se afina sola: cada capa hacia abajo conserva solo
+  las celdas con tierra en los cuatro costados, y el resultado es la silueta
+  clásica de isla flotante sin modelar nada.
+- **Los adornos** (arbustos, piedras, matas de pasto) se sortean con un hash
+  estable de la celda, así que sobreviven a cada reconstrucción sin ocupar lugar
+  en la partida guardada.
+
+El terreno se rehace entero cuando cambia la forma del territorio. Suena caro,
+pero expandir es una acción puntual y la geometría se arma en milisegundos; a
+cambio no hay estado incremental que pueda desincronizarse del modelo.
 
 ### El tiempo es una sola regla
 
@@ -100,11 +127,13 @@ reemplazar `src/game/` sin tocar una línea de la lógica del juego.
 src/
   game/
     art/        matrices de píxeles, extrusión a voxels, texturas
-    world/      motor, terreno, cielo, luces, plantas, animales, efectos
+    world/      motor y cámara libre, terreno, cielo, luces, plantas,
+                animales, personaje, efectos
     EventBus.ts puente tipado entre el mundo 3D y React
   state/
-    config.ts   medidas del mundo y balance, todo en un solo lugar
-    content.ts  las 14 variedades de flor, 15 de animal y 5 comidas
+    config.ts   claves de celda y balance, todo en un solo lugar
+    content.ts  las 14 variedades de flor, 15 de animal, 5 comidas y el avatar
+    islas.ts    geometría del territorio: bordes, expansión, generación
     sim.ts      simulación pura del paso del tiempo
     store.ts    estado y acciones (Zustand)
     persistence/ adaptadores de guardado: nube y local
@@ -137,9 +166,12 @@ más recientemente.
 
 Todos los números del juego están en `BALANCE`, en
 [`config.ts`](src/state/config.ts): cuánto dura la humedad, cuánto tarda una
-planta en marchitarse, cada cuánto un animal feliz deja un regalo. Los precios y
-tiempos de crecimiento de cada flor están en
+planta en marchitarse, cada cuánto un animal feliz deja un regalo, cuánto cuesta
+una celda de terreno. Los precios y tiempos de crecimiento de cada flor están en
 [`content.ts`](src/state/content.ts).
+
+Expandir usa precio creciente: cada celda encarece la siguiente
+(`costoProximaCelda`), para que crecer sea una decisión y no un trámite.
 
 ## Herramientas de desarrollo
 

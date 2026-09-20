@@ -15,7 +15,7 @@ export function HelpPanel() {
     <Drawer titulo="Cómo se juega" onCerrar={() => setPanel(null)}>
       <ol className="pasos">
         <li>
-          <strong>Sembrá.</strong> Elegí una semilla abajo y tocá una parcela del bancal.
+          <strong>Sembrá.</strong> Elegí una semilla abajo y tocá una parcela arada del bancal.
         </li>
         <li>
           <strong>Regá.</strong> Una planta seca deja de crecer y, si pasa mucho tiempo, se
@@ -31,6 +31,20 @@ export function HelpPanel() {
         </li>
       </ol>
 
+      <h3 className="seccion">Mover la cámara</h3>
+      <p className="fila-nota">
+        Arrastrá sobre el jardín para girarlo en cualquier dirección y altura. Con Shift (o el
+        botón derecho) te desplazás, y la rueda acerca. El botón ⌖ vuelve a encuadrar todo.
+      </p>
+
+      <h3 className="seccion">Hacer crecer el jardín</h3>
+      <p className="fila-nota">
+        En <strong>Construir</strong> podés ganarle terreno al vacío celda por celda, arar césped
+        para sembrar y fundar islas nuevas. Cada celda encarece la siguiente, así que crecer es
+        una decisión. La cerca no se coloca a mano: se dibuja sola en el contorno y se reacomoda
+        cada vez que ampliás.
+      </p>
+
       <h3 className="seccion">Quién visita y cuándo</h3>
       <ul className="lista-simple">
         {especies.map((e) => (
@@ -45,13 +59,15 @@ export function HelpPanel() {
       <p className="fila-nota">
         Todo avanza con el reloj real: al volver, las plantas crecieron, la tierra se secó y tus
         animales pueden tener hambre. Se simulan hasta 8 horas de ausencia, así que irte un día
-        entero no arruina el jardín. La partida se guarda en {origen === 'nube' ? 'la nube' : 'este navegador'}.
+        entero no arruina el jardín. La partida se guarda en{' '}
+        {origen === 'nube' ? 'la nube' : 'este navegador'}.
       </p>
 
       <h3 className="seccion">Empezar de nuevo</h3>
       <p className="fila-nota">Borra el jardín actual y arranca de cero. No se puede deshacer.</p>
       <button
-        className="comprar peligro"
+        className="boton peligro"
+        style={{ marginTop: 10 }}
         onClick={() => {
           if (confirm('¿Seguro que querés borrar este jardín y empezar de nuevo?')) reiniciar();
         }}

@@ -1,28 +1,37 @@
 /**
- * Puente tipado entre Phaser y React.
+ * Puente tipado entre el mundo 3D y React.
  *
- * Phaser dibuja el mundo, React dibuja el HUD, y ninguno importa al otro:
+ * Three dibuja el mundo, React dibuja el HUD, y ninguno importa al otro:
  * solo se hablan por aqui.
  */
 
 export interface GameEvents {
-  /** El jugador tocó una parcela del bancal. */
-  'parcela:click': { index: number };
+  /** El jugador tocó una celda de tierra. */
+  'celda:click': { celda: string };
+  /** El jugador tocó una celda vacía con la herramienta de expandir. */
+  'celda:expandir': { islaId: string; col: number; row: number };
   /** El jugador tocó un animal. */
   'animal:click': { uid: string };
 
-  /* Efectos que React pide y Phaser dibuja */
-  'efecto:plantar': { index: number };
-  'efecto:regar': { index: number };
+  /* Efectos que React pide y el mundo dibuja */
+  'efecto:plantar': { celda: string };
+  'efecto:regar': { celda: string };
   'efecto:regarTodo': Record<string, never>;
-  'efecto:cosechar': { index: number; color: string };
+  'efecto:cosechar': { celda: string; color: string };
+  'efecto:expandir': { celda: string };
   'efecto:mimar': { uid: string };
   'efecto:comer': { uid: string };
   'efecto:adoptar': { uid: string };
-  /** Reconstruir sprites porque el estado cambió de forma no incremental. */
+
+  /** Reconstruir el mundo porque el estado cambió de forma no incremental. */
   'mundo:resincronizar': Record<string, never>;
-  /** Girar la cámara un cuarto de vuelta. */
-  'camara:rotar': { dir: 1 | -1 };
+  /** El aspecto del personaje cambió y hay que regenerar su textura. */
+  'avatar:cambio': Record<string, never>;
+
+  /* Cámara */
+  'camara:mirar': { x: number; z: number };
+  'camara:centrar': Record<string, never>;
+  'camara:zoom': { delta: number };
 }
 
 type Handler<K extends keyof GameEvents> = (payload: GameEvents[K]) => void;
@@ -46,10 +55,6 @@ class TypedEmitter {
     if (!set) return;
     // Copia defensiva: un handler puede desuscribirse durante la emisión.
     for (const handler of [...set]) handler(payload);
-  }
-
-  clear(): void {
-    this.oyentes.clear();
   }
 }
 

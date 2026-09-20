@@ -58,7 +58,64 @@ export interface FoodItem {
 }
 
 /* ------------------------------------------------------------------ */
-/* Estado guardado                                                     */
+/* Territorio                                                          */
+/* ------------------------------------------------------------------ */
+
+/** Clave de una celda dentro de su isla: "col,row". */
+export type CeldaLocal = string;
+
+/** Clave global de una celda: "islaId/col,row". */
+export type CeldaId = string;
+
+export type PropTipo = 'farol' | 'maceta' | 'regadera';
+
+export interface PropColocado {
+  tipo: PropTipo;
+  col: number;
+  row: number;
+}
+
+/**
+ * Una isla es un trozo de tierra flotante con su propio sistema de
+ * coordenadas. El jardin entero es un conjunto de islas: por eso el jugador
+ * puede expandir, arar y fundar islas nuevas sin que nada este cableado.
+ */
+export interface IslaState {
+  id: string;
+  nombre: string;
+  /** Origen de la isla en tiles, respecto del mundo. */
+  ox: number;
+  oz: number;
+  /** Celdas de tierra que existen, como "col,row". */
+  suelo: CeldaLocal[];
+  /** Subconjunto de `suelo` que esta arado y admite siembra. */
+  parcelas: CeldaLocal[];
+  /** Celdas de agua. Decorativas: no se pueden arar ni pisar. */
+  agua: CeldaLocal[];
+  props: PropColocado[];
+}
+
+/* ------------------------------------------------------------------ */
+/* Personaje                                                           */
+/* ------------------------------------------------------------------ */
+
+export type Sombrero = 'ninguno' | 'paja' | 'gorro';
+
+export interface AvatarState {
+  nombre: string;
+  piel: string;
+  pelo: string;
+  ropa: string;
+  pantalon: string;
+  sombrero: Sombrero;
+  colorSombrero: string;
+  /** Posicion en el mundo 3D. */
+  x: number;
+  z: number;
+}
+
+/* ------------------------------------------------------------------ */
+/* Cultivos y animales                                                 */
 /* ------------------------------------------------------------------ */
 
 export type GrowthStage = 'semilla' | 'brote' | 'capullo' | 'flor' | 'marchita';
@@ -72,11 +129,6 @@ export interface PlantState {
   humedad: number;
   /** 0..1, sube cuando lleva mucho sin agua. En 1 la planta se marchita. */
   marchitez: number;
-}
-
-export interface PlotState {
-  index: number;
-  planta: PlantState | null;
 }
 
 export type AnimalStatus = 'visitante' | 'adoptado';
@@ -112,8 +164,11 @@ export interface GameState {
   semillas: Record<string, number>;
   /** FoodId -> cantidad. */
   comida: Partial<Record<FoodId, number>>;
-  parcelas: PlotState[];
+  islas: IslaState[];
+  /** Solo las celdas que tienen algo plantado, por clave global. */
+  cultivos: Record<CeldaId, PlantState>;
   animales: AnimalState[];
+  avatar: AvatarState;
   floresCosechadas: number;
   creadoEn: number;
   /** Ultimo instante simulado; permite crecer mientras el juego esta cerrado. */
@@ -124,7 +179,15 @@ export interface GameState {
 /* Interaccion                                                         */
 /* ------------------------------------------------------------------ */
 
-export type ToolId = 'plantar' | 'regar' | 'cosechar' | 'pala' | 'mimar' | 'alimentar';
+export type ToolId =
+  | 'plantar'
+  | 'regar'
+  | 'cosechar'
+  | 'pala'
+  | 'mimar'
+  | 'alimentar'
+  | 'expandir'
+  | 'arar';
 
 export interface Toast {
   id: number;

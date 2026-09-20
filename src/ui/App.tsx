@@ -5,6 +5,9 @@ import { useGame } from '../state/store';
 import { AdoptModal } from './AdoptModal';
 import { AnimalSheet } from './AnimalSheet';
 import { AnimalsPanel } from './AnimalsPanel';
+import { BuildPanel } from './BuildPanel';
+import { CameraControls } from './CameraControls';
+import { CharacterPanel } from './CharacterPanel';
 import { GameCanvas } from './GameCanvas';
 import { HelpPanel } from './HelpPanel';
 import { HUD } from './HUD';
@@ -57,18 +60,19 @@ export function App() {
 
   return (
     <div className="app">
+      {/* El jardín ocupa toda la pantalla; el resto flota encima. */}
+      <GameCanvas />
+
       <HUD />
-
-      <main className="mundo">
-        <GameCanvas />
-        <AnimalSheet />
-      </main>
-
+      <CameraControls />
+      <AnimalSheet />
       <Toolbar />
 
       <AnimatePresence>
         {panel === 'tienda' && <ShopPanel key="tienda" />}
+        {panel === 'construir' && <BuildPanel key="construir" />}
         {panel === 'animales' && <AnimalsPanel key="animales" />}
+        {panel === 'personaje' && <CharacterPanel key="personaje" />}
         {panel === 'ayuda' && <HelpPanel key="ayuda" />}
       </AnimatePresence>
 

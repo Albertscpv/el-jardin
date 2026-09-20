@@ -1,17 +1,14 @@
 import * as THREE from 'three';
-import { plotToTile, tileToWorld } from '../../state/config';
+import { celdaAMundo, celdaId, parseCeldaId } from '../../state/config';
 import { ANIMAL_SPECIES } from '../../state/content';
+import { celdasExpandibles, celdaEnMundo, limitesMundo } from '../../state/islas';
 import { stageOf } from '../../state/sim';
 import { useGame } from '../../state/store';
-import type { GameState } from '../../state/types';
-import {
-  texturaAnimal,
-  texturaComida,
-  texturaFlor,
-  texturaSeleccion,
-} from '../art/gameTextures';
+import type { GameState, IslaState } from '../../state/types';
+import { texturaAnimal, texturaComida, texturaFlor, texturaSeleccion } from '../art/gameTextures';
 import { EventBus } from '../EventBus';
 import { AnimalMesh } from './AnimalMesh';
+import { AvatarMesh } from './AvatarMesh';
 import { Effects } from './Effects';
 import { Engine } from './Engine';
 import { GrassField } from './GrassField';
@@ -37,35 +34,50 @@ export class GardenWorld {
   readonly cielo: Sky;
   readonly pasto: GrassField;
 
-  private plantas = new Map<number, PlantMesh>();
+  private plantas = new Map<string, PlantMesh>();
   private animales = new Map<string, AnimalMesh>();
+  private avatar: AvatarMesh;
 
   private seleccion: THREE.Mesh;
+  private fantasmas: THREE.Mesh[] = [];
+  private grupoFantasmas = new THREE.Group();
+  private materialFantasma: THREE.MeshLambertMaterial;
+
   private raycaster = new THREE.Raycaster();
   private puntero = new THREE.Vector2();
+  private contenedor: HTMLElement;
 
   private desuscribir: Array<() => void> = [];
+  private islasVistas: IslaState[] | null = null;
+  private herramientaVista: string | null = null;
   private tiempo = 0;
   private acumuladorPosiciones = 0;
 
   constructor(contenedor: HTMLElement) {
+    this.contenedor = contenedor;
     this.engine = new Engine(contenedor);
 
-    this.terreno = new Terrain();
+    const estado = useGame.getState().estado;
+
+    this.terreno = new Terrain(estado.islas);
     this.engine.escena.add(this.terreno.grupo);
 
-    this.luces = new Lighting(this.engine.escena, this.terreno.posicionFarol);
+    this.luces = new Lighting(this.engine.escena);
+    this.luces.setFaroles(this.terreno.faroles);
 
     this.cielo = new Sky();
     this.engine.escena.add(this.cielo.grupo);
 
-    this.pasto = new GrassField();
-    this.engine.escena.add(this.pasto.malla);
+    this.pasto = new GrassField(estado.islas);
+    this.engine.escena.add(this.pasto.grupo);
 
     this.efectos = new Effects();
     this.engine.escena.add(this.efectos.grupo);
 
-    /* Marco que sigue a la parcela bajo el cursor. */
+    this.avatar = new AvatarMesh(estado.avatar);
+    this.engine.escena.add(this.avatar.grupo);
+
+    /* Marco que sigue a la celda bajo el cursor. */
     const geoSeleccion = new THREE.PlaneGeometry(1, 1);
     geoSeleccion.rotateX(-Math.PI / 2);
     this.seleccion = new THREE.Mesh(
@@ -76,15 +88,26 @@ export class GardenWorld {
         depthWrite: false,
       }),
     );
-    this.seleccion.position.y = ALTURA_BANCAL + 0.01;
     this.seleccion.visible = false;
     this.engine.escena.add(this.seleccion);
 
-    this.conectarEntrada(contenedor);
+    /* Fantasmas de expansión. */
+    this.materialFantasma = new THREE.MeshLambertMaterial({
+      color: '#a8e08a',
+      transparent: true,
+      opacity: 0.5,
+      depthWrite: false,
+    });
+    this.engine.escena.add(this.grupoFantasmas);
+
+    this.islasVistas = estado.islas;
+
+    this.conectarEntrada();
     this.conectarEventos();
     this.conectarStore();
 
-    this.sincronizar(useGame.getState().estado);
+    this.sincronizar(estado);
+    this.engine.centrar(limitesMundo(estado.islas));
 
     this.desuscribir.push(this.engine.enCadaFrame((dt) => this.update(dt)));
     this.engine.arrancar();
@@ -99,78 +122,90 @@ export class GardenWorld {
   /* Entrada                                                           */
   /* ---------------------------------------------------------------- */
 
-  private conectarEntrada(contenedor: HTMLElement): void {
+  private conectarEntrada(): void {
     const aNDC = (evento: PointerEvent) => {
-      const caja = contenedor.getBoundingClientRect();
+      const caja = this.contenedor.getBoundingClientRect();
       this.puntero.set(
         ((evento.clientX - caja.left) / caja.width) * 2 - 1,
         -((evento.clientY - caja.top) / caja.height) * 2 + 1,
       );
     };
 
-    const alMover = (evento: PointerEvent) => {
+    // El Engine solo llama a esto cuando el gesto fue un toque, no un giro.
+    this.engine.alTocar = (evento) => {
       aNDC(evento);
-      const parcela = this.parcelaBajoPuntero();
-      if (parcela === null) {
-        this.seleccion.visible = false;
-        contenedor.style.cursor = this.animalBajoPuntero() ? 'pointer' : 'default';
-        return;
-      }
-      const { col, row } = plotToTile(parcela);
-      const { x, z } = tileToWorld(col, row);
-      this.seleccion.position.set(x, ALTURA_BANCAL + 0.01, z);
-      this.seleccion.visible = true;
-      contenedor.style.cursor = 'pointer';
-    };
 
-    const alTocar = (evento: PointerEvent) => {
-      aNDC(evento);
-      // Los animales tienen prioridad: estan por encima del bancal.
+      if (useGame.getState().herramienta === 'expandir') {
+        const fantasma = this.fantasmaBajoPuntero();
+        if (fantasma) {
+          const { islaId, col, row } = fantasma;
+          EventBus.emit('celda:expandir', { islaId, col, row });
+          return;
+        }
+      }
+
+      // Los animales tienen prioridad: están por encima del suelo.
       const uid = this.animalBajoPuntero();
       if (uid) {
         EventBus.emit('animal:click', { uid });
         return;
       }
-      const parcela = this.parcelaBajoPuntero();
-      if (parcela !== null) EventBus.emit('parcela:click', { index: parcela });
+
+      const celda = this.celdaBajoPuntero();
+      if (celda) EventBus.emit('celda:click', { celda });
     };
 
-    const alSalir = () => {
-      this.seleccion.visible = false;
+    this.engine.alMover = (evento) => {
+      aNDC(evento);
+      this.actualizarSeleccion();
+      this.contenedor.style.cursor =
+        this.animalBajoPuntero() || this.celdaBajoPuntero() ? 'pointer' : 'grab';
     };
-
-    contenedor.addEventListener('pointermove', alMover);
-    contenedor.addEventListener('pointerdown', alTocar);
-    contenedor.addEventListener('pointerleave', alSalir);
-
-    this.desuscribir.push(() => {
-      contenedor.removeEventListener('pointermove', alMover);
-      contenedor.removeEventListener('pointerdown', alTocar);
-      contenedor.removeEventListener('pointerleave', alSalir);
-    });
-
-    const alTeclear = (e: KeyboardEvent) => {
-      // Sin esto, escribir "que" en el nombre de un animal giraria el jardin.
-      const foco = document.activeElement;
-      if (
-        foco instanceof HTMLInputElement ||
-        foco instanceof HTMLTextAreaElement ||
-        (foco instanceof HTMLElement && foco.isContentEditable)
-      ) {
-        return;
-      }
-      if (e.key === 'q' || e.key === 'Q') this.engine.rotar(-1);
-      if (e.key === 'e' || e.key === 'E') this.engine.rotar(1);
-    };
-    window.addEventListener('keydown', alTeclear);
-    this.desuscribir.push(() => window.removeEventListener('keydown', alTeclear));
   }
 
-  private parcelaBajoPuntero(): number | null {
+  private actualizarSeleccion(): void {
+    if (useGame.getState().herramienta === 'expandir') {
+      const fantasma = this.fantasmaBajoPuntero();
+      if (!fantasma) return this.ocultarSeleccion();
+      this.seleccion.position.set(fantasma.x, 0.06, fantasma.z);
+      this.seleccion.visible = true;
+      return;
+    }
+
+    const celda = this.celdaBajoPuntero();
+    if (!celda) return this.ocultarSeleccion();
+
+    const { islaId, col, row } = parseCeldaId(celda);
+    const isla = useGame.getState().estado.islas.find((i) => i.id === islaId);
+    if (!isla) return this.ocultarSeleccion();
+
+    const { x, z } = celdaAMundo(isla, col, row);
+    const arada = isla.parcelas.includes(`${col},${row}`);
+    this.seleccion.position.set(x, (arada ? ALTURA_BANCAL : 0) + 0.02, z);
+    this.seleccion.visible = true;
+  }
+
+  private ocultarSeleccion(): void {
+    this.seleccion.visible = false;
+  }
+
+  /** Celda de tierra bajo el cursor, resuelta por el punto de impacto. */
+  private celdaBajoPuntero(): string | null {
     this.raycaster.setFromCamera(this.puntero, this.engine.camara);
-    const golpes = this.raycaster.intersectObjects(this.terreno.parcelas, false);
-    const indice = golpes[0]?.object.userData.parcela;
-    return typeof indice === 'number' ? indice : null;
+
+    const objetivos = [...this.terreno.parcelas.values(), ...this.terreno.suelo];
+    const golpes = this.raycaster.intersectObjects(objetivos, false);
+    const golpe = golpes[0];
+    if (!golpe) return null;
+
+    // Una parcela arada sabe quién es; para el césped se deduce del punto.
+    const propia = golpe.object.userData.celda;
+    if (typeof propia === 'string') return propia;
+
+    const { islas } = useGame.getState().estado;
+    const encontrada = celdaEnMundo(islas, golpe.point.x, golpe.point.z);
+    if (!encontrada) return null;
+    return celdaId(encontrada.isla.id, encontrada.col, encontrada.row);
   }
 
   private animalBajoPuntero(): string | null {
@@ -181,6 +216,16 @@ export class GardenWorld {
     return typeof uid === 'string' ? uid : null;
   }
 
+  private fantasmaBajoPuntero():
+    | { islaId: string; col: number; row: number; x: number; z: number }
+    | null {
+    this.raycaster.setFromCamera(this.puntero, this.engine.camara);
+    const golpes = this.raycaster.intersectObjects(this.fantasmas, false);
+    const datos = golpes[0]?.object.userData;
+    if (!datos || typeof datos.islaId !== 'string') return null;
+    return datos as { islaId: string; col: number; row: number; x: number; z: number };
+  }
+
   /* ---------------------------------------------------------------- */
   /* Sincronizacion                                                    */
   /* ---------------------------------------------------------------- */
@@ -189,36 +234,47 @@ export class GardenWorld {
     this.desuscribir.push(
       useGame.subscribe((s, prev) => {
         if (s.estado !== prev.estado) this.sincronizar(s.estado);
+        if (s.herramienta !== prev.herramienta) this.sincronizarFantasmas(s.estado);
       }),
     );
   }
 
   private sincronizar(estado: GameState): void {
-    /* --- Parcelas y plantas --- */
-    for (const parcela of estado.parcelas) {
-      const planta = parcela.planta;
-      this.terreno.setHumedad(parcela.index, Boolean(planta && planta.humedad > 0.35));
+    /* --- Territorio: se rehace solo si cambió la forma de las islas --- */
+    if (estado.islas !== this.islasVistas) {
+      this.islasVistas = estado.islas;
+      this.terreno.reconstruir(estado.islas);
+      this.pasto.reconstruir(estado.islas);
+      this.luces.setFaroles(this.terreno.faroles);
+      this.sincronizarFantasmas(estado);
+    }
 
-      const malla = this.plantas.get(parcela.index);
-
-      if (!planta) {
-        if (malla) {
-          malla.dispose();
-          this.plantas.delete(parcela.index);
-        }
-        continue;
-      }
+    /* --- Cultivos --- */
+    const vistas = new Set<string>();
+    for (const [id, planta] of Object.entries(estado.cultivos)) {
+      vistas.add(id);
+      this.terreno.setHumedad(id, planta.humedad > 0.35);
 
       const textura = texturaFlor(planta.variantId, stageOf(planta));
+      const malla = this.plantas.get(id);
 
       if (malla) {
         malla.cambiarTextura(textura);
       } else {
-        const { col, row } = plotToTile(parcela.index);
-        const { x, z } = tileToWorld(col, row);
+        const { islaId, col, row } = parseCeldaId(id);
+        const isla = estado.islas.find((i) => i.id === islaId);
+        if (!isla) continue;
+        const { x, z } = celdaAMundo(isla, col, row);
         const nueva = new PlantMesh(x, z, textura);
         this.engine.escena.add(nueva.grupo);
-        this.plantas.set(parcela.index, nueva);
+        this.plantas.set(id, nueva);
+      }
+    }
+    for (const [id, malla] of this.plantas) {
+      if (!vistas.has(id)) {
+        malla.dispose();
+        this.plantas.delete(id);
+        this.terreno.setHumedad(id, false);
       }
     }
 
@@ -247,11 +303,45 @@ export class GardenWorld {
         });
       }
     }
-
     for (const [uid, malla] of this.animales) {
       if (!vistos.has(uid)) {
         malla.dispose();
         this.animales.delete(uid);
+      }
+    }
+
+    /* --- Personaje --- */
+    this.avatar.aplicarAspecto(estado.avatar);
+    this.avatar.irA(estado.avatar.x, estado.avatar.z);
+  }
+
+  /** Cubos translúcidos sobre cada celda donde se puede ganar terreno. */
+  private sincronizarFantasmas(estado: GameState): void {
+    const herramienta = useGame.getState().herramienta;
+    if (herramienta === this.herramientaVista && this.fantasmas.length > 0) {
+      if (herramienta !== 'expandir') return;
+    }
+    this.herramientaVista = herramienta;
+
+    for (const malla of this.fantasmas) {
+      this.grupoFantasmas.remove(malla);
+      malla.geometry.dispose();
+    }
+    this.fantasmas = [];
+
+    if (herramienta !== 'expandir') return;
+
+    // Algo mas altos que el cesped: tienen que leerse como una invitacion
+    // flotando sobre el vacio, no como un parche del suelo.
+    const geo = new THREE.BoxGeometry(0.9, 0.22, 0.9);
+    for (const isla of estado.islas) {
+      for (const { col, row } of celdasExpandibles(isla)) {
+        const { x, z } = celdaAMundo(isla, col, row);
+        const malla = new THREE.Mesh(geo.clone(), this.materialFantasma);
+        malla.position.set(x, 0.02, z);
+        malla.userData = { islaId: isla.id, col, row, x, z };
+        this.grupoFantasmas.add(malla);
+        this.fantasmas.push(malla);
       }
     }
   }
@@ -260,48 +350,71 @@ export class GardenWorld {
   /* Efectos                                                           */
   /* ---------------------------------------------------------------- */
 
-  private centroParcela(index: number): { x: number; z: number } {
-    const { col, row } = plotToTile(index);
-    return tileToWorld(col, row);
+  private posicionDeCelda(id: string): { x: number; z: number } | null {
+    const { islaId, col, row } = parseCeldaId(id);
+    const isla = useGame.getState().estado.islas.find((i) => i.id === islaId);
+    return isla ? celdaAMundo(isla, col, row) : null;
   }
 
   private conectarEventos(): void {
     this.desuscribir.push(
-      EventBus.on('camara:rotar', ({ dir }) => this.engine.rotar(dir)),
+      EventBus.on('camara:centrar', () => {
+        this.engine.centrar(limitesMundo(useGame.getState().estado.islas));
+      }),
 
-      EventBus.on('efecto:plantar', ({ index }) => {
-        const { x, z } = this.centroParcela(index);
+      EventBus.on('camara:mirar', ({ x, z }) => this.engine.mirar(x, z)),
+      EventBus.on('camara:zoom', ({ delta }) => this.engine.aplicarZoom(delta)),
+      EventBus.on('avatar:cambio', () => this.avatar.aplicarAspecto(useGame.getState().estado.avatar)),
+
+      EventBus.on('efecto:plantar', ({ celda }) => {
+        const p = this.posicionDeCelda(celda);
+        if (!p) return;
         this.efectos.emitir({
-          x, y: ALTURA_BANCAL, z,
+          x: p.x, y: ALTURA_BANCAL, z: p.z,
           cantidad: 12, colores: ['#8a6238', '#6b4a2e', '#a3763f'],
           velocidad: 1.3, empuje: 1.5, vida: 0.6,
         });
       }),
 
-      EventBus.on('efecto:regar', ({ index }) => {
-        const { x, z } = this.centroParcela(index);
+      EventBus.on('efecto:expandir', ({ celda }) => {
+        const p = this.posicionDeCelda(celda);
+        if (!p) return;
         this.efectos.emitir({
-          x, y: ALTURA_BANCAL + 0.9, z,
+          x: p.x, y: 0.2, z: p.z,
+          cantidad: 22, colores: ['#7fd18a', '#5fa14a', '#e8d8b0'],
+          velocidad: 1.8, empuje: 2.2, vida: 0.9,
+        });
+      }),
+
+      EventBus.on('efecto:regar', ({ celda }) => {
+        const p = this.posicionDeCelda(celda);
+        if (!p) return;
+        this.efectos.emitir({
+          x: p.x, y: ALTURA_BANCAL + 0.9, z: p.z,
           cantidad: 14, colores: ['#9fd8f5', '#5bb4e8', '#8ec5ff'],
           velocidad: 0.7, empuje: -0.4, gravedad: 7, vida: 0.7, escala: 0.07,
         });
       }),
 
       EventBus.on('efecto:regarTodo', () => {
-        for (let i = 0; i < 32; i++) {
-          const { x, z } = this.centroParcela(i);
+        const estado = useGame.getState().estado;
+        let n = 0;
+        for (const id of Object.keys(estado.cultivos)) {
+          const p = this.posicionDeCelda(id);
+          if (!p || n++ > 40) continue;
           this.efectos.emitir({
-            x, y: ALTURA_BANCAL + 0.9, z,
+            x: p.x, y: ALTURA_BANCAL + 0.9, z: p.z,
             cantidad: 4, colores: ['#9fd8f5', '#5bb4e8'],
             velocidad: 0.5, empuje: -0.3, gravedad: 7, vida: 0.6, escala: 0.06,
           });
         }
       }),
 
-      EventBus.on('efecto:cosechar', ({ index, color }) => {
-        const { x, z } = this.centroParcela(index);
+      EventBus.on('efecto:cosechar', ({ celda, color }) => {
+        const p = this.posicionDeCelda(celda);
+        if (!p) return;
         this.efectos.emitir({
-          x, y: ALTURA_BANCAL + 0.6, z,
+          x: p.x, y: ALTURA_BANCAL + 0.6, z: p.z,
           cantidad: 20, colores: [color, '#fff3c4', '#ffd447'],
           velocidad: 2.2, empuje: 2.4, vida: 0.9, escala: 0.1,
         });
@@ -332,7 +445,13 @@ export class GardenWorld {
         this.efectos.emitirCorazones(malla.x, 1.1, malla.z, 10);
       }),
 
-      EventBus.on('mundo:resincronizar', () => this.sincronizar(useGame.getState().estado)),
+      EventBus.on('mundo:resincronizar', () => {
+        const estado = useGame.getState().estado;
+        // Fuerza la reconstrucción del terreno aunque la referencia coincida.
+        this.islasVistas = null;
+        this.sincronizar(estado);
+        this.engine.centrar(limitesMundo(estado.islas));
+      }),
     );
   }
 
@@ -343,9 +462,21 @@ export class GardenWorld {
   private update(dt: number): void {
     this.tiempo += dt;
 
+    // Las sombras se concentran donde mira la cámara: un solo mapa no alcanza
+    // para varias islas repartidas por el mundo.
+    this.luces.centroSombras.copy(this.engine.camara.position);
+    this.luces.centroSombras.y = 0;
     this.luces.actualizar();
+
     this.terreno.actualizar(dt);
     this.pasto.update(dt);
+
+    for (const planta of this.plantas.values()) planta.update(dt);
+    for (const animal of this.animales.values()) animal.update(dt, this.engine.camara);
+    this.avatar.update(dt, this.engine.camara);
+
+    this.efectos.update(dt, this.luces.noche, this.tiempo);
+
     this.cielo.actualizar(
       dt,
       this.engine.camara,
@@ -357,10 +488,10 @@ export class GardenWorld {
       this.luces.cieloAbajo,
     );
 
-    for (const planta of this.plantas.values()) planta.update(dt);
-    for (const animal of this.animales.values()) animal.update(dt, this.engine.camara);
-
-    this.efectos.update(dt, this.luces.noche, this.tiempo);
+    // Los fantasmas laten para que se lean como una invitación y no como suelo.
+    if (this.fantasmas.length > 0) {
+      this.materialFantasma.opacity = 0.44 + Math.sin(this.tiempo * 2.6) * 0.16;
+    }
 
     this.acumuladorPosiciones += dt;
     if (this.acumuladorPosiciones > GUARDAR_POSICIONES_CADA) {
@@ -375,6 +506,8 @@ export class GardenWorld {
     this.desuscribir = [];
     for (const planta of this.plantas.values()) planta.dispose();
     for (const animal of this.animales.values()) animal.dispose();
+    this.avatar.dispose();
+    this.terreno.dispose();
     this.plantas.clear();
     this.animales.clear();
     this.engine.destruir();

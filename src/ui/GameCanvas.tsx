@@ -23,30 +23,14 @@ export function GameCanvas() {
 
   useEffect(() => {
     const offs = [
-      EventBus.on('parcela:click', ({ index }) => useGame.getState().usarEnParcela(index)),
+      EventBus.on('celda:click', ({ celda }) => useGame.getState().usarEnCelda(celda)),
+      EventBus.on('celda:expandir', ({ islaId, col, row }) =>
+        useGame.getState().expandir(islaId, col, row),
+      ),
       EventBus.on('animal:click', ({ uid }) => useGame.getState().interactuarAnimal(uid)),
     ];
     return () => offs.forEach((off) => off());
   }, []);
 
-  return (
-    <div className="escenario" ref={contenedor}>
-      <div className="camara-controles">
-        <button
-          onClick={() => EventBus.emit('camara:rotar', { dir: -1 })}
-          title="Girar la vista a la izquierda (tecla Q)"
-          aria-label="Girar la vista a la izquierda"
-        >
-          ⟲
-        </button>
-        <button
-          onClick={() => EventBus.emit('camara:rotar', { dir: 1 })}
-          title="Girar la vista a la derecha (tecla E)"
-          aria-label="Girar la vista a la derecha"
-        >
-          ⟳
-        </button>
-      </div>
-    </div>
-  );
+  return <div className="escenario" ref={contenedor} />;
 }

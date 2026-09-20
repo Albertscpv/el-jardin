@@ -62,11 +62,11 @@ export function AnimalSheet() {
           </div>
 
           <div className="ficha-acciones">
-            <button className="comprar secundario" onClick={() => setHerramienta('mimar')}>
+            <button className="boton suave" onClick={() => setHerramienta('mimar')}>
               🫶 Mimar
             </button>
             <button
-              className="comprar"
+              className="boton"
               onClick={() => {
                 setComida(ANIMAL_SPECIES[animal.especie].comidaFavorita);
                 setHerramienta('alimentar');

@@ -74,10 +74,10 @@ export function AdoptModal() {
                 aria-label="Nombre del animal"
               />
               <div className="modal-acciones">
-                <button type="button" className="comprar secundario" onClick={cerrar}>
+                <button type="button" className="boton suave" onClick={cerrar}>
                   Todavía no
                 </button>
-                <button type="submit" className="comprar" disabled={!nombre.trim()}>
+                <button type="submit" className="boton" disabled={!nombre.trim()}>
                   Adoptar
                 </button>
               </div>

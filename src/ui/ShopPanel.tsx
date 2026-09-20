@@ -64,14 +64,14 @@ function Semillas() {
 
             <div className="fila-acciones">
               <button
-                className="comprar"
+                className="boton"
                 disabled={monedas < v.precioSemilla}
                 onClick={() => comprar(v.id, 1)}
               >
                 {v.precioSemilla} 🪙
               </button>
               <button
-                className="comprar secundario"
+                className="boton suave"
                 disabled={monedas < v.precioSemilla * 5}
                 onClick={() => comprar(v.id, 5)}
               >
@@ -113,11 +113,11 @@ function Comida() {
             </div>
 
             <div className="fila-acciones">
-              <button className="comprar" disabled={monedas < c.precio} onClick={() => comprar(c.id, 1)}>
+              <button className="boton" disabled={monedas < c.precio} onClick={() => comprar(c.id, 1)}>
                 {c.precio} 🪙
               </button>
               <button
-                className="comprar secundario"
+                className="boton suave"
                 disabled={monedas < c.precio * 5}
                 onClick={() => comprar(c.id, 5)}
               >

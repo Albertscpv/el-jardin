@@ -1,5 +1,6 @@
 import * as M from '../game/art/matrices';
 import type { Matrix } from '../game/art/matrices';
+import type { Palette } from '../game/art/render';
 import type {
   AnimalSpecies,
   AnimalSpeciesId,
@@ -9,6 +10,8 @@ import type {
   FlowerVariant,
   FoodId,
   FoodItem,
+  AvatarState,
+  Sombrero,
 } from './types';
 
 /* ------------------------------------------------------------------ */
@@ -454,3 +457,66 @@ export const FOODS: Record<FoodId, FoodItem> = {
 };
 
 export const FOOD_LIST = Object.values(FOODS);
+
+/* ------------------------------------------------------------------ */
+/* Personaje                                                           */
+/* ------------------------------------------------------------------ */
+
+export const PIELES = ['#f7dcc0', '#e8b48c', '#c88d62', '#96603c', '#5e3a26'];
+
+export const PELOS = [
+  '#2a2320', '#5a3a26', '#8a5a33', '#c98a3a',
+  '#e8d8b0', '#b0504a', '#6a5a9a', '#4a7a6a',
+];
+
+export const ROPAS = [
+  '#6fae5a', '#e0785a', '#6f96d8', '#d8a13a',
+  '#b06fb0', '#e8e4d8', '#4a6a8a', '#d85a7a',
+];
+
+export const PANTALONES = ['#4a6a8a', '#5a4a3a', '#3a4a5a', '#6a5a4a', '#2e3b32'];
+
+export const COLORES_SOMBRERO = ['#e0b463', '#c85a4a', '#5a8ad8', '#e8e4d8', '#3a3038'];
+
+export const SOMBREROS: Array<{ id: Sombrero; nombre: string }> = [
+  { id: 'ninguno', nombre: 'Sin sombrero' },
+  { id: 'paja', nombre: 'De paja' },
+  { id: 'gorro', nombre: 'Gorro' },
+];
+
+/** Oscurece un color hex para derivar sombras sin pedirlas al jugador. */
+function oscurecer(hex: string, factor: number): string {
+  const n = parseInt(hex.slice(1), 16);
+  const r = Math.round(((n >> 16) & 255) * factor);
+  const g = Math.round(((n >> 8) & 255) * factor);
+  const b = Math.round((n & 255) * factor);
+  return `#${((r << 16) | (g << 8) | b).toString(16).padStart(6, '0')}`;
+}
+
+/**
+ * Paleta del avatar a partir de las cuatro elecciones del jugador.
+ * Las sombras se derivan solas: elegir ocho colores seria un trabajo, no
+ * una personalizacion.
+ */
+export function paletaAvatar(avatar: AvatarState): Palette {
+  return {
+    k: avatar.piel,
+    K: oscurecer(avatar.piel, 0.78),
+    h: avatar.pelo,
+    H: oscurecer(avatar.pelo, 0.72),
+    r: avatar.ropa,
+    R: oscurecer(avatar.ropa, 0.74),
+    p: avatar.pantalon,
+    z: oscurecer(avatar.pantalon, 0.6),
+    e: '#2a2320',
+    s: avatar.colorSombrero,
+    S: oscurecer(avatar.colorSombrero, 0.74),
+  };
+}
+
+/** Matriz final del avatar, con el sombrero ya superpuesto. */
+export function matrizAvatar(avatar: AvatarState): Matrix {
+  if (avatar.sombrero === 'paja') return M.componerMatrices(M.AVATAR, M.SOMBRERO_PAJA);
+  if (avatar.sombrero === 'gorro') return M.componerMatrices(M.AVATAR, M.SOMBRERO_GORRO);
+  return M.AVATAR;
+}

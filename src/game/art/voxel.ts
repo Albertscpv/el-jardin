@@ -189,8 +189,12 @@ export interface Caja {
 /**
  * Une varias cajas en una sola geometria con colores por vertice.
  * Se usa para el terreno y los props que no vienen de una matriz.
+ *
+ * @param sombreado 1 aplica el sombreado por cara completo; valores menores lo
+ *   suavizan. El terreno lo baja porque sus caras inferiores, que ya reciben
+ *   poca luz directa, quedarian negras.
  */
-export function cajasGeometry(cajas: Caja[]): THREE.BufferGeometry {
+export function cajasGeometry(cajas: Caja[], sombreado = 1): THREE.BufferGeometry {
   const posiciones: number[] = [];
   const normales: number[] = [];
   const colores: number[] = [];
@@ -206,9 +210,10 @@ export function cajasGeometry(cajas: Caja[]): THREE.BufferGeometry {
 
     for (const cara of CARAS) {
       const base = posiciones.length / 3;
-      const r = color.r * cara.luz;
-      const g = color.g * cara.luz;
-      const b = color.b * cara.luz;
+      const k = 1 - (1 - cara.luz) * sombreado;
+      const r = color.r * k;
+      const g = color.g * k;
+      const b = color.b * k;
 
       for (const [ex, ey, ez] of cara.esquinas) {
         posiciones.push(

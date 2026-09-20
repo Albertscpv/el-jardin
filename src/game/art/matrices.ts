@@ -415,3 +415,89 @@ export function assertRectangular(name: string, m: Matrix): void {
     }
   });
 }
+
+/* ------------------------------------------------------------------ */
+/* Personaje                                                           */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Avatar del jugador, de frente.
+ *   k/K piel y su sombra  ·  h/H pelo  ·  r/R ropa  ·  p pantalon
+ *   z zapatos  ·  e ojos  ·  s/S sombrero
+ */
+export const AVATAR: Matrix = [
+  '................',
+  '.....hhhhhh.....',
+  '....hhhhhhhh....',
+  '....hkkkkkkh....',
+  '....hkekkekh....',
+  '....hkkkkkkh....',
+  '....hkkKKkkh....',
+  '.....kkkkkk.....',
+  '....rrrrrrrr....',
+  '...krrrrrrrrk...',
+  '...krrrrrrrrk...',
+  '...kRRRRRRRRk...',
+  '....pppppppp....',
+  '....pppppppp....',
+  '....pp....pp....',
+  '...zzz....zzz...',
+];
+
+/** Se superpone sobre AVATAR; solo dibuja donde no hay punto. */
+export const SOMBRERO_PAJA: Matrix = [
+  '.....SSSSSS.....',
+  '....ssssssss....',
+  '..SSSSSSSSSSSS..',
+  '................',
+  '................',
+  '................',
+  '................',
+  '................',
+  '................',
+  '................',
+  '................',
+  '................',
+  '................',
+  '................',
+  '................',
+  '................',
+];
+
+export const SOMBRERO_GORRO: Matrix = [
+  '.....ssssss.....',
+  '....ssssssss....',
+  '....SSSSSSSS....',
+  '................',
+  '................',
+  '................',
+  '................',
+  '................',
+  '................',
+  '................',
+  '................',
+  '................',
+  '................',
+  '................',
+  '................',
+  '................',
+];
+
+/**
+ * Superpone matrices del mismo tamano: gana la ultima que no sea transparente.
+ * Se usa para ponerle sombrero al avatar sin duplicar el dibujo del cuerpo.
+ */
+export function componerMatrices(...capas: Matrix[]): Matrix {
+  const base = capas[0];
+  return base.map((fila, y) =>
+    [...fila]
+      .map((ch, x) => {
+        for (let i = capas.length - 1; i > 0; i--) {
+          const encima = capas[i][y]?.[x];
+          if (encima && encima !== '.') return encima;
+        }
+        return ch;
+      })
+      .join(''),
+  );
+}

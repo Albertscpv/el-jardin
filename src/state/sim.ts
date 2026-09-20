@@ -6,15 +6,16 @@
  * estuvo cerrado: `advance(estado, ahora)`.
  */
 
-import { BALANCE, PLOT_COUNT, SAVE_VERSION, WORLD_COLS, WORLD_ROWS } from './config';
+import { BALANCE, SAVE_VERSION } from './config';
 import { ANIMAL_SPECIES, FLOWER_SPECIES, getFlowerVariant, variantsOfSpecies } from './content';
+import { celdaAleatoria, crearAvatarInicial, crearIslaInicial } from './islas';
 import type {
   AnimalSpeciesId,
   AnimalState,
+  CeldaId,
   GameState,
   GrowthStage,
   PlantState,
-  PlotState,
 } from './types';
 
 const clamp01 = (n: number) => Math.min(1, Math.max(0, n));
@@ -33,7 +34,11 @@ export function stageOf(planta: PlantState): GrowthStage {
 }
 
 export function contarFlores(estado: GameState): number {
-  return estado.parcelas.filter((p) => p.planta && stageOf(p.planta) === 'flor').length;
+  let n = 0;
+  for (const planta of Object.values(estado.cultivos)) {
+    if (stageOf(planta) === 'flor') n++;
+  }
+  return n;
 }
 
 /* ------------------------------------------------------------------ */
@@ -42,10 +47,6 @@ export function contarFlores(estado: GameState): number {
 
 export function crearEstadoInicial(nombreJardin = 'Mi jardín'): GameState {
   const ahora = Date.now();
-  const parcelas: PlotState[] = Array.from({ length: PLOT_COUNT }, (_, index) => ({
-    index,
-    planta: null,
-  }));
 
   return {
     version: SAVE_VERSION,
@@ -54,8 +55,10 @@ export function crearEstadoInicial(nombreJardin = 'Mi jardín'): GameState {
     // Un puñado de semillas fáciles para que la primera partida arranque sola.
     semillas: { 'margarita-blanca': 3, 'tulipan-rojo': 2 },
     comida: { nectar: 2 },
-    parcelas,
+    islas: [crearIslaInicial()],
+    cultivos: {},
     animales: [],
+    avatar: crearAvatarInicial(),
     floresCosechadas: 0,
     creadoEn: ahora,
     ultimoTick: ahora,
@@ -87,10 +90,8 @@ export function advance(previo: GameState, ahora: number, rng = Math.random): Ad
   let florecieron = 0;
   let seMarchitaron = 0;
 
-  const parcelas = previo.parcelas.map((parcela) => {
-    const planta = parcela.planta;
-    if (!planta) return parcela;
-
+  const cultivos: Record<CeldaId, PlantState> = {};
+  for (const [id, planta] of Object.entries(previo.cultivos)) {
     const etapaAntes = stageOf(planta);
     const variante = getFlowerVariant(planta.variantId);
     const segundosTotales = FLOWER_SPECIES[variante.especie].minutosCrecimiento * 60;
@@ -115,8 +116,8 @@ export function advance(previo: GameState, ahora: number, rng = Math.random): Ad
     if (etapaAntes !== 'flor' && etapaDespues === 'flor') florecieron++;
     if (etapaAntes !== 'marchita' && etapaDespues === 'marchita') seMarchitaron++;
 
-    return { ...parcela, planta: siguiente };
-  });
+    cultivos[id] = siguiente;
+  }
 
   if (florecieron > 0) {
     eventos.push(
@@ -133,7 +134,6 @@ export function advance(previo: GameState, ahora: number, rng = Math.random): Ad
 
   /* --- Animales --------------------------------------------------- */
   let monedas = previo.monedas;
-  const semillas = { ...previo.semillas };
   let regalos = 0;
 
   const animales: AnimalState[] = [];
@@ -185,7 +185,7 @@ export function advance(previo: GameState, ahora: number, rng = Math.random): Ad
   }
 
   return {
-    estado: { ...previo, parcelas, animales, monedas, semillas, ultimoTick: ahora },
+    estado: { ...previo, cultivos, animales, monedas, ultimoTick: ahora },
     eventos,
   };
 }
@@ -203,12 +203,18 @@ export function especiesDisponibles(flores: number): AnimalSpeciesId[] {
 
 /** Cuantos animales caben a la vez en el jardin. */
 export function aforo(flores: number): number {
-  return Math.min(8, 1 + Math.floor(flores / 3));
+  return Math.min(10, 1 + Math.floor(flores / 3));
 }
 
-export function crearVisitante(especie: AnimalSpeciesId, rng = Math.random): AnimalState {
+export function crearVisitante(
+  especie: AnimalSpeciesId,
+  estado: GameState,
+  rng = Math.random,
+): AnimalState {
   const variantes = variantsOfSpecies(especie);
   const variante = variantes[Math.floor(rng() * variantes.length)];
+  // Aparecen sobre tierra firme, en cualquiera de las islas.
+  const { x, z } = celdaAleatoria(estado.islas, rng);
 
   return {
     uid: `${especie}-${Date.now().toString(36)}-${Math.floor(rng() * 1e6).toString(36)}`,
@@ -222,9 +228,8 @@ export function crearVisitante(especie: AnimalSpeciesId, rng = Math.random): Ani
     felicidad: 55 + rng() * 20,
     vinculo: 0,
     adoptadoEn: null,
-    // Aparecen dentro de la cerca, repartidos por el jardin.
-    x: (rng() - 0.5) * (WORLD_COLS - 3),
-    z: (rng() - 0.5) * (WORLD_ROWS - 3),
+    x,
+    z,
     proximoRegalo: Date.now() + BALANCE.minutosEntreRegalos * 60_000,
   };
 }

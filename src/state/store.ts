@@ -1,14 +1,15 @@
 import { create } from 'zustand';
 import { EventBus } from '../game/EventBus';
-import { BALANCE } from './config';
 import {
-  ANIMAL_SPECIES,
-  FOODS,
-  getAnimalVariant,
-  getFlowerVariant,
-} from './content';
-import { conRespaldoLocal, crearAdaptador, type AdapterName } from './persistence';
-import { borrarLocal } from './persistence';
+  BALANCE,
+  celdaId as hacerCeldaId,
+  celdaLocal,
+  costoProximaCelda,
+  parseCeldaId,
+} from './config';
+import { ANIMAL_SPECIES, FOODS, getAnimalVariant, getFlowerVariant } from './content';
+import { crearIslaNueva, esAgua, esParcela, tieneSuelo, totalCeldas } from './islas';
+import { borrarLocal, conRespaldoLocal, crearAdaptador, type AdapterName } from './persistence';
 import {
   advance,
   aforo,
@@ -18,7 +19,16 @@ import {
   especiesDisponibles,
   stageOf,
 } from './sim';
-import type { AnimalState, FoodId, GameState, PlotState, Toast, ToolId } from './types';
+import type {
+  AnimalState,
+  AvatarState,
+  CeldaId,
+  FoodId,
+  GameState,
+  IslaState,
+  Toast,
+  ToolId,
+} from './types';
 
 const clamp100 = (n: number) => Math.min(100, Math.max(0, n));
 
@@ -27,7 +37,7 @@ const adaptador = conRespaldoLocal(crearAdaptador());
 /** Ventana muerta entre caricias al mismo animal, para que no se pueda spamear. */
 const COOLDOWN_CARICIA = 1100;
 
-export type PanelId = 'tienda' | 'animales' | 'ayuda' | null;
+export type PanelId = 'tienda' | 'animales' | 'construir' | 'personaje' | 'ayuda' | null;
 
 interface Store {
   /* --- datos --- */
@@ -61,10 +71,15 @@ interface Store {
   descartarToast: (id: number) => void;
 
   /* --- jardin --- */
-  usarEnParcela: (index: number) => void;
+  usarEnCelda: (id: CeldaId) => void;
   regarTodo: () => void;
   comprarSemilla: (variantId: string, cantidad?: number) => void;
   comprarComida: (foodId: FoodId, cantidad?: number) => void;
+
+  /* --- territorio --- */
+  expandir: (islaId: string, col: number, row: number) => void;
+  fundarIsla: () => void;
+  renombrarIsla: (islaId: string, nombre: string) => void;
 
   /* --- animales --- */
   interactuarAnimal: (uid: string) => void;
@@ -72,6 +87,10 @@ interface Store {
   renombrar: (uid: string, nombre: string) => void;
   liberar: (uid: string) => void;
   moverAnimal: (uid: string, x: number, z: number) => void;
+
+  /* --- personaje --- */
+  personalizarAvatar: (cambios: Partial<AvatarState>) => void;
+  moverAvatar: (x: number, z: number) => void;
 }
 
 let siguienteToast = 1;
@@ -91,10 +110,10 @@ export const useGame = create<Store>()((set, get) => {
       animales: estado.animales.map((a) => (a.uid === uid ? fn(a) : a)),
     }));
 
-  const mutarParcela = (index: number, fn: (p: PlotState) => PlotState) =>
+  const mutarIsla = (islaId: string, fn: (isla: IslaState) => IslaState) =>
     mutar((estado) => ({
       ...estado,
-      parcelas: estado.parcelas.map((p) => (p.index === index ? fn(p) : p)),
+      islas: estado.islas.map((i) => (i.id === islaId ? fn(i) : i)),
     }));
 
   return {
@@ -153,8 +172,7 @@ export const useGame = create<Store>()((set, get) => {
             break;
           }
         }
-        const visitante = crearVisitante(elegida);
-        animales = [...animales, visitante];
+        animales = [...animales, crearVisitante(elegida, estado)];
         get().avisar(`Llegó ${unArticulo(elegida)} al jardín`, 'info');
       }
 
@@ -202,14 +220,46 @@ export const useGame = create<Store>()((set, get) => {
     /* Jardin                                                            */
     /* ---------------------------------------------------------------- */
 
-    usarEnParcela(index) {
+    usarEnCelda(id) {
       const { estado, herramienta, semillaSeleccionada, avisar } = get();
-      const parcela = estado.parcelas[index];
-      if (!parcela) return;
-      const planta = parcela.planta;
+      const { islaId, col, row } = parseCeldaId(id);
+      const isla = estado.islas.find((i) => i.id === islaId);
+      if (!isla) return;
+
+      // El personaje camina a donde trabajás: no hace falta moverlo aparte.
+      get().moverAvatar(isla.ox + col + 0.5, isla.oz + row + 0.5);
+
+      const planta = estado.cultivos[id];
+      const arada = esParcela(isla, col, row);
 
       switch (herramienta) {
+        case 'arar': {
+          if (esAgua(isla, col, row)) return avisar('Ahí hay agua', 'aviso');
+          if (arada) {
+            if (planta) return avisar('Primero sacá lo que está sembrado', 'aviso');
+            mutarIsla(islaId, (i) => ({
+              ...i,
+              parcelas: i.parcelas.filter((c) => c !== celdaLocal(col, row)),
+            }));
+            mutar((e) => ({ ...e, monedas: e.monedas + Math.floor(BALANCE.costoArar / 2) }));
+            return avisar('Parcela devuelta a césped', 'info');
+          }
+          if (estado.monedas < BALANCE.costoArar) {
+            return avisar(`Arar cuesta ${BALANCE.costoArar} monedas`, 'aviso');
+          }
+          mutar((e) => ({
+            ...e,
+            monedas: e.monedas - BALANCE.costoArar,
+            islas: e.islas.map((i) =>
+              i.id === islaId ? { ...i, parcelas: [...i.parcelas, celdaLocal(col, row)] } : i,
+            ),
+          }));
+          EventBus.emit('efecto:plantar', { celda: id });
+          return avisar('Tierra lista para sembrar', 'exito');
+        }
+
         case 'plantar': {
+          if (!arada) return avisar('Ahí no hay tierra arada. Usá la azada', 'aviso');
           if (planta) return avisar('Esa parcela ya está ocupada', 'aviso');
           if (!semillaSeleccionada) return avisar('Elegí una semilla primero', 'aviso');
           if ((estado.semillas[semillaSeleccionada] ?? 0) <= 0) {
@@ -220,39 +270,36 @@ export const useGame = create<Store>()((set, get) => {
           mutar((e) => ({
             ...e,
             semillas: { ...e.semillas, [variante.id]: (e.semillas[variante.id] ?? 0) - 1 },
-            parcelas: e.parcelas.map((p) =>
-              p.index === index
-                ? {
-                    ...p,
-                    // Se siembra ya regada: el primer riego lo hace el jugador.
-                    planta: {
-                      variantId: variante.id,
-                      plantedAt: Date.now(),
-                      growth: 0,
-                      humedad: 1,
-                      marchitez: 0,
-                    },
-                  }
-                : p,
-            ),
+            cultivos: {
+              ...e.cultivos,
+              // Se siembra ya regada: el primer riego lo hace el jugador.
+              [id]: {
+                variantId: variante.id,
+                plantedAt: Date.now(),
+                growth: 0,
+                humedad: 1,
+                marchitez: 0,
+              },
+            },
           }));
-          EventBus.emit('efecto:plantar', { index });
+          EventBus.emit('efecto:plantar', { celda: id });
           return;
         }
 
         case 'regar': {
           if (!planta) return avisar('Ahí no hay nada que regar', 'aviso');
-          mutarParcela(index, (p) => ({
-            ...p,
-            planta: p.planta
-              ? {
-                  ...p.planta,
-                  humedad: BALANCE.riego,
-                  marchitez: Math.max(0, p.planta.marchitez - 0.25),
-                }
-              : null,
+          mutar((e) => ({
+            ...e,
+            cultivos: {
+              ...e.cultivos,
+              [id]: {
+                ...planta,
+                humedad: BALANCE.riego,
+                marchitez: Math.max(0, planta.marchitez - 0.25),
+              },
+            },
           }));
-          EventBus.emit('efecto:regar', { index });
+          EventBus.emit('efecto:regar', { celda: id });
           return;
         }
 
@@ -267,17 +314,21 @@ export const useGame = create<Store>()((set, get) => {
           const variante = getFlowerVariant(planta.variantId);
           const bonus = Math.random() < BALANCE.probabilidadSemilla;
 
-          mutar((e) => ({
-            ...e,
-            monedas: e.monedas + variante.precioVenta,
-            floresCosechadas: e.floresCosechadas + 1,
-            semillas: bonus
-              ? { ...e.semillas, [variante.id]: (e.semillas[variante.id] ?? 0) + 1 }
-              : e.semillas,
-            parcelas: e.parcelas.map((p) => (p.index === index ? { ...p, planta: null } : p)),
-          }));
+          mutar((e) => {
+            const cultivos = { ...e.cultivos };
+            delete cultivos[id];
+            return {
+              ...e,
+              monedas: e.monedas + variante.precioVenta,
+              floresCosechadas: e.floresCosechadas + 1,
+              semillas: bonus
+                ? { ...e.semillas, [variante.id]: (e.semillas[variante.id] ?? 0) + 1 }
+                : e.semillas,
+              cultivos,
+            };
+          });
 
-          EventBus.emit('efecto:cosechar', { index, color: variante.palette['2'] ?? '#ffd447' });
+          EventBus.emit('efecto:cosechar', { celda: id, color: variante.palette['2'] ?? '#ffd447' });
           avisar(
             bonus
               ? `+${variante.precioVenta} monedas y una semilla de regalo 🌰`
@@ -289,36 +340,36 @@ export const useGame = create<Store>()((set, get) => {
 
         case 'pala': {
           if (!planta) return avisar('Ahí no hay nada que quitar', 'aviso');
-          mutarParcela(index, (p) => ({ ...p, planta: null }));
+          mutar((e) => {
+            const cultivos = { ...e.cultivos };
+            delete cultivos[id];
+            return { ...e, cultivos };
+          });
           avisar('Parcela despejada', 'info');
           return;
         }
 
         default:
-          avisar('Esa herramienta es para los animales', 'aviso');
+          avisar('Esa herramienta no se usa en la tierra', 'aviso');
       }
     },
 
     regarTodo() {
       const { estado } = get();
-      const secas = estado.parcelas.filter((p) => p.planta && p.planta.humedad < 0.95).length;
+      const secas = Object.values(estado.cultivos).filter((p) => p.humedad < 0.95).length;
       if (secas === 0) return get().avisar('Todo el jardín está regado', 'info');
 
-      mutar((e) => ({
-        ...e,
-        parcelas: e.parcelas.map((p) =>
-          p.planta
-            ? {
-                ...p,
-                planta: {
-                  ...p.planta,
-                  humedad: BALANCE.riego,
-                  marchitez: Math.max(0, p.planta.marchitez - 0.25),
-                },
-              }
-            : p,
-        ),
-      }));
+      mutar((e) => {
+        const cultivos: GameState['cultivos'] = {};
+        for (const [id, planta] of Object.entries(e.cultivos)) {
+          cultivos[id] = {
+            ...planta,
+            humedad: BALANCE.riego,
+            marchitez: Math.max(0, planta.marchitez - 0.25),
+          };
+        }
+        return { ...e, cultivos };
+      });
       EventBus.emit('efecto:regarTodo', {});
       get().avisar(`Regaste ${secas} ${secas === 1 ? 'planta' : 'plantas'} 💧`, 'exito');
     },
@@ -352,6 +403,55 @@ export const useGame = create<Store>()((set, get) => {
     },
 
     /* ---------------------------------------------------------------- */
+    /* Territorio                                                        */
+    /* ---------------------------------------------------------------- */
+
+    expandir(islaId, col, row) {
+      const { estado, avisar } = get();
+      const isla = estado.islas.find((i) => i.id === islaId);
+      if (!isla) return;
+      if (tieneSuelo(isla, col, row)) return;
+
+      const costo = costoProximaCelda(totalCeldas(estado.islas));
+      if (estado.monedas < costo) {
+        return avisar(`Esa celda cuesta ${costo} monedas`, 'aviso');
+      }
+
+      mutar((e) => ({
+        ...e,
+        monedas: e.monedas - costo,
+        islas: e.islas.map((i) =>
+          i.id === islaId ? { ...i, suelo: [...i.suelo, celdaLocal(col, row)] } : i,
+        ),
+      }));
+
+      EventBus.emit('efecto:expandir', { celda: hacerCeldaId(islaId, col, row) });
+      avisar(`Jardín ampliado · −${costo} 🪙`, 'exito');
+    },
+
+    fundarIsla() {
+      const { estado, avisar } = get();
+      if (estado.monedas < BALANCE.costoIsla) {
+        return avisar(`Fundar una isla cuesta ${BALANCE.costoIsla} monedas`, 'aviso');
+      }
+
+      const isla = crearIslaNueva(estado.islas);
+      mutar((e) => ({
+        ...e,
+        monedas: e.monedas - BALANCE.costoIsla,
+        islas: [...e.islas, isla],
+      }));
+      EventBus.emit('camara:mirar', { x: isla.ox + 2.5, z: isla.oz + 2.5 });
+      avisar(`${isla.nombre} emergió del mar 🏝️`, 'exito');
+    },
+
+    renombrarIsla(islaId, nombre) {
+      const limpio = nombre.trim().slice(0, 24);
+      if (!limpio) return;
+      mutarIsla(islaId, (i) => ({ ...i, nombre: limpio }));
+    },
+
+    /* ---------------------------------------------------------------- */
     /* Animales                                                          */
     /* ---------------------------------------------------------------- */
 
@@ -370,6 +470,7 @@ export const useGame = create<Store>()((set, get) => {
         const especie = ANIMAL_SPECIES[animal.especie];
         const favorita = especie.comidaFavorita === comida.id;
 
+        get().moverAvatar(animal.x, animal.z);
         mutar((e) => ({
           ...e,
           comida: { ...e.comida, [comida.id]: (e.comida[comida.id] ?? 0) - 1 },
@@ -404,6 +505,7 @@ export const useGame = create<Store>()((set, get) => {
         if (ahora - (ultimaCaricia.get(uid) ?? 0) < COOLDOWN_CARICIA) return;
         ultimaCaricia.set(uid, ahora);
 
+        get().moverAvatar(animal.x, animal.z);
         mutarAnimal(uid, (a) => ({
           ...a,
           felicidad: clamp100(a.felicidad + 6),
@@ -460,6 +562,20 @@ export const useGame = create<Store>()((set, get) => {
           animales: s.estado.animales.map((a) => (a.uid === uid ? { ...a, x, z } : a)),
         },
       }));
+    },
+
+    /* ---------------------------------------------------------------- */
+    /* Personaje                                                         */
+    /* ---------------------------------------------------------------- */
+
+    personalizarAvatar(cambios) {
+      mutar((e) => ({ ...e, avatar: { ...e.avatar, ...cambios } }));
+      EventBus.emit('avatar:cambio', {});
+    },
+
+    /** Marca adonde debe caminar el personaje; la malla lo sigue suavemente. */
+    moverAvatar(x, z) {
+      set((s) => ({ estado: { ...s.estado, avatar: { ...s.estado.avatar, x, z } } }));
     },
   };
 

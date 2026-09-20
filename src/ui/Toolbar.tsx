@@ -1,27 +1,40 @@
 import { FOODS } from '../state/content';
+import { costoProximaCelda } from '../state/config';
+import { totalCeldas } from '../state/islas';
 import { useGame } from '../state/store';
 import type { FoodId, ToolId } from '../state/types';
 import { iconoComida, iconoFlor } from './icons';
 import { PixelIcon } from './PixelIcon';
 
-const HERRAMIENTAS: Array<{ id: ToolId; icono: string; nombre: string; ayuda: string }> = [
-  { id: 'plantar', icono: '🌱', nombre: 'Sembrar', ayuda: 'Elegí una semilla y tocá una parcela' },
+interface Herramienta {
+  id: ToolId;
+  icono: string;
+  nombre: string;
+  ayuda: string;
+}
+
+const HERRAMIENTAS: Herramienta[] = [
+  { id: 'plantar', icono: '🌱', nombre: 'Sembrar', ayuda: 'Elegí una semilla y tocá una parcela arada' },
   { id: 'regar', icono: '💧', nombre: 'Regar', ayuda: 'Sin agua la planta no crece y se marchita' },
   { id: 'cosechar', icono: '🧺', nombre: 'Cosechar', ayuda: 'Solo funciona con la flor abierta' },
   { id: 'pala', icono: '🧹', nombre: 'Limpiar', ayuda: 'Vacía la parcela, marchita o no' },
   { id: 'mimar', icono: '🫶', nombre: 'Mimar', ayuda: 'Tocá un animal para subirle el ánimo' },
   { id: 'alimentar', icono: '🍽️', nombre: 'Alimentar', ayuda: 'Elegí comida y tocá un animal' },
+  { id: 'arar', icono: '🪓', nombre: 'Arar', ayuda: 'Convierte césped en parcela, y al revés' },
+  { id: 'expandir', icono: '🧱', nombre: 'Terreno', ayuda: 'Tocá una celda verde del borde para ganarla' },
 ];
 
 export function Toolbar() {
   const herramienta = useGame((s) => s.herramienta);
   const setHerramienta = useGame((s) => s.setHerramienta);
   const regarTodo = useGame((s) => s.regarTodo);
+  const islas = useGame((s) => s.estado.islas);
 
   const activa = HERRAMIENTAS.find((h) => h.id === herramienta);
+  const costoCelda = costoProximaCelda(totalCeldas(islas));
 
   return (
-    <div className="dock">
+    <div className="dock vidrio">
       <div className="dock-fila">
         <div className="herramientas">
           {HERRAMIENTAS.map((h) => (
@@ -39,12 +52,22 @@ export function Toolbar() {
           ))}
         </div>
 
-        <button className="chip chip-accion" onClick={regarTodo} title="Riega todas las parcelas">
+        <button className="boton suave" onClick={regarTodo} title="Riega todas las parcelas">
           💧 Regar todo
         </button>
       </div>
 
-      {activa && <p className="dock-ayuda">{activa.ayuda}</p>}
+      {activa && (
+        <p className="dock-ayuda">
+          {activa.ayuda}
+          {herramienta === 'expandir' && (
+            <>
+              {' · '}
+              <b>{costoCelda} 🪙</b> cada celda
+            </>
+          )}
+        </p>
+      )}
 
       {herramienta === 'plantar' && <TiraSemillas />}
       {herramienta === 'alimentar' && <TiraComida />}
@@ -64,7 +87,7 @@ function TiraSemillas() {
     return (
       <div className="tira vacia">
         <span>No te quedan semillas.</span>
-        <button className="chip" onClick={() => setPanel('tienda')}>
+        <button className="boton suave" onClick={() => setPanel('tienda')}>
           Ir a la tienda
         </button>
       </div>
@@ -102,7 +125,7 @@ function TiraComida() {
     return (
       <div className="tira vacia">
         <span>No te queda comida.</span>
-        <button className="chip" onClick={() => setPanel('tienda')}>
+        <button className="boton suave" onClick={() => setPanel('tienda')}>
           Ir a la tienda
         </button>
       </div>

@@ -1,50 +1,41 @@
-/** Constantes de mundo y balance. Un solo lugar para tocar el juego. */
+import type { CeldaId, CeldaLocal, IslaState } from './types';
 
 /** Pixeles por tile en las matrices de arte. Define la escala del voxel. */
 export const TILE = 16;
 
-/** Tamano del jardin, en tiles. Un tile mide 1 unidad de mundo. */
-export const WORLD_COLS = 16;
-export const WORLD_ROWS = 11;
+/* ------------------------------------------------------------------ */
+/* Celdas                                                              */
+/* ------------------------------------------------------------------ */
 
-/** Bancal de siembra, en coordenadas de tile. */
-export const PLOT_COLS = 8;
-export const PLOT_ROWS = 4;
-export const PLOT_ORIGIN_COL = 4;
-export const PLOT_ORIGIN_ROW = 3;
-export const PLOT_COUNT = PLOT_COLS * PLOT_ROWS;
+export const celdaLocal = (col: number, row: number): CeldaLocal => `${col},${row}`;
 
-/** Fila del sendero que cruza el jardin por delante del bancal. */
-export const SENDERO_ROW = 7;
+export const celdaId = (islaId: string, col: number, row: number): CeldaId =>
+  `${islaId}/${col},${row}`;
 
-/** Estanque decorativo (los animales beben ahi). */
-export const POND = { col: 1, row: 7, cols: 3, rows: 3 } as const;
-
-export function plotToTile(index: number): { col: number; row: number } {
-  return {
-    col: PLOT_ORIGIN_COL + (index % PLOT_COLS),
-    row: PLOT_ORIGIN_ROW + Math.floor(index / PLOT_COLS),
-  };
+export function parseCeldaId(id: CeldaId): { islaId: string; col: number; row: number } {
+  const barra = id.lastIndexOf('/');
+  const islaId = id.slice(0, barra);
+  const [col, row] = id.slice(barra + 1).split(',').map(Number);
+  return { islaId, col, row };
 }
 
-/**
- * Centro de un tile en coordenadas de mundo 3D.
- * El jardin queda centrado en el origen: X crece a la derecha, Z hacia el
- * frente y Y es la altura. Un tile mide exactamente 1 unidad.
- */
-export function tileToWorld(col: number, row: number): { x: number; z: number } {
-  return {
-    x: col - WORLD_COLS / 2 + 0.5,
-    z: row - WORLD_ROWS / 2 + 0.5,
-  };
+export function parseCeldaLocal(local: CeldaLocal): { col: number; row: number } {
+  const [col, row] = local.split(',').map(Number);
+  return { col, row };
 }
 
-export function tileToPlot(col: number, row: number): number | null {
-  const c = col - PLOT_ORIGIN_COL;
-  const r = row - PLOT_ORIGIN_ROW;
-  if (c < 0 || c >= PLOT_COLS || r < 0 || r >= PLOT_ROWS) return null;
-  return r * PLOT_COLS + c;
+/** Centro de una celda en coordenadas de mundo 3D. */
+export function celdaAMundo(isla: IslaState, col: number, row: number): { x: number; z: number } {
+  return { x: isla.ox + col + 0.5, z: isla.oz + row + 0.5 };
 }
+
+/** Las cuatro celdas vecinas, para bordes de cerca y expansion. */
+export const VECINAS: ReadonlyArray<readonly [number, number]> = [
+  [1, 0],
+  [-1, 0],
+  [0, 1],
+  [0, -1],
+];
 
 /* ------------------------------------------------------------------ */
 /* Balance                                                             */
@@ -83,7 +74,27 @@ export const BALANCE = {
   maxSegundosOffline: 8 * 3600,
 
   monedasIniciales: 60,
+
+  /* --- Territorio --- */
+  /** Costo base de ganarle una celda al vacio. */
+  costoTierra: 18,
+  /**
+   * Cada celda encarece la siguiente: expandir sin fin deberia costar cada vez
+   * mas, para que crecer sea una decision y no un tramite.
+   */
+  incrementoPorCelda: 0.55,
+  /** Convertir tierra en parcela de siembra, y volver atras. */
+  costoArar: 12,
+  /** Fundar una isla nueva. */
+  costoIsla: 500,
+  /** Separacion entre islas, en tiles. */
+  separacionIslas: 9,
 } as const;
 
-export const SAVE_VERSION = 4;
-export const SAVE_KEY = 'jardin-pixel:save:v4';
+/** Lo que cuesta la proxima celda de tierra, dado el tamano actual. */
+export function costoProximaCelda(celdasTotales: number): number {
+  return Math.round(BALANCE.costoTierra + celdasTotales * BALANCE.incrementoPorCelda);
+}
+
+export const SAVE_VERSION = 5;
+export const SAVE_KEY = 'jardin-pixel:save:v5';

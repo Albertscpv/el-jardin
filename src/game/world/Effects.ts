@@ -1,7 +1,6 @@
 import * as THREE from 'three';
 import { HEART } from '../art/matrices';
 import { texturaDeMatriz } from '../art/spriteTexture';
-import { WORLD_COLS, WORLD_ROWS } from '../../state/config';
 
 const MAX_PARTICULAS = 320;
 const MAX_CORAZONES = 24;
@@ -184,6 +183,9 @@ export class Effects {
   /* Bucle                                                             */
   /* ---------------------------------------------------------------- */
 
+  /** Zona por la que vagan las motas de ambiente. La fija el mundo. */
+  radioAmbiente = 10;
+
   update(dt: number, noche: number, tiempo: number): void {
     this.actualizarCubos(dt);
     this.actualizarCorazones(dt);
@@ -268,9 +270,9 @@ export class Effects {
       const f = this.faseAmbiente[i];
       // Deriva en lazos amplios, cada mota con su propio ritmo.
       this.dummy.position.set(
-        Math.sin(tiempo * 0.26 + f * 2.1) * (WORLD_COLS / 2 - 2),
+        Math.sin(tiempo * 0.26 + f * 2.1) * this.radioAmbiente,
         1 + Math.sin(tiempo * 0.7 + f) * 0.45 + noche * 0.3,
-        Math.cos(tiempo * 0.21 + f * 1.7) * (WORLD_ROWS / 2 - 2),
+        Math.cos(tiempo * 0.21 + f * 1.7) * this.radioAmbiente,
       );
       // El titileo es lo que las vuelve luciernagas; de dia el polen no titila.
       const parpadeo = Math.max(0, Math.sin(tiempo * 2.6 + f * 3));

@@ -1,11 +1,9 @@
 import * as THREE from 'three';
 import { ANIMAL_SPECIES } from '../../state/content';
-import { WORLD_COLS, WORLD_ROWS } from '../../state/config';
 import type { AnimalState } from '../../state/types';
 
-/** Limites de paseo: por dentro de la cerca. */
-const LIMITE_X = WORLD_COLS / 2 - 1.6;
-const LIMITE_Z = WORLD_ROWS / 2 - 1.6;
+/** Radio de paseo alrededor del punto donde aparecio. */
+const RADIO_PASEO = 4.5;
 const VUELO_MIN = 0.9;
 const VUELO_MAX = 2.1;
 
@@ -36,6 +34,8 @@ export class AnimalMesh {
   private velocidad: number;
 
   private destino = new THREE.Vector3();
+  /** Punto alrededor del cual deambula. */
+  private querencia = new THREE.Vector3();
   private esperaHasta = 0;
   private tiempo = 0;
   private fase = Math.random() * Math.PI * 2;
@@ -81,6 +81,7 @@ export class AnimalMesh {
     this.grupo.add(this.indicador);
 
     this.grupo.position.set(estado.x, this.alturaBase(), estado.z);
+    this.querencia.set(estado.x, 0, estado.z);
     // Los animales son los protagonistas: se los agranda respecto del tile.
     this.grupo.scale.setScalar(1.2);
     this.elegirDestino(true);
@@ -131,10 +132,12 @@ export class AnimalMesh {
   /* ---------------------------------------------------------------- */
 
   private elegirDestino(inmediato = false): void {
+    // Pasea alrededor de su querencia, no por todo el mapa: con varias islas,
+    // un destino global lo mandaria a caminar por el aire.
     this.destino.set(
-      (Math.random() - 0.5) * 2 * LIMITE_X,
+      this.querencia.x + (Math.random() - 0.5) * 2 * RADIO_PASEO,
       this.vuela ? VUELO_MIN + Math.random() * (VUELO_MAX - VUELO_MIN) : 0,
-      (Math.random() - 0.5) * 2 * LIMITE_Z,
+      this.querencia.z + (Math.random() - 0.5) * 2 * RADIO_PASEO,
     );
     this.esperaHasta = inmediato ? 0 : this.tiempo + 0.4 + Math.random() * 2.4;
   }
