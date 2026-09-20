@@ -145,6 +145,28 @@ supabase/
   schema.sql    tabla y políticas RLS para el guardado en la nube
 ```
 
+## Desplegar en Vercel
+
+El repo ya trae [`vercel.json`](vercel.json) con el framework, el comando de
+build y el directorio de salida, así que Vercel no tiene que adivinar nada.
+
+1. Entrá a [vercel.com/new](https://vercel.com/new) e importá este repositorio.
+2. Dejá los valores que detecta solos (framework Vite, `npm run build`, `dist`).
+3. Si querés guardado en la nube, agregá las dos variables de entorno de la
+   sección siguiente en **Settings → Environment Variables**. Sin ellas el juego
+   funciona igual, guardando en `localStorage`.
+4. Deploy.
+
+Desde ahí, cada push a `main` publica a producción y cada rama abre su propio
+preview. El build corre `tsc --noEmit` antes de compilar, así que un error de
+tipos frena el deploy en vez de llegar a producción.
+
+Las variables de Vite se inlinean en el bundle en tiempo de build: lo que pongas
+en `VITE_*` queda visible en el JS que sirve el sitio. La `anon key` de Supabase
+está pensada para eso — lo que protege los datos son las políticas RLS de
+[`schema.sql`](supabase/schema.sql), no el secreto de la clave. Nunca pongas ahí
+una `service_role key`.
+
 ## Guardado en la nube (opcional)
 
 Sin configurar nada, el juego guarda en `localStorage`. Para sincronizar entre
