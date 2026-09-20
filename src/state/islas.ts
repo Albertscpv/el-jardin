@@ -131,7 +131,7 @@ export function crearIslaInicial(): IslaState {
 
   return {
     id: 'casa',
-    nombre: 'El jardín',
+    nombre: 'Jardín de casa',
     ox: -6,
     oz: -4,
     suelo: rectangulo(cols, filas),

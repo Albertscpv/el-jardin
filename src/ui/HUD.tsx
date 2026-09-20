@@ -26,7 +26,7 @@ export function HUD() {
     <header className="hud">
       <div className="hud-izquierda">
         <div className="hud-marca vidrio">
-          <h1>Jardín Pixel</h1>
+          <h1>El Jardín</h1>
           <span className="hud-origen" title={`Partida guardada en ${origen}`}>
             {origen === 'nube' ? '☁ nube' : '💾 local'}
           </span>

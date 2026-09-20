@@ -97,4 +97,10 @@ export function costoProximaCelda(celdasTotales: number): number {
 }
 
 export const SAVE_VERSION = 5;
+/**
+ * Conserva el prefijo viejo a proposito. La clave identifica la partida en
+ * el navegador: cambiarla al renombrar el juego haria desaparecer los
+ * jardines ya guardados, que es justo lo que no tiene que pasar por un
+ * cambio cosmetico.
+ */
 export const SAVE_KEY = 'jardin-pixel:save:v5';

@@ -1,4 +1,4 @@
--- Esquema para el guardado en la nube de Jardín Pixel.
+-- Esquema para el guardado en la nube de El Jardín.
 -- Ejecutalo en el SQL Editor de tu proyecto de Supabase.
 --
 -- El juego usa sesiones anónimas (auth.signInAnonymously), así que cada
