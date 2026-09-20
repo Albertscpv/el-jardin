@@ -27,6 +27,7 @@ import {
 } from './sim';
 import type {
   AnimalState,
+  Records,
   AvatarState,
   CeldaId,
   FoodId,
@@ -40,6 +41,17 @@ const clamp100 = (n: number) => Math.min(100, Math.max(0, n));
 
 /** Ventana muerta entre caricias al mismo animal, para que no se pueda spamear. */
 const COOLDOWN_CARICIA = 1100;
+
+export type Modo = 'jardin' | 'practica';
+export type Municion = 'flecha' | 'bomba';
+
+/** Marcador vacio, para partidas anteriores a la practica de tiro. */
+export const RECORDS_VACIOS: Records = {
+  disparos: 0,
+  impactos: 0,
+  mejorDistancia: 0,
+  mojadas: 0,
+};
 
 export type PanelId =
   | 'tienda'
@@ -63,6 +75,10 @@ interface Store {
   animalAbierto: string | null;
   adoptando: string | null;
   toasts: Toast[];
+
+  /* --- practica de tiro --- */
+  modo: Modo;
+  municion: Municion;
 
   /* --- ciclo de vida --- */
   inicializar: () => Promise<void>;
@@ -103,6 +119,14 @@ interface Store {
   /* --- personaje --- */
   personalizarAvatar: (cambios: Partial<AvatarState>) => void;
   moverAvatar: (x: number, z: number) => void;
+
+  /* --- practica de tiro --- */
+  setModo: (m: Modo) => void;
+  setMunicion: (m: Municion) => void;
+  registrarDisparo: () => void;
+  registrarImpacto: (distancia: number) => void;
+  registrarMojada: () => void;
+  despertarRival: () => void;
 }
 
 let siguienteToast = 1;
@@ -139,6 +163,9 @@ export const useGame = create<Store>()((set, get) => {
     animalAbierto: null,
     adoptando: null,
     toasts: [],
+
+    modo: 'jardin',
+    municion: 'flecha',
 
     /* ---------------------------------------------------------------- */
     /* Ciclo de vida                                                     */
@@ -615,6 +642,62 @@ export const useGame = create<Store>()((set, get) => {
     moverAvatar(x, z) {
       set((s) => ({ estado: { ...s.estado, avatar: { ...s.estado.avatar, x, z } } }));
     },
+
+    /* ---------------------------------------------------------------- */
+    /* Practica de tiro                                                  */
+    /* ---------------------------------------------------------------- */
+
+    setModo(modo) {
+      // Entrar a practicar cierra los paneles: se necesita la pantalla libre.
+      set({ modo, panel: null, animalAbierto: null });
+      if (modo === 'practica') {
+        const conRival = Boolean(get().estado.rivalDespierto);
+        set({ municion: conRival ? get().municion : 'flecha' });
+      }
+      EventBus.emit('practica:modo', { activa: modo === 'practica' });
+    },
+
+    setMunicion: (municion) => set({ municion }),
+
+    registrarDisparo() {
+      mutar((e) => ({
+        ...e,
+        records: { ...(e.records ?? RECORDS_VACIOS), disparos: (e.records?.disparos ?? 0) + 1 },
+      }));
+    },
+
+    registrarImpacto(distancia) {
+      const previos = get().estado.records ?? RECORDS_VACIOS;
+      const record = distancia > previos.mejorDistancia;
+
+      mutar((e) => ({
+        ...e,
+        records: {
+          ...(e.records ?? RECORDS_VACIOS),
+          impactos: (e.records?.impactos ?? 0) + 1,
+          mejorDistancia: Math.max(e.records?.mejorDistancia ?? 0, distancia),
+        },
+      }));
+
+      if (record && distancia > 6) {
+        get().avisar(`¡Blanco a ${distancia.toFixed(1)} m! Nuevo récord 🎯`, 'exito');
+      }
+    },
+
+    registrarMojada() {
+      mutar((e) => ({
+        ...e,
+        records: { ...(e.records ?? RECORDS_VACIOS), mojadas: (e.records?.mojadas ?? 0) + 1 },
+      }));
+      const total = get().estado.records?.mojadas ?? 0;
+      get().avisar(BURLAS[total % BURLAS.length], 'exito');
+    },
+
+    despertarRival() {
+      if (get().estado.rivalDespierto) return;
+      mutar((e) => ({ ...e, rivalDespierto: true }));
+      get().avisar('Escuchaste una risita del otro lado de la cerca… 🎈', 'info');
+    },
   };
 
   /** Si un visitante llegó a confiar del todo, ofrece la adopción. */
@@ -641,6 +724,16 @@ function unArticulo(especie: keyof typeof ANIMAL_SPECIES): string {
   const nombre = ANIMAL_SPECIES[especie].nombre.toLowerCase();
   return especie === 'mariposa' ? `una ${nombre}` : `un ${nombre}`;
 }
+
+/** Lo que dice el vecino cada vez que le pega una bomba. Todo en broma. */
+const BURLAS = [
+  '¡Le diste! El vecino se sacude y se rie 💦',
+  '"¡Fallaste!", grita empapado de pies a cabeza',
+  'Se seca la cara y te hace una reverencia burlona',
+  '"Eso no cuenta", dice chorreando agua',
+  '¡Directo! Ahora se esconde detras de un muneco',
+  'Se rie tanto que se le cae la gorra 💦',
+];
 
 function formatearLapso(minutos: number): string {
   if (minutos < 60) return `${minutos} minutos`;

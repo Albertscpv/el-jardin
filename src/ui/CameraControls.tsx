@@ -1,6 +1,7 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
 import { EventBus } from '../game/EventBus';
+import { esTactil } from '../game/input/Controls';
 
 /** Controles minimos de camara. El grueso se maneja arrastrando el jardin. */
 export function CameraControls() {
@@ -47,8 +48,16 @@ export function CameraControls() {
             exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.5 }}
           >
-            <b>Arrastrá</b> para girar · <b>Shift</b> o botón derecho para mover · <b>rueda</b> para
-            acercar
+            {esTactil() ? (
+              <>
+                <b>Un dedo</b> gira la vista · <b>dos dedos</b> acercan y desplazan
+              </>
+            ) : (
+              <>
+                <b>Arrastrá</b> para girar · <b>Shift</b> o botón derecho para mover ·{' '}
+                <b>rueda</b> para acercar
+              </>
+            )}
           </motion.p>
         )}
       </AnimatePresence>

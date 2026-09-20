@@ -38,6 +38,8 @@ credenciales de Supabase, la partida se guarda en `localStorage`.
    hasta ganarte su confianza; ahí podés adoptarlos y ponerles nombre.
 5. **Hacé crecer el jardín.** En *Construir* le ganás terreno al vacío celda por
    celda, arás césped para sembrar y fundás islas nuevas.
+6. **Practicá tiro.** *Práctica* abre el campo de tiro: otro escenario, en
+   primera persona, donde el clima del momento te corre las flechas.
 
 **Cámara libre:** arrastrá para orbitar en cualquier ángulo y altura, Shift (o
 el botón derecho) para desplazarte, rueda para acercar, ⌖ para encuadrar todo.
@@ -131,12 +133,15 @@ reemplazar `src/game/` sin tocar una línea de la lógica del juego.
 src/
   game/
     art/        matrices de píxeles, extrusión a voxels, texturas
+    input/      teclado y joystick, unificados en un solo vector
+    range/      campo de tiro en primera persona (canvas 2D)
     world/      motor y cámara libre, terreno, cielo, luces, plantas,
                 animales, personaje, efectos
     EventBus.ts puente tipado entre el mundo 3D y React
   state/
     config.ts   claves de celda y balance, todo en un solo lugar
     content.ts  las 14 variedades de flor, 15 de animal, 5 comidas y el avatar
+    clima.ts    clima derivado del reloj, sin guardarse
     islas.ts    geometría del territorio: bordes, expansión, generación
     sim.ts      simulación pura del paso del tiempo
     store.ts    estado y acciones (Zustand)
@@ -167,6 +172,44 @@ en `VITE_*` queda visible en el JS que sirve el sitio. La `anon key` de Supabase
 está pensada para eso — lo que protege los datos son las políticas RLS de
 [`schema.sql`](supabase/schema.sql), no el secreto de la clave. Nunca pongas ahí
 una `service_role key`.
+
+## Campo de tiro
+
+Es un escenario aparte, no un panel sobre el jardín: se monta en lugar del
+mundo 3D, así no paga su render mientras practicás.
+
+La vista es en primera persona y se dibuja sobre un canvas 2D proyectando a
+mano (`escala = focal / z`). No hace falta un motor 3D para esto, y a cambio
+el pixel art queda intacto. Desde los ojos del arquero la caída y la deriva se
+**ven mientras pasan**, que es justo lo que en vista isométrica había que
+adivinar.
+
+- Mantené apretado para tensar, soltá para disparar. Cuanto más tensás, más
+  tiembla la mira: sostener el arco cansa, y sin eso cargar al máximo sería
+  gratis y siempre la mejor jugada.
+- Los tres muñecos están a 10, 17 y 26 m. El primero se acierta apuntando al
+  centro; el último obliga a elevar la mira y a leer el viento.
+- La resolución lógica del lienzo se deriva del tamaño real de la pantalla, así
+  que en un teléfono vertical el encuadre sigue siendo jugable en vez de quedar
+  como una franja.
+
+### El clima
+
+Lo define [`clima.ts`](src/state/clima.ts) y **no se guarda en la partida**: se
+deriva del reloj en bloques de cuatro minutos. Un bloque da siempre el mismo
+cielo, así que recargar no lo cambia, todos ven lo mismo a la misma hora y no
+hay un campo más que migrar.
+
+El viento acelera la flecha de costado y se muestra arriba como una manga, con
+el pasto y las nubes inclinados: si no se ve por qué fallaste, el viento es una
+trampa en vez de una mecánica.
+
+### El personaje, por ahora apagado
+
+El personaje que caminaba por el jardín está desactivado con
+`PERSONAJE_ACTIVO` en [`config.ts`](src/state/config.ts). La malla, el control
+por teclado y el joystick táctil siguen enteros: no se montan, nada más.
+Ponerlo en `true` lo devuelve.
 
 ## Cuentas y guardado en la nube (opcional)
 

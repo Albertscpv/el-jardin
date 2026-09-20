@@ -1,7 +1,14 @@
 import * as THREE from 'three';
-import { celdaAMundo, celdaId, parseCeldaId } from '../../state/config';
+import { celdaAMundo, celdaId, parseCeldaId, PERSONAJE_ACTIVO } from '../../state/config';
 import { ANIMAL_SPECIES } from '../../state/content';
-import { celdaCercana, celdasExpandibles, celdaEnMundo, limitesMundo } from '../../state/islas';
+import {
+  celdaCercana,
+  celdasExpandibles,
+  celdaEnMundo,
+  esAgua,
+
+  limitesMundo,
+} from '../../state/islas';
 import { stageOf } from '../../state/sim';
 import { useGame } from '../../state/store';
 import type { GameState, IslaState } from '../../state/types';
@@ -20,6 +27,7 @@ import { ALTURA_BANCAL, Terrain } from './Terrain';
 /** Cada cuanto se persiste la posicion de los animales. */
 const GUARDAR_POSICIONES_CADA = 4;
 
+
 /**
  * Orquestador del mundo 3D.
  *
@@ -36,7 +44,8 @@ export class GardenWorld {
 
   private plantas = new Map<string, PlantMesh>();
   private animales = new Map<string, AnimalMesh>();
-  private avatar: AvatarMesh;
+  private avatar: AvatarMesh | null = null;
+  private acumuladorAvatar = 0;
 
   private seleccion: THREE.Mesh;
   private fantasmas: THREE.Mesh[] = [];
@@ -74,8 +83,10 @@ export class GardenWorld {
     this.efectos = new Effects();
     this.engine.escena.add(this.efectos.grupo);
 
-    this.avatar = new AvatarMesh(estado.avatar);
-    this.engine.escena.add(this.avatar.grupo);
+    if (PERSONAJE_ACTIVO) {
+      this.avatar = new AvatarMesh(estado.avatar);
+      this.engine.escena.add(this.avatar.grupo);
+    }
 
     /* Marco que sigue a la celda bajo el cursor. */
     const geoSeleccion = new THREE.PlaneGeometry(1, 1);
@@ -117,6 +128,16 @@ export class GardenWorld {
       (window as unknown as Record<string, unknown>).__mundo = this;
     }
   }
+
+  /* ---------------------------------------------------------------- */
+  /* Suelo                                                             */
+  /* ---------------------------------------------------------------- */
+
+  /** Si el personaje puede pararse ahi. El agua no se pisa. */
+  private pisable = (x: number, z: number): boolean => {
+    const encontrada = celdaEnMundo(useGame.getState().estado.islas, x, z);
+    return Boolean(encontrada && !esAgua(encontrada.isla, encontrada.col, encontrada.row));
+  };
 
   /* ---------------------------------------------------------------- */
   /* Entrada                                                           */
@@ -312,8 +333,8 @@ export class GardenWorld {
     }
 
     /* --- Personaje --- */
-    this.avatar.aplicarAspecto(estado.avatar);
-    this.avatar.irA(estado.avatar.x, estado.avatar.z);
+    this.avatar?.aplicarAspecto(estado.avatar);
+    this.avatar?.irA(estado.avatar.x, estado.avatar.z);
   }
 
   /** Cubos translúcidos sobre cada celda donde se puede ganar terreno. */
@@ -364,8 +385,11 @@ export class GardenWorld {
       }),
 
       EventBus.on('camara:mirar', ({ x, z }) => this.engine.mirar(x, z)),
+
       EventBus.on('camara:zoom', ({ delta }) => this.engine.aplicarZoom(delta)),
-      EventBus.on('avatar:cambio', () => this.avatar.aplicarAspecto(useGame.getState().estado.avatar)),
+      EventBus.on('avatar:cambio', () =>
+        this.avatar?.aplicarAspecto(useGame.getState().estado.avatar),
+      ),
 
       EventBus.on('efecto:plantar', ({ celda }) => {
         const p = this.posicionDeCelda(celda);
@@ -474,7 +498,19 @@ export class GardenWorld {
 
     for (const planta of this.plantas.values()) planta.update(dt);
     for (const animal of this.animales.values()) animal.update(dt, this.engine.camara);
-    this.avatar.update(dt, this.engine.camara);
+    if (this.avatar) {
+      this.avatar.update(dt, this.engine.camara, this.pisable);
+
+      // La posicion del personaje se persiste de a ratos, no por frame.
+      this.acumuladorAvatar += dt;
+      if (this.acumuladorAvatar > 2) {
+        this.acumuladorAvatar = 0;
+        const { estado, moverAvatar } = useGame.getState();
+        if (estado.avatar.x !== this.avatar.x || estado.avatar.z !== this.avatar.z) {
+          moverAvatar(this.avatar.x, this.avatar.z);
+        }
+      }
+    }
 
     this.efectos.update(dt, this.luces.noche, this.tiempo);
 
@@ -507,7 +543,7 @@ export class GardenWorld {
     this.desuscribir = [];
     for (const planta of this.plantas.values()) planta.dispose();
     for (const animal of this.animales.values()) animal.dispose();
-    this.avatar.dispose();
+    this.avatar?.dispose();
     this.terreno.dispose();
     this.plantas.clear();
     this.animales.clear();

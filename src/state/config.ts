@@ -1,5 +1,12 @@
 import type { CeldaId, CeldaLocal, IslaState } from './types';
 
+/**
+ * El personaje que camina por el jardin esta apagado por pedido.
+ * Ponerlo en true vuelve a montar la malla y los controles: nada se borro,
+ * solo no se instancia.
+ */
+export const PERSONAJE_ACTIVO = false;
+
 /** Pixeles por tile en las matrices de arte. Define la escala del voxel. */
 export const TILE = 16;
 

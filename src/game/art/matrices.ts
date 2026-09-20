@@ -501,3 +501,62 @@ export function componerMatrices(...capas: Matrix[]): Matrix {
       .join(''),
   );
 }
+
+/* ------------------------------------------------------------------ */
+/* Practica de tiro y easter egg                                       */
+/* ------------------------------------------------------------------ */
+
+/** Bomba de agua. Chica a proposito: se extruye a un globo de ~0.25 unidades. */
+export const BOMBA_AGUA: Matrix = [
+  '..bbbb..',
+  '.bwwbbb.',
+  'bwbbbbbb',
+  'bbbbbbbb',
+  'bbbbbbbb',
+  '.bbbbbb.',
+  '..bbbb..',
+  '...nn...',
+];
+
+/**
+ * Muneco de paja para practicar tiro.
+ *   p/P paja  ·  k ojos  ·  d sombrero  ·  r/R arpillera  ·  s poste
+ */
+export const MUNECO_PAJA: Matrix = [
+  '................',
+  '.......dd.......',
+  '......dddd......',
+  '....dddddddd....',
+  '.....pppppp.....',
+  '.....pkppkp.....',
+  '.....pppppp.....',
+  '......PPPP......',
+  '..rrrrrrrrrrrr..',
+  '..rrrrrrrrrrrr..',
+  '....rrrrrrrr....',
+  '....rrRRRrr.....',
+  '.....pppppp.....',
+  '......PPPP......',
+  '.......ss.......',
+  '.......ss.......',
+];
+
+/** El niño de al lado: nuestra competencia. Mismo esquema que el avatar. */
+export const NINO_RIVAL: Matrix = [
+  '................',
+  '................',
+  '................',
+  '.....hhhhhh.....',
+  '....gggggggg....',
+  '....hkkkkkkh....',
+  '....hkekkekh....',
+  '....hkkKKkkh....',
+  '.....kkkkkk.....',
+  '....rrrrrrrr....',
+  '...krrrrrrrrk...',
+  '...krrrrrrrrk...',
+  '....pppppppp....',
+  '....pppppppp....',
+  '....pp....pp....',
+  '...zzz....zzz...',
+];

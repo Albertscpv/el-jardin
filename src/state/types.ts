@@ -156,6 +156,16 @@ export interface AnimalState {
   proximoRegalo: number;
 }
 
+/** Marcador de la practica de tiro. */
+export interface Records {
+  disparos: number;
+  impactos: number;
+  /** Distancia del mejor flechazo, en unidades de mundo. */
+  mejorDistancia: number;
+  /** Bombazos acertados al vecino. */
+  mojadas: number;
+}
+
 export interface GameState {
   version: number;
   nombreJardin: string;
@@ -170,6 +180,13 @@ export interface GameState {
   animales: AnimalState[];
   avatar: AvatarState;
   floresCosechadas: number;
+  /**
+   * Campos agregados despues de la version 5. Son opcionales para que las
+   * partidas ya guardadas sigan cargando sin migracion ni perdida.
+   */
+  records?: Records;
+  /** Easter egg descubierto: habilita al vecino y las bombas de agua. */
+  rivalDespierto?: boolean;
   creadoEn: number;
   /** Ultimo instante simulado; permite crecer mientras el juego esta cerrado. */
   ultimoTick: number;

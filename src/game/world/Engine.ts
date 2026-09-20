@@ -60,6 +60,7 @@ export class Engine {
   private distancia = 60;
 
   /* --- Gesto en curso --- */
+  private punteros = new Map<number, { x: number; y: number }>();
   private punteroActivo: number | null = null;
   private ultimoX = 0;
   private ultimoY = 0;
@@ -67,6 +68,10 @@ export class Engine {
   private inicioY = 0;
   private arrastrando = false;
   private paneando = false;
+  /** Separacion entre dedos del pellizco anterior. */
+  private pellizcoPrevio = 0;
+  /** Punto medio del pellizco anterior, para desplazar con dos dedos. */
+  private medioPrevio = { x: 0, y: 0 };
 
   private bufferW = 0;
   private bufferH = 0;
@@ -156,18 +161,39 @@ export class Engine {
 
   private conectarGestos(el: HTMLElement): void {
     const abajo = (e: PointerEvent) => {
-      if (this.punteroActivo !== null) return;
+      this.punteros.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      el.setPointerCapture(e.pointerId);
+
+      if (this.punteros.size === 2) {
+        // Arranca un pellizco: se cancela el gesto de un dedo en curso.
+        this.arrastrando = true;
+        this.punteroActivo = null;
+        this.medirPellizco();
+        return;
+      }
+      if (this.punteros.size > 2) return;
+
       this.punteroActivo = e.pointerId;
       this.inicioX = this.ultimoX = e.clientX;
       this.inicioY = this.ultimoY = e.clientY;
       this.arrastrando = false;
       // Boton derecho, medio o Shift desplazan en vez de girar.
       this.paneando = e.button === 2 || e.button === 1 || e.shiftKey;
-      el.setPointerCapture(e.pointerId);
     };
 
     const mover = (e: PointerEvent) => {
+      const previo = this.punteros.get(e.pointerId);
+      if (previo) {
+        previo.x = e.clientX;
+        previo.y = e.clientY;
+      }
+
       this.alMover?.(e);
+
+      if (this.punteros.size >= 2) {
+        this.aplicarPellizco();
+        return;
+      }
       if (e.pointerId !== this.punteroActivo) return;
 
       const dx = e.clientX - this.ultimoX;
@@ -195,13 +221,25 @@ export class Engine {
     };
 
     const arriba = (e: PointerEvent) => {
-      if (e.pointerId !== this.punteroActivo) return;
-      this.punteroActivo = null;
+      this.punteros.delete(e.pointerId);
       if (el.hasPointerCapture(e.pointerId)) el.releasePointerCapture(e.pointerId);
-      // Un toque limpio es una interacción con el jardín; un arrastre, cámara.
-      if (!this.arrastrando) this.alTocar?.(e);
+
+      if (this.punteros.size >= 2) {
+        this.medirPellizco();
+        return;
+      }
+      // Al levantar un dedo de un pellizco no debe dispararse un toque.
+      if (this.punteros.size === 1) {
+        this.pellizcoPrevio = 0;
+        this.punteroActivo = null;
+        return;
+      }
+
+      if (e.pointerId === this.punteroActivo && !this.arrastrando) this.alTocar?.(e);
+      this.punteroActivo = null;
       this.arrastrando = false;
       this.paneando = false;
+      this.pellizcoPrevio = 0;
     };
 
     const rueda = (e: WheelEvent) => {
@@ -226,6 +264,41 @@ export class Engine {
       el.removeEventListener('wheel', rueda);
       el.removeEventListener('contextmenu', menu);
     });
+  }
+
+  /** Guarda separacion y centro actuales como referencia del pellizco. */
+  private medirPellizco(): void {
+    const [a, b] = [...this.punteros.values()];
+    if (!a || !b) return;
+    this.pellizcoPrevio = Math.hypot(a.x - b.x, a.y - b.y);
+    this.medioPrevio = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+  }
+
+  /**
+   * Dos dedos hacen zoom y desplazan a la vez, como en cualquier mapa.
+   * Girar queda para un solo dedo: mezclar rotacion con pellizco vuelve
+   * imposible acercarse sin marear la vista.
+   */
+  private aplicarPellizco(): void {
+    const [a, b] = [...this.punteros.values()];
+    if (!a || !b) return;
+
+    const separacion = Math.hypot(a.x - b.x, a.y - b.y);
+    const medio = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+
+    if (this.pellizcoPrevio > 0 && separacion > 0) {
+      this.zoom = THREE.MathUtils.clamp(
+        this.zoom * (separacion / this.pellizcoPrevio),
+        ZOOM_MIN,
+        ZOOM_MAX,
+      );
+      this.actualizarProyeccion();
+      this.desplazar(medio.x - this.medioPrevio.x, medio.y - this.medioPrevio.y);
+      this.colocarCamara();
+    }
+
+    this.pellizcoPrevio = separacion;
+    this.medioPrevio = medio;
   }
 
   /** Desplaza el punto de mira en el plano del suelo, siguiendo la vista. */

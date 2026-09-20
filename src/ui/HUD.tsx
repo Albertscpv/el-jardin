@@ -1,3 +1,4 @@
+import { useRef } from 'react';
 import { useAuth } from '../state/auth';
 import { totalCeldas } from '../state/islas';
 import { contarFlores } from '../state/sim';
@@ -20,6 +21,23 @@ export function HUD() {
   const email = useAuth((s) => s.email);
   const panel = useGame((s) => s.panel);
   const setPanel = useGame((s) => s.setPanel);
+  const setModo = useGame((s) => s.setModo);
+  const despertarRival = useGame((s) => s.despertarRival);
+
+  // Easter egg: cinco toques al titulo despiertan al vecino de al lado.
+  const toques = useRef(0);
+  const ultimoToque = useRef(0);
+  const tocarTitulo = () => {
+    const ahora = Date.now();
+    // La racha se corta si pasa demasiado entre toques: evita despertarlo
+    // sin querer a lo largo de una partida entera.
+    toques.current = ahora - ultimoToque.current < 1200 ? toques.current + 1 : 1;
+    ultimoToque.current = ahora;
+    if (toques.current >= 5) {
+      toques.current = 0;
+      despertarRival();
+    }
+  };
 
   const adoptados = animales.filter((a) => a.estado === 'adoptado').length;
   const visitantes = animales.length - adoptados;
@@ -28,7 +46,7 @@ export function HUD() {
     <header className="hud">
       <div className="hud-izquierda">
         <div className="hud-marca vidrio">
-          <h1>El Jardín</h1>
+          <h1 onClick={tocarTitulo}>El Jardín</h1>
           <button
             className={panel === 'cuenta' ? 'hud-origen activo' : 'hud-origen'}
             onClick={() => setPanel('cuenta')}
@@ -62,6 +80,9 @@ export function HUD() {
             {item.etiqueta}
           </button>
         ))}
+        <button className="chip" onClick={() => setModo('practica')} title="Practicá tiro al arco">
+          Práctica
+        </button>
         <button
           className={panel === 'ayuda' ? 'chip activo' : 'chip'}
           onClick={() => setPanel('ayuda')}

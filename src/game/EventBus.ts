@@ -28,6 +28,10 @@ export interface GameEvents {
   /** El aspecto del personaje cambió y hay que regenerar su textura. */
   'avatar:cambio': Record<string, never>;
 
+  /* Práctica de tiro */
+  'practica:modo': { activa: boolean };
+  'practica:impacto': { tipo: 'muneco' | 'rival' | 'suelo'; x: number; y: number; z: number };
+
   /* Cámara */
   'camara:mirar': { x: number; z: number };
   'camara:centrar': Record<string, never>;

@@ -1,5 +1,6 @@
 import { AnimatePresence } from 'framer-motion';
 import { useEffect } from 'react';
+import { PERSONAJE_ACTIVO } from '../state/config';
 import { useAuth } from '../state/auth';
 import { escribirLocal } from '../state/persistence/local';
 import { useGame } from '../state/store';
@@ -13,9 +14,12 @@ import { CharacterPanel } from './CharacterPanel';
 import { GameCanvas } from './GameCanvas';
 import { HelpPanel } from './HelpPanel';
 import { HUD } from './HUD';
+import { RangeScreen } from './RangeScreen';
 import { ShopPanel } from './ShopPanel';
 import { Toasts } from './Toasts';
 import { Toolbar } from './Toolbar';
+import { esTactil } from '../game/input/Controls';
+import { TouchControls } from './TouchControls';
 
 /** Cada cuánto avanza la simulación mientras la pestaña está visible. */
 const TICK_MS = 1000;
@@ -23,6 +27,7 @@ const TICK_MS = 1000;
 export function App() {
   const cargando = useGame((s) => s.cargando);
   const panel = useGame((s) => s.panel);
+  const modo = useGame((s) => s.modo);
 
   useEffect(() => {
     // La sesión primero: define de dónde sale la partida que se carga.
@@ -64,6 +69,17 @@ export function App() {
     );
   }
 
+  // El campo de tiro es otro escenario: se monta en lugar del jardín, no
+  // encima. Así no paga el render del mundo 3D mientras se practica.
+  if (modo === 'practica') {
+    return (
+      <div className="app">
+        <RangeScreen />
+        <Toasts />
+      </div>
+    );
+  }
+
   return (
     <div className="app">
       {/* El jardín ocupa toda la pantalla; el resto flota encima. */}
@@ -73,6 +89,8 @@ export function App() {
       <CameraControls />
       <AnimalSheet />
       <Toolbar />
+
+      {PERSONAJE_ACTIVO && esTactil() && <TouchControls />}
 
       <AnimatePresence>
         {panel === 'tienda' && <ShopPanel key="tienda" />}

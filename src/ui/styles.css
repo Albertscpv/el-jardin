@@ -1163,51 +1163,340 @@ code {
   font-size: 0.88em;
 }
 
+
+/* ------------------------------------------------------------------ */
+/* Controles táctiles                                                  */
+/* ------------------------------------------------------------------ */
+
+.joystick {
+  position: absolute;
+  left: max(18px, env(safe-area-inset-left));
+  bottom: calc(18px + env(safe-area-inset-bottom));
+  z-index: 35;
+  width: 128px;
+  height: 128px;
+  border-radius: 50%;
+  background: var(--vidrio);
+  border: 1px solid var(--borde);
+  backdrop-filter: var(--desenfoque);
+  -webkit-backdrop-filter: var(--desenfoque);
+  display: grid;
+  place-items: center;
+  touch-action: none;
+  user-select: none;
+}
+
+.joystick-pulgar {
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  background: rgba(255, 208, 137, 0.82);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  box-shadow: var(--sombra-suave);
+  pointer-events: none;
+}
+
+.boton-disparo {
+  position: absolute;
+  right: max(18px, env(safe-area-inset-right));
+  bottom: calc(26px + env(safe-area-inset-bottom));
+  z-index: 35;
+  width: 88px;
+  height: 88px;
+  border-radius: 50%;
+  font-size: 34px;
+  background: rgba(242, 160, 61, 0.82);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: var(--sombra);
+  touch-action: none;
+  user-select: none;
+}
+
+.boton-disparo:active {
+  transform: scale(0.94);
+  background: rgba(255, 208, 137, 0.9);
+}
+
+/* ------------------------------------------------------------------ */
+/* Campo de tiro (escenario 2D)                                        */
+/* ------------------------------------------------------------------ */
+
+.campo {
+  position: absolute;
+  inset: 0;
+  background: #1d262e;
+}
+
+/*
+ * El lienzo llena la pantalla y su resolución lógica se deriva del tamaño
+ * real, así que la caja del elemento y lo dibujado siempre coinciden: no
+ * hay bandas negras, ni píxeles estirados, ni desfase al apuntar. Con
+ * object-fit el elemento era más grande que el dibujo y la mira quedaba
+ * corrida respecto del dedo.
+ */
+.campo-lienzo {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+  touch-action: none;
+  cursor: crosshair;
+}
+
+.campo-barra {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  right: 14px;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+}
+
+.campo-titulo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.campo-titulo strong {
+  font-family: var(--display);
+  font-size: 18px;
+  color: var(--miel);
+}
+
+.campo-clima {
+  font-size: 12.5px;
+  color: var(--tenue);
+}
+
+.campo-pie {
+  position: absolute;
+  bottom: 14px;
+  left: 14px;
+  right: 14px;
+  z-index: 10;
+  padding: 11px 14px;
+}
+
+.campo-marcador {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  font-size: 13px;
+  color: var(--tenue);
+  font-variant-numeric: tabular-nums;
+}
+
+.campo-marcador span:first-child {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 16px;
+  color: var(--miel);
+}
+
+.municiones {
+  display: flex;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.municion {
+  flex: 1;
+  padding: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid transparent;
+  border-radius: var(--radio-chico);
+  font-size: 13px;
+  color: var(--tenue);
+}
+
+.municion.activa {
+  background: rgba(242, 160, 61, 0.18);
+  border-color: rgba(242, 160, 61, 0.5);
+  color: var(--miel);
+  font-weight: 600;
+}
+
+.campo-ayuda {
+  margin: 10px 0 0;
+  font-size: 12.5px;
+  color: var(--tenue);
+}
+
 /* ------------------------------------------------------------------ */
 /* Pantallas angostas                                                  */
 /* ------------------------------------------------------------------ */
 
 @media (max-width: 780px) {
+  /* El HUD pasa a tres franjas apiladas: marca, cifras y navegación. Cada
+     una se desplaza sola en horizontal en vez de envolver a varias líneas,
+     que es lo que antes se comía media pantalla. */
   .hud {
-    top: 10px;
+    top: max(10px, env(safe-area-inset-top));
     left: 10px;
     right: 10px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .hud-izquierda {
+    width: 100%;
+    gap: 8px;
+  }
+
+  .hud-marca {
+    align-self: flex-start;
+    padding: 6px 13px;
+    gap: 8px;
   }
 
   .hud-marca h1 {
-    font-size: 17px;
+    font-size: 16px;
   }
 
   .hud-origen {
+    display: inline-block;
+    font-size: 10px;
+    padding: 2px 8px;
+  }
+
+  .hud-stats {
+    width: 100%;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    padding: 5px;
+  }
+
+  .hud-stats::-webkit-scrollbar {
     display: none;
   }
 
+  .stat {
+    flex: 0 0 auto;
+    padding: 4px 9px;
+    font-size: 13px;
+  }
+
+  .stat strong {
+    font-size: 13px;
+  }
+
+  .hud-acciones {
+    width: 100%;
+    justify-content: flex-start;
+    padding: 5px;
+  }
+
+  .hud-acciones .chip {
+    font-size: 13px;
+    padding: 7px 11px;
+  }
+
+  /* El joystick se queda abajo a la izquierda; todo lo demás sube para no
+     pelearse con el pulgar. */
+  .joystick {
+    width: 112px;
+    height: 112px;
+  }
+
+  .joystick-pulgar {
+    width: 48px;
+    height: 48px;
+  }
+
   .dock {
-    bottom: 10px;
+    bottom: calc(146px + env(safe-area-inset-bottom));
     width: calc(100% - 20px);
+    padding: 9px 10px 10px;
+  }
+
+  .campo-barra,
+  .campo-pie {
+    left: 10px;
+    right: 10px;
+    padding: 9px 11px;
+  }
+
+  .campo-barra {
+    top: max(10px, env(safe-area-inset-top));
+  }
+
+  .campo-pie {
+    bottom: calc(10px + env(safe-area-inset-bottom));
+  }
+
+  .campo-titulo strong {
+    font-size: 15px;
+  }
+
+  /* El pie no puede comerse el campo de juego en una pantalla alta. */
+  .campo-ayuda {
+    font-size: 11.5px;
+    margin-top: 8px;
+  }
+
+  .campo-marcador {
+    font-size: 12px;
+  }
+
+  .dock-fila {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
   }
 
   .herramienta {
-    min-width: 58px;
+    min-width: 56px;
+    padding: 6px;
   }
 
+  .herramienta-icono {
+    font-size: 17px;
+  }
+
+  /* La franja entre el HUD y el panel de abajo es la única zona libre.
+     Ahí van cámara, avisos y la pista, cada uno en su carril. */
   .camara {
     right: 10px;
-    bottom: 152px;
-    flex-direction: row;
+    bottom: auto;
+    top: calc(158px + env(safe-area-inset-top));
+    flex-direction: column;
+    padding: 4px;
   }
 
+  .camara button {
+    width: 34px;
+    height: 34px;
+  }
+
+  /* En táctil el consejo de Shift y botón derecho no aplica; se reemplaza
+     por el gesto real y se lo saca del camino. */
   .pista-camara {
-    top: auto;
-    bottom: 200px;
+    top: calc(158px + env(safe-area-inset-top));
+    bottom: auto;
+    left: 10px;
+    right: 62px;
+    transform: none;
     white-space: normal;
-    max-width: calc(100% - 24px);
-    text-align: center;
+    max-width: none;
+    text-align: left;
+    font-size: 12px;
   }
 
+  /* A la izquierda de la columna de cámara, para no taparla. */
   .toasts {
     left: 10px;
-    right: 10px;
+    right: 62px;
+    top: calc(214px + env(safe-area-inset-top));
+    bottom: auto;
     align-items: stretch;
   }
 
@@ -1218,7 +1507,7 @@ code {
   .ficha {
     left: 10px;
     right: 10px;
-    bottom: 176px;
+    bottom: calc(146px + env(safe-area-inset-bottom));
     width: auto;
   }
 
@@ -1228,6 +1517,43 @@ code {
     bottom: 10px;
     left: 10px;
     width: auto;
+  }
+
+  .drawer-cabecera h2 {
+    font-size: 19px;
+  }
+}
+
+/* Pantallas muy bajas (móvil apaisado): el HUD no puede ocupar tres filas. */
+@media (max-height: 520px) {
+  .hud-stats {
+    display: none;
+  }
+
+  .dock,
+  .ficha {
+    bottom: calc(12px + env(safe-area-inset-bottom));
+  }
+
+  .camara {
+    top: 50%;
+    bottom: auto;
+    transform: translateY(-50%);
+  }
+
+  .joystick {
+    width: 92px;
+    height: 92px;
+  }
+
+  .joystick-pulgar {
+    width: 40px;
+    height: 40px;
+  }
+
+  .pista-camara,
+  .toasts {
+    display: none;
   }
 }
 
