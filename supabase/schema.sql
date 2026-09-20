@@ -1,9 +1,10 @@
 -- Esquema para el guardado en la nube de El Jardín.
 -- Ejecutalo en el SQL Editor de tu proyecto de Supabase.
 --
--- El juego usa sesiones anónimas (auth.signInAnonymously), así que cada
--- navegador obtiene un usuario real y las políticas RLS de abajo alcanzan
--- para que nadie pueda leer ni tocar el jardín de otro.
+-- Cada jardín pertenece a una cuenta de auth.users. Las políticas RLS de
+-- abajo son lo único que impide que alguien lea o toque el jardín de otro:
+-- la anon key viaja en el bundle del navegador, así que la seguridad no
+-- puede depender de que esa clave sea secreta.
 
 create table if not exists public.jardines (
   usuario_id     uuid primary key references auth.users (id) on delete cascade,
@@ -39,5 +40,12 @@ create policy "borrar el jardin propio"
 create index if not exists jardines_actualizado_en_idx
   on public.jardines (actualizado_en desc);
 
--- Acordate de habilitar "Anonymous sign-ins" en
--- Authentication → Providers → Anonymous, o signInAnonymously fallará.
+-- Configuración necesaria en el panel de Supabase
+--
+-- 1. Authentication → Providers → Email: dejalo habilitado.
+-- 2. Authentication → URL Configuration → Site URL: la URL de tu deploy.
+--    De ahí salen los enlaces de confirmación y de cambio de contraseña; si
+--    apunta a otro lado, el usuario confirma y aterriza en la nada.
+-- 3. Si querés probar sin lidiar con la entrega de correos, desactivá
+--    "Confirm email" en Authentication → Providers → Email. Para producción,
+--    dejalo activado.

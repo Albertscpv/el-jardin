@@ -23,6 +23,7 @@ credenciales de Supabase, la partida se guarda en `localStorage`.
 | `npm run dev` | Servidor de desarrollo con recarga en caliente |
 | `npm run build` | Chequeo de tipos + build de producción en `dist/` |
 | `npm run typecheck` | Solo el chequeo de tipos |
+| `npm test` | Tests de la lógica de sesión y persistencia |
 | `npm run preview` | Sirve el build de producción |
 
 ## Cómo se juega
@@ -152,9 +153,9 @@ build y el directorio de salida, así que Vercel no tiene que adivinar nada.
 
 1. Entrá a [vercel.com/new](https://vercel.com/new) e importá este repositorio.
 2. Dejá los valores que detecta solos (framework Vite, `npm run build`, `dist`).
-3. Si querés guardado en la nube, agregá las dos variables de entorno de la
+3. Si querés cuentas y guardado en la nube, agregá las dos variables de la
    sección siguiente en **Settings → Environment Variables**. Sin ellas el juego
-   funciona igual, guardando en `localStorage`.
+   funciona igual, guardando en `localStorage` y sin registro.
 4. Deploy.
 
 Desde ahí, cada push a `main` publica a producción y cada rama abre su propio
@@ -167,25 +168,55 @@ está pensada para eso — lo que protege los datos son las políticas RLS de
 [`schema.sql`](supabase/schema.sql), no el secreto de la clave. Nunca pongas ahí
 una `service_role key`.
 
-## Guardado en la nube (opcional)
+## Cuentas y guardado en la nube (opcional)
 
-Sin configurar nada, el juego guarda en `localStorage`. Para sincronizar entre
-dispositivos:
+Sin configurar nada, el juego guarda en `localStorage` y no hay registro: se
+juega y listo. Conectando un proyecto de Supabase se habilita crear cuenta,
+iniciar sesión y sincronizar el jardín entre dispositivos.
 
 1. Creá un proyecto en [Supabase](https://supabase.com).
-2. Corré [`supabase/schema.sql`](supabase/schema.sql) en el SQL Editor.
-3. Habilitá **Anonymous sign-ins** en Authentication → Providers.
-4. Copiá `.env.example` a `.env` y completá:
+2. Corré [`supabase/schema.sql`](supabase/schema.sql) en el SQL Editor. Al final
+   del archivo está la configuración que hay que tocar en el panel (Site URL y
+   confirmación de correo).
+3. Copiá `.env.example` a `.env` y completá:
 
 ```
 VITE_SUPABASE_URL=https://tu-proyecto.supabase.co
 VITE_SUPABASE_ANON_KEY=tu-anon-key
 ```
 
-El juego detecta las credenciales solo y muestra `☁ nube` en la esquina. Si la
-red falla, degrada a guardado local y reintenta después; nunca se pierde una
-partida por estar sin conexión. Cuando hay dos versiones, gana la que se simuló
-más recientemente.
+El juego detecta las credenciales solo: aparece el panel **Cuenta** y el chip de
+la esquina pasa de `💾 local` a `☁ sincronizado` al iniciar sesión.
+
+### Cómo se comporta
+
+- **Sin cuenta** se juega igual, guardando en el navegador. La cuenta es opcional
+  a propósito: pedirle registro a alguien antes de dejarlo plantar una flor es
+  la forma más rápida de perderlo.
+- **Al registrarte**, el jardín que tenías en el navegador se sube tal cual. No
+  se pierde nada por crear la cuenta tarde.
+- **Al iniciar sesión**, manda la partida de la cuenta. Iniciar sesión significa
+  "traeme mi jardín", así que lo local no pisa lo de la cuenta.
+- **Al cerrar sesión** volvés a la partida del navegador; la de la nube queda
+  intacta.
+- **Con sesión activa**, entre la copia del navegador y la de la nube gana la
+  simulada más recientemente, que es lo que resuelve jugar en dos dispositivos.
+- Si la red falla, el guardado local ya ocurrió y el siguiente intento
+  reintenta la nube. Nunca se pierde una partida por estar sin conexión.
+
+### Si querés volver la cuenta obligatoria
+
+Es una guarda en [`App.tsx`](src/ui/App.tsx): cuando `useAuth` reporta estado
+`invitado`, renderizá `<AuthPanel />` en vez del juego.
+
+### Sobre la anon key
+
+Las variables de Vite se inlinean en el bundle en tiempo de build: lo que pongas
+en `VITE_*` queda visible en el JS que sirve el sitio. La `anon key` está
+pensada para eso — lo que protege los datos son las políticas RLS de
+[`schema.sql`](supabase/schema.sql), no el secreto de la clave. Nunca pongas ahí
+una `service_role key`.
+
 
 ## Balance
 

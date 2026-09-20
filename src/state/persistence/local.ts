@@ -1,6 +1,5 @@
 import { SAVE_KEY, SAVE_VERSION } from '../config';
 import type { GameState } from '../types';
-import type { SaveAdapter } from './types';
 
 export function leerLocal(): GameState | null {
   try {
@@ -31,12 +30,3 @@ export function borrarLocal(): void {
   }
 }
 
-export const adaptadorLocal: SaveAdapter = {
-  nombre: 'local',
-  async cargar() {
-    return leerLocal();
-  },
-  async guardar(estado) {
-    escribirLocal(estado);
-  },
-};

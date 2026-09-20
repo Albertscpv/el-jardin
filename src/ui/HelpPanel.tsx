@@ -1,11 +1,12 @@
 import { ANIMAL_SPECIES } from '../state/content';
+import { useAuth } from '../state/auth';
 import { useGame } from '../state/store';
 import { Drawer } from './Drawer';
 
 export function HelpPanel() {
   const setPanel = useGame((s) => s.setPanel);
   const reiniciar = useGame((s) => s.reiniciar);
-  const origen = useGame((s) => s.origenGuardado);
+  const sesion = useAuth((s) => s.estado);
 
   const especies = Object.values(ANIMAL_SPECIES).sort(
     (a, b) => a.floresParaVisitar - b.floresParaVisitar,
@@ -60,7 +61,7 @@ export function HelpPanel() {
         Todo avanza con el reloj real: al volver, las plantas crecieron, la tierra se secó y tus
         animales pueden tener hambre. Se simulan hasta 8 horas de ausencia, así que irte un día
         entero no arruina el jardín. La partida se guarda en{' '}
-        {origen === 'nube' ? 'la nube' : 'este navegador'}.
+        {sesion === 'dentro' ? 'tu cuenta' : 'este navegador'}.
       </p>
 
       <h3 className="seccion">Empezar de nuevo</h3>

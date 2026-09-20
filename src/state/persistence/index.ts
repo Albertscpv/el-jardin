@@ -1,39 +1,62 @@
-import { adaptadorLocal } from './local';
-import { adaptadorNube, supabaseConfigurado } from './supabase';
-import type { SaveAdapter } from './types';
+import type { GameState } from '../types';
+import { escribirLocal, leerLocal } from './local';
+import { escribirEnNube, leerDeNube, usuarioActual } from './nube';
 
-export { borrarLocal } from './local';
-export type { SaveAdapter, AdapterName } from './types';
+export { borrarLocal, escribirLocal, leerLocal } from './local';
+export { supabaseConfigurado } from './cliente';
+
+export type OrigenGuardado = 'nube' | 'local';
 
 /**
- * Elige el adaptador de guardado. Con credenciales de Supabase usa la nube
- * (con espejo local); sin ellas, el juego funciona igual contra localStorage.
+ * Carga la partida al arrancar.
+ *
+ * Con sesion activa hay dos copias del mismo jugador (la del navegador y la
+ * de la nube) y gana la simulada mas recientemente: eso cubre jugar en dos
+ * dispositivos o en dos pestanas sin perder trabajo.
  */
-export function crearAdaptador(): SaveAdapter {
-  return supabaseConfigurado ? adaptadorNube : adaptadorLocal;
+export async function cargarPartida(): Promise<GameState | null> {
+  const local = leerLocal();
+
+  try {
+    if (!(await usuarioActual())) return local;
+
+    const remoto = await leerDeNube();
+    if (!remoto) return local;
+    if (!local) return remoto;
+    return remoto.ultimoTick >= local.ultimoTick ? remoto : local;
+  } catch (e) {
+    console.warn('[jardin] no se pudo leer la nube, sigo con la copia local', e);
+    return local;
+  }
 }
 
-/** Adaptador que degrada a local si la nube falla en tiempo de ejecucion. */
-export function conRespaldoLocal(adaptador: SaveAdapter): SaveAdapter {
-  if (adaptador.nombre === 'local') return adaptador;
+/**
+ * Guarda siempre en el navegador, y ademas en la nube si hay cuenta.
+ *
+ * El guardado local va primero y es sincrono: si la red falla, la partida ya
+ * quedo a salvo y el proximo guardado reintenta la nube.
+ */
+export async function guardarPartida(estado: GameState): Promise<void> {
+  escribirLocal(estado);
+  try {
+    await escribirEnNube(estado);
+  } catch (e) {
+    console.warn('[jardin] no se pudo guardar en la nube, queda el guardado local', e);
+  }
+}
 
-  return {
-    nombre: adaptador.nombre,
-    async cargar() {
-      try {
-        return await adaptador.cargar();
-      } catch (e) {
-        console.warn('[jardin] fallo al cargar de la nube, uso la copia local', e);
-        return adaptadorLocal.cargar();
-      }
-    },
-    async guardar(estado) {
-      try {
-        await adaptador.guardar(estado);
-      } catch (e) {
-        console.warn('[jardin] fallo al guardar en la nube, queda guardado local', e);
-        await adaptadorLocal.guardar(estado);
-      }
-    },
-  };
+/**
+ * Se llama justo despues de iniciar sesion.
+ *
+ * Iniciar sesion significa "traeme mi jardin", asi que la partida de la cuenta
+ * manda. Solo si la cuenta esta vacia se adopta lo jugado sin cuenta, para que
+ * registrarse no tire a la basura lo que ya habias plantado.
+ */
+export async function partidaAlEntrar(): Promise<GameState | null> {
+  const remoto = await leerDeNube();
+  if (remoto) return remoto;
+
+  const local = leerLocal();
+  if (local) await escribirEnNube(local);
+  return local;
 }

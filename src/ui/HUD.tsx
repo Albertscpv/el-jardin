@@ -1,3 +1,4 @@
+import { useAuth } from '../state/auth';
 import { totalCeldas } from '../state/islas';
 import { contarFlores } from '../state/sim';
 import { useGame, type PanelId } from '../state/store';
@@ -15,7 +16,8 @@ export function HUD() {
   const flores = useGame((s) => contarFlores(s.estado));
   const animales = useGame((s) => s.estado.animales);
   const islas = useGame((s) => s.estado.islas);
-  const origen = useGame((s) => s.origenGuardado);
+  const sesion = useAuth((s) => s.estado);
+  const email = useAuth((s) => s.email);
   const panel = useGame((s) => s.panel);
   const setPanel = useGame((s) => s.setPanel);
 
@@ -27,9 +29,17 @@ export function HUD() {
       <div className="hud-izquierda">
         <div className="hud-marca vidrio">
           <h1>El Jardín</h1>
-          <span className="hud-origen" title={`Partida guardada en ${origen}`}>
-            {origen === 'nube' ? '☁ nube' : '💾 local'}
-          </span>
+          <button
+            className={panel === 'cuenta' ? 'hud-origen activo' : 'hud-origen'}
+            onClick={() => setPanel('cuenta')}
+            title={
+              sesion === 'dentro'
+                ? `Sesión iniciada como ${email ?? 'tu cuenta'}`
+                : 'Tu jardín se guarda solo en este navegador'
+            }
+          >
+            {sesion === 'dentro' ? '☁ sincronizado' : '💾 local'}
+          </button>
         </div>
 
         <div className="hud-stats vidrio">

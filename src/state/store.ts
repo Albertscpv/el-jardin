@@ -9,7 +9,13 @@ import {
 } from './config';
 import { ANIMAL_SPECIES, FOODS, getAnimalVariant, getFlowerVariant } from './content';
 import { crearIslaNueva, esAgua, esParcela, tieneSuelo, totalCeldas } from './islas';
-import { borrarLocal, conRespaldoLocal, crearAdaptador, type AdapterName } from './persistence';
+import {
+  borrarLocal,
+  cargarPartida,
+  guardarPartida,
+  leerLocal,
+  partidaAlEntrar,
+} from './persistence';
 import {
   advance,
   aforo,
@@ -32,18 +38,22 @@ import type {
 
 const clamp100 = (n: number) => Math.min(100, Math.max(0, n));
 
-const adaptador = conRespaldoLocal(crearAdaptador());
-
 /** Ventana muerta entre caricias al mismo animal, para que no se pueda spamear. */
 const COOLDOWN_CARICIA = 1100;
 
-export type PanelId = 'tienda' | 'animales' | 'construir' | 'personaje' | 'ayuda' | null;
+export type PanelId =
+  | 'tienda'
+  | 'animales'
+  | 'construir'
+  | 'personaje'
+  | 'cuenta'
+  | 'ayuda'
+  | null;
 
 interface Store {
   /* --- datos --- */
   estado: GameState;
   cargando: boolean;
-  origenGuardado: AdapterName;
 
   /* --- interfaz --- */
   herramienta: ToolId;
@@ -56,6 +66,8 @@ interface Store {
 
   /* --- ciclo de vida --- */
   inicializar: () => Promise<void>;
+  /** Recarga la partida cuando cambia quién tiene la sesión. */
+  alCambiarSesion: (cambio: 'entro' | 'salio') => Promise<void>;
   tick: () => void;
   guardar: () => void;
   reiniciar: () => void;
@@ -119,7 +131,6 @@ export const useGame = create<Store>()((set, get) => {
   return {
     estado: crearEstadoInicial(),
     cargando: true,
-    origenGuardado: adaptador.nombre,
 
     herramienta: 'plantar',
     semillaSeleccionada: 'margarita-blanca',
@@ -134,7 +145,7 @@ export const useGame = create<Store>()((set, get) => {
     /* ---------------------------------------------------------------- */
 
     async inicializar() {
-      const guardado = await adaptador.cargar();
+      const guardado = await cargarPartida();
       const base = guardado ?? crearEstadoInicial();
       const { estado, eventos } = advance(base, Date.now());
 
@@ -185,14 +196,41 @@ export const useGame = create<Store>()((set, get) => {
     guardar() {
       if (temporizadorGuardado) clearTimeout(temporizadorGuardado);
       temporizadorGuardado = setTimeout(() => {
-        void adaptador.guardar(get().estado);
+        void guardarPartida(get().estado);
       }, 1200);
+    },
+
+    /**
+     * Al entrar manda la partida de la cuenta; al salir, la del navegador.
+     * En los dos casos el mundo 3D se reconstruye desde cero, porque el
+     * territorio pudo cambiar de forma entera.
+     */
+    async alCambiarSesion(cambio) {
+      set({ cargando: true, panel: null, animalAbierto: null, adoptando: null });
+
+      let base: GameState | null = null;
+      try {
+        base = cambio === 'entro' ? await partidaAlEntrar() : leerLocal();
+      } catch (e) {
+        console.warn('[jardin] no se pudo cambiar de partida', e);
+        base = leerLocal();
+      }
+
+      const { estado, eventos } = advance(base ?? crearEstadoInicial(), Date.now());
+      set({ estado, cargando: false });
+      EventBus.emit('mundo:resincronizar', {});
+      eventos.forEach((e) => get().avisar(e, 'info'));
+
+      get().avisar(
+        cambio === 'entro' ? 'Cargamos tu jardín ☁️' : 'Volviste a la partida de este navegador',
+        'info',
+      );
     },
 
     reiniciar() {
       borrarLocal();
       set({ estado: crearEstadoInicial(), animalAbierto: null, panel: null, adoptando: null });
-      void adaptador.guardar(get().estado);
+      void guardarPartida(get().estado);
       EventBus.emit('mundo:resincronizar', {});
       get().avisar('Jardín nuevo. A sembrar de nuevo 🌱', 'info');
     },

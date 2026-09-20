@@ -1,10 +1,12 @@
 import { AnimatePresence } from 'framer-motion';
 import { useEffect } from 'react';
+import { useAuth } from '../state/auth';
 import { escribirLocal } from '../state/persistence/local';
 import { useGame } from '../state/store';
 import { AdoptModal } from './AdoptModal';
 import { AnimalSheet } from './AnimalSheet';
 import { AnimalsPanel } from './AnimalsPanel';
+import { AuthPanel } from './AuthPanel';
 import { BuildPanel } from './BuildPanel';
 import { CameraControls } from './CameraControls';
 import { CharacterPanel } from './CharacterPanel';
@@ -23,7 +25,11 @@ export function App() {
   const panel = useGame((s) => s.panel);
 
   useEffect(() => {
-    void useGame.getState().inicializar();
+    // La sesión primero: define de dónde sale la partida que se carga.
+    void useAuth
+      .getState()
+      .inicializar((cambio) => useGame.getState().alCambiarSesion(cambio))
+      .finally(() => useGame.getState().inicializar());
   }, []);
 
   useEffect(() => {
@@ -73,6 +79,7 @@ export function App() {
         {panel === 'construir' && <BuildPanel key="construir" />}
         {panel === 'animales' && <AnimalsPanel key="animales" />}
         {panel === 'personaje' && <CharacterPanel key="personaje" />}
+        {panel === 'cuenta' && <AuthPanel key="cuenta" />}
         {panel === 'ayuda' && <HelpPanel key="ayuda" />}
       </AnimatePresence>
 
