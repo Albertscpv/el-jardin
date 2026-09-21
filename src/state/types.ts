@@ -54,10 +54,10 @@ export interface AnimalSpecies {
   /** Los que vuelan ignoran el suelo y flotan. */
   vuela: boolean;
   /**
-   * Tamano del billboard respecto del resto. Sin esto un caballo se veria
-   * igual de chico que una mariposa. Por omision, 1.
+   * Hasta donde se aleja de su querencia al pasear, en tiles. Un caballo
+   * necesita la isla entera; un conejo, un rincon. Por omision, 4,5.
    */
-  escala?: number;
+  radioPaseo?: number;
   descripcion: string;
 }
 

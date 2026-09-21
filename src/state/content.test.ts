@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   ANIMAL_MATRIX,
+  ANIMAL_POSES,
   ANIMAL_SPECIES,
   ANIMAL_VARIANTS,
   FOODS,
@@ -34,11 +35,33 @@ describe('catálogo de animales', () => {
     expect(new Set(ids).size).toBe(ids.length);
   });
 
-  it('los equinos son más grandes que el resto', () => {
+  it('los equinos son más grandes que el resto por su dibujo, no por estirarlos', () => {
+    const alto = (id: AnimalSpeciesId) => ANIMAL_MATRIX[id].length;
     for (const id of ['poni', 'yegua', 'caballo'] as const) {
-      expect(ANIMAL_SPECIES[id].escala ?? 1).toBeGreaterThan(1);
+      expect(alto(id)).toBeGreaterThan(alto('gato'));
     }
-    expect(ANIMAL_SPECIES.poni.escala!).toBeLessThan(ANIMAL_SPECIES.caballo.escala!);
+    expect(alto('poni')).toBeLessThan(alto('caballo'));
+  });
+
+  it('las poses de cada especie tienen el tamaño de su dibujo quieto', () => {
+    // Si un fotograma midiera distinto, el animal cambiaria de tamano al
+    // caminar: el plano se arma con la medida de la pose quieta.
+    for (const [id, poses] of Object.entries(ANIMAL_POSES)) {
+      const quieto = ANIMAL_MATRIX[id as AnimalSpeciesId];
+      for (const m of [...poses!.paso, poses!.pastar]) {
+        expect(m.length).toBe(quieto.length);
+        expect(new Set(m.map((f) => f.length))).toEqual(new Set([quieto[0].length]));
+      }
+      expect(poses!.paso).toHaveLength(4);
+    }
+  });
+
+  it('el paso mueve las patas y deja el cuerpo quieto', () => {
+    const { quieto, paso } = ANIMAL_POSES.caballo!;
+    const cuerpo = (m: readonly string[]) => m.slice(0, 20).join('\n');
+    for (const f of paso) expect(cuerpo(f)).toBe(cuerpo(quieto));
+    // Y al menos dos tiempos del paso se ven distintos entre si.
+    expect(new Set(paso.map((f) => f.join('\n'))).size).toBeGreaterThan(1);
   });
 });
 

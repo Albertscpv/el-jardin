@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import {
   ANIMAL_MATRIX,
+  ANIMAL_POSES,
   BLOOM_MATRIX,
   FOODS,
   FOOD_MATRIX,
@@ -45,6 +46,24 @@ export function texturaAnimal(variantId: string): THREE.Texture {
     ANIMAL_MATRIX[variante.especie],
     variante.palette,
   );
+}
+
+/** Texturas de las poses de un animal, o null si tiene una sola. */
+export interface TexturasPoses {
+  paso: THREE.Texture[];
+  pastar: THREE.Texture;
+}
+
+export function texturasPoses(variantId: string): TexturasPoses | null {
+  const variante = getAnimalVariant(variantId);
+  const poses = ANIMAL_POSES[variante.especie];
+  if (!poses) return null;
+  return {
+    paso: poses.paso.map((m, i) =>
+      texturaDeMatriz(`animal:${variantId}:paso${i}`, m, variante.palette),
+    ),
+    pastar: texturaDeMatriz(`animal:${variantId}:pastar`, poses.pastar, variante.palette),
+  };
 }
 
 export function texturaComida(foodId: FoodId): THREE.Texture {

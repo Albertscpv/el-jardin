@@ -25,7 +25,9 @@ export function PixelIcon({ matrix, palette, size = 32, className, title }: Prop
       title={title}
       alt=""
       draggable={false}
-      style={{ imageRendering: 'pixelated' }}
+      // `contain`: un caballo mide 32x28 y la caja es cuadrada; sin esto
+      // se estiraba para llenarla.
+      style={{ imageRendering: 'pixelated', objectFit: 'contain' }}
     />
   );
 }

@@ -565,49 +565,261 @@ export const NINO_RIVAL: Matrix = [
 /* Equinos                                                             */
 /* ------------------------------------------------------------------ */
 
-/**
- * Caballo y yegua comparten dibujo y se distinguen por la paleta, igual que
- * los gatos entre si. Miran a la izquierda como el resto del bestiario: el
- * billboard espeja la textura cuando el animal camina para el otro lado.
+/*
+ * Los equinos son los unicos animales mas grandes que un tile, y se dibujan
+ * a su tamano real en vez de estirar un sprite de 16x16: estirado, cada
+ * pixel del caballo salia casi al doble que los de un gato y parecia de
+ * otro juego. A la misma densidad que el resto, el caballo mide 32x28.
+ *
+ * Tambien son los unicos con mas de una pose. El cuerpo y las patas se
+ * guardan por separado y se componen al cargar: los cinco fotogramas
+ * comparten un solo cuerpo, asi que retocarlo es retocarlo una vez.
+ * Miran a la izquierda como el resto del bestiario.
  */
-export const HORSE: Matrix = [
-  '..dd............',
-  '..daa...........',
-  '..daaa..........',
-  '..daefa.........',
-  '..daaaa.........',
-  '...gaa..........',
-  '...daaa.........',
-  '...daaaaaaaa....',
-  '..aaaaaaaaaaad..',
-  '..aaaaaaaaaaadd.',
-  '..caaaaaaaaaadd.',
-  '..ccaaaaaaaaad..',
-  '...aa...aaa.....',
-  '...aa...aaa.....',
-  '...gg...ggg.....',
-  '................',
+
+/** Caballo con la cabeza en alto, sin patas. */
+const CABALLO_CUERPO: Matrix = [
+  '.........a.a....................',
+  '.........daad...................',
+  '........daaadd..................',
+  '.......aaaaaadd.................',
+  '......aaefaaaad.................',
+  '.....aaaaaaaaadd................',
+  '....aaaaaaaaaaadd...............',
+  '...aaaaaaaaaaaaad...............',
+  '..bgaaabbaaaaaaadd..............',
+  '..bbaaa..baaaaaaadd.............',
+  '.........aaaaaaaaadd............',
+  '.........aaaaaaaaaaacccccca.....',
+  '........aaaaaaaaaaaaaaaaacccdd..',
+  '........baaaaaaaaaaaaaaaaaaabdd.',
+  '........baaaaaaaaaaaaaaaaaaab.d.',
+  '........baaaaaaaaaaaaaaaaaaab.d.',
+  '........aaaaaaaaaaaaaaaaaaaab.d.',
+  '.........aaaaaaaaaaaaaaaaaaab.dd',
+  '.........aaabbbbbbbbbbbbbaaa..d.',
+  '..........bbbbbbbbbbbbbbbbb...d.',
+  '.............................d..',
+  '.............................d..',
+  '..............................d.',
+  '................................',
+  '................................',
+  '................................',
+  '................................',
+  '................................',
 ];
 
-/** El poni es el mismo animal en chico: patas cortas y cuerpo compacto. */
-export const PONY: Matrix = [
-  '................',
-  '...dd...........',
-  '...daa..........',
-  '...daefa........',
-  '...daaaa........',
-  '....gaa.........',
-  '....daaaaaa.....',
-  '...aaaaaaaaad...',
-  '...aaaaaaaaadd..',
-  '...caaaaaaaadd..',
-  '...ccaaaaaaad...',
-  '....aa...aa.....',
-  '....aa...aa.....',
-  '....gg...gg.....',
-  '................',
-  '................',
+/** El mismo caballo con la cabeza en el pasto. */
+const CABALLO_PASTANDO: Matrix = [
+  '................................',
+  '................................',
+  '................................',
+  '................................',
+  '................................',
+  '................................',
+  '................................',
+  '................................',
+  '................................',
+  '................................',
+  '................ddaa............',
+  '..........aaddddaaaacccccca.....',
+  '........adddaaaaaaaaaaaaacccdd..',
+  '.......adaaaaaaaaaaaaaaaaaaabdd.',
+  '......adaaaaaaaaaaaaaaaaaaaab.d.',
+  '.....adaaaaaaaaaaaaaaaaaaaaab.d.',
+  '....adaaaaaaaaaaaaaaaaaaaaaab.d.',
+  '...adaaaaaaaaaaaaaaaaaaaaaaab.dd',
+  '..adaaaaaaaabbbbbbbbbbbbbaaa..d.',
+  '..aaaaaa..bbbbbbbbbbbbbbbbb...d.',
+  '..aaefaa.....................d..',
+  '.aaaaaa......................d..',
+  '.aaaaaa.......................d.',
+  '.aaaaa..........................',
+  '.baaaa..........................',
+  '.bgba...........................',
+  '................................',
+  '................................',
 ];
+
+/** Franja de patas: quieto y los cuatro tiempos del paso. */
+const CABALLO_PATAS: Matrix[] = [
+  [
+    '.........aaa.bb......bb.aaa.....',
+    '..........aa.bb......bb.aa......',
+    '..........aa.bb......bb.aa......',
+    '..........aa.bb......bb.aa......',
+    '..........aa.bb......bb.aa......',
+    '..........aa.bb......bb.aa......',
+    '..........gg.gg......gg.gg......',
+    '................................',
+  ],
+  [
+    '.........aaa.bb......bb.aaa.....',
+    '..........aa.bb......bb.aa......',
+    '.........aa..bb.....bb..aa......',
+    '.........aa..bb.....bb..aa......',
+    '........aa....bb...bb....aa.....',
+    '........aa....bb...bb....aa.....',
+    '........gg....gg...gg....gg.....',
+    '................................',
+  ],
+  [
+    '.........aaa.bb......bb.aaa.....',
+    '..........aa.bb......bb.aa......',
+    '..........aa.bb......bb.aa......',
+    '..........aa.bb......bb.aa......',
+    '.........aa..bb.....bb..aa......',
+    '.........aa..bb.....bb..aa......',
+    '.........gg..gg.....gg..gg......',
+    '................................',
+  ],
+  [
+    '.........aaa.bb......bb.aaa.....',
+    '..........aa.bb......bb.aa......',
+    '..........aabb.......bbaa.......',
+    '..........aabb.......bbaa.......',
+    '...........aa.........aa........',
+    '...........aa.........aa........',
+    '...........gg.........gg........',
+    '................................',
+  ],
+  [
+    '.........aaa.bb......bb.aaa.....',
+    '..........aa.bb......bb.aa......',
+    '..........aa.bb......bb.aa......',
+    '..........aa.bb......bb.aa......',
+    '..........aabb.......bbaa.......',
+    '..........aabb.......bbaa.......',
+    '..........gggg.......gggg.......',
+    '................................',
+  ],
+];
+
+/** Poni: retacon, patas cortas y copete sobre la frente. */
+const PONI_CUERPO: Matrix = [
+  '.......a.a..............',
+  '.......ddadd............',
+  '......ddaaadd...........',
+  '.....daaaaadd...........',
+  '....aaefaaaadd..........',
+  '...aaaaaaaaadd..........',
+  '..aaaaaaaaaaadd.........',
+  '..bgaaaaaaaaaadd........',
+  '..baab.aaaaaaaadd.......',
+  '.......aaaaaaaacccccad..',
+  '......aaaaaaaaaaaaaaadd.',
+  '......baaaaaaaaaaaaaabd.',
+  '......baaaaaaaaaaaaaabd.',
+  '......aaaaaaaaaaaaaaabdd',
+  '.......aabbbbbbbbbbbaad.',
+  '........bbbbbbbbbbbbb.d.',
+  '.....................d..',
+  '......................d.',
+  '........................',
+  '........................',
+  '........................',
+  '........................',
+];
+
+/** Poni con la cabeza en el pasto. */
+const PONI_PASTANDO: Matrix = [
+  '........................',
+  '........................',
+  '........................',
+  '........................',
+  '........................',
+  '........................',
+  '........................',
+  '........................',
+  '............ddaa........',
+  '........adddaaacccccad..',
+  '......addaaaaaaaaaaaadd.',
+  '.....ddaaaaaaaaaaaaaabd.',
+  '....ddaaaaaaaaaaaaaaabd.',
+  '...ddaaaaaaaaaaaaaaaabdd',
+  '..ddaaaaabbbbbbbbbbbaad.',
+  '..aefaa.bbbbbbbbbbbbb.d.',
+  '.aaaaaa..............d..',
+  '.aaaaa................d.',
+  '.baaaa..................',
+  '.bgaa...................',
+  '........................',
+  '........................',
+];
+
+/** Franja de patas: quieto y los cuatro tiempos del paso. */
+const PONI_PATAS: Matrix[] = [
+  [
+    '......aaa.bb...bb.aaa...',
+    '.......aa.bb...bb.aa....',
+    '.......aa.bb...bb.aa....',
+    '.......aa.bb...bb.aa....',
+    '.......gg.gg...gg.gg....',
+    '........................',
+  ],
+  [
+    '......aaa.bb...bb.aaa...',
+    '......aa..bb..bb..aa....',
+    '.....aa....bbbb....aa...',
+    '.....aa....bbbb....aa...',
+    '.....gg....gggg....gg...',
+    '........................',
+  ],
+  [
+    '......aaa.bb...bb.aaa...',
+    '.......aa.bb...bb.aa....',
+    '......aa..bb..bb..aa....',
+    '......aa..bb..bb..aa....',
+    '......gg..gg..gg..gg....',
+    '........................',
+  ],
+  [
+    '......aaa.bb...bb.aaa...',
+    '.......aabb....bbaa.....',
+    '........aa......aa......',
+    '........aa......aa......',
+    '........gg......gg......',
+    '........................',
+  ],
+  [
+    '......aaa.bb...bb.aaa...',
+    '.......aa.bb...bb.aa....',
+    '.......aabb....bbaa.....',
+    '.......aabb....bbaa.....',
+    '.......gggg....gggg.....',
+    '........................',
+  ],
+];
+
+/** Pega la franja de patas al pie de un cuerpo del mismo ancho. */
+function conPatas(cuerpo: Matrix, patas: Matrix): Matrix {
+  const vacia = '.'.repeat(cuerpo[0].length);
+  const relleno = Array.from({ length: cuerpo.length - patas.length }, () => vacia);
+  return componerMatrices(cuerpo, [...relleno, ...patas]);
+}
+
+export interface Poses {
+  quieto: Matrix;
+  /** Los cuatro tiempos del paso, en orden. */
+  paso: Matrix[];
+  pastar: Matrix;
+}
+
+function poses(cuerpo: Matrix, pastando: Matrix, patas: Matrix[]): Poses {
+  const [quieto, ...paso] = patas;
+  return {
+    quieto: conPatas(cuerpo, quieto),
+    paso: paso.map((p) => conPatas(cuerpo, p)),
+    pastar: conPatas(pastando, quieto),
+  };
+}
+
+export const CABALLO: Poses = poses(CABALLO_CUERPO, CABALLO_PASTANDO, CABALLO_PATAS);
+export const PONI: Poses = poses(PONI_CUERPO, PONI_PASTANDO, PONI_PATAS);
+
+/** Pose quieta: la que usan los iconos y los paneles. */
+export const HORSE: Matrix = CABALLO.quieto;
+export const PONY: Matrix = PONI.quieto;
 
 /* ------------------------------------------------------------------ */
 /* Comida de los equinos                                               */

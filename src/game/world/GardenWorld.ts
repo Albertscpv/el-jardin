@@ -12,7 +12,13 @@ import {
 import { stageOf } from '../../state/sim';
 import { useGame } from '../../state/store';
 import type { GameState, IslaState } from '../../state/types';
-import { texturaAnimal, texturaComida, texturaFlor, texturaSeleccion } from '../art/gameTextures';
+import {
+  texturaAnimal,
+  texturaComida,
+  texturaFlor,
+  texturaSeleccion,
+  texturasPoses,
+} from '../art/gameTextures';
 import { EventBus } from '../EventBus';
 import { AnimalMesh } from './AnimalMesh';
 import { AvatarMesh } from './AvatarMesh';
@@ -314,6 +320,7 @@ export class GardenWorld {
           texturaAnimal(animal.variante),
           texturaComida(ANIMAL_SPECIES[animal.especie].comidaFavorita),
           (x, z, radio) => celdaCercana(useGame.getState().estado.islas, x, z, radio),
+          texturasPoses(animal.variante),
         );
         this.engine.escena.add(nueva.grupo);
         this.animales.set(animal.uid, nueva);

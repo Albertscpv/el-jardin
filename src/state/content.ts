@@ -304,7 +304,7 @@ export const ANIMAL_SPECIES: Record<AnimalSpeciesId, AnimalSpecies> = {
     comidaFavorita: 'manzana',
     velocidad: 20,
     vuela: false,
-    escala: 1.3,
+    radioPaseo: 7,
     descripcion: 'Chico, terco y muy sociable. El primero de los equinos en acercarse.',
   },
   yegua: {
@@ -314,7 +314,7 @@ export const ANIMAL_SPECIES: Record<AnimalSpeciesId, AnimalSpecies> = {
     comidaFavorita: 'heno',
     velocidad: 24,
     vuela: false,
-    escala: 1.65,
+    radioPaseo: 9,
     descripcion: 'Tranquila y observadora. Si confia en vos, no se va mas.',
   },
   caballo: {
@@ -324,7 +324,7 @@ export const ANIMAL_SPECIES: Record<AnimalSpeciesId, AnimalSpecies> = {
     comidaFavorita: 'heno',
     velocidad: 30,
     vuela: false,
-    escala: 1.8,
+    radioPaseo: 9,
     descripcion: 'El animal mas grande del jardin. Cuesta ganarselo y se nota cuando pasa.',
   },
 };
@@ -338,6 +338,17 @@ export const ANIMAL_MATRIX: Record<AnimalSpeciesId, Matrix> = {
   poni: M.PONY,
   yegua: M.HORSE,
   caballo: M.HORSE,
+};
+
+/**
+ * Especies con mas de una pose. Las que no estan aca se dibujan siempre con
+ * su matriz de ANIMAL_MATRIX; las que si, caminan moviendo las patas y
+ * pastan cuando se detienen.
+ */
+export const ANIMAL_POSES: Partial<Record<AnimalSpeciesId, M.Poses>> = {
+  poni: M.PONI,
+  yegua: M.CABALLO,
+  caballo: M.CABALLO,
 };
 
 const OJO = { e: '#2a2320', f: '#ffffff' };
