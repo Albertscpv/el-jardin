@@ -186,6 +186,26 @@ export interface Records {
   mojadas: number;
 }
 
+/**
+ * Un pedido del pueblo: cosechar cierta cantidad de una especie. Cada flor
+ * se sigue vendiendo como siempre; la recompensa del pedido es aparte.
+ */
+export interface Pedido {
+  id: string;
+  cliente: string;
+  especie: FlowerSpeciesId;
+  cantidad: number;
+  progreso: number;
+  recompensa: number;
+}
+
+/** Lo ganado hoy en el campo de tiro, para aplicar el tope diario. */
+export interface TiroDiario {
+  /** Dia local, como "2026-09-21". */
+  dia: string;
+  ganado: number;
+}
+
 export interface GameState {
   version: number;
   nombreJardin: string;
@@ -213,6 +233,13 @@ export interface GameState {
    * guardado, que borraria todas las partidas existentes.
    */
   regalosRecibidos?: string[];
+  /** Dia local en que se cobro el ultimo regalo diario. */
+  regaloDiario?: string;
+  /** Islas que ya recibieron su caballo de la casa. */
+  islasConCaballo?: string[];
+  pedido?: Pedido;
+  pedidosCompletados?: number;
+  tiroDiario?: TiroDiario;
   creadoEn: number;
   /** Ultimo instante simulado; permite crecer mientras el juego esta cerrado. */
   ultimoTick: number;

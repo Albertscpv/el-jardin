@@ -15,6 +15,7 @@ import { GameCanvas } from './GameCanvas';
 import { GiftsPanel } from './GiftsPanel';
 import { HelpPanel } from './HelpPanel';
 import { HUD } from './HUD';
+import { OrdersPanel } from './OrdersPanel';
 import { RangeScreen } from './RangeScreen';
 import { ShopPanel } from './ShopPanel';
 import { Toasts } from './Toasts';
@@ -113,6 +114,7 @@ export function App() {
         {panel === 'personaje' && <CharacterPanel key="personaje" />}
         {panel === 'cuenta' && <AuthPanel key="cuenta" />}
         {panel === 'regalos' && <GiftsPanel key="regalos" />}
+        {panel === 'pedidos' && <OrdersPanel key="pedidos" />}
         {panel === 'ayuda' && <HelpPanel key="ayuda" />}
       </AnimatePresence>
 

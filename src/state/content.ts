@@ -51,6 +51,20 @@ export const FLOWER_SPECIES: Record<FlowerSpeciesId, FlowerSpecies> = {
   },
 };
 
+/** Plural de cada especie. No sale de agregar una "s": tulipán, girasol. */
+const PLURAL_FLOR: Record<FlowerSpeciesId, string> = {
+  tulipan: 'tulipanes',
+  margarita: 'margaritas',
+  lavanda: 'lavandas',
+  rosa: 'rosas',
+  girasol: 'girasoles',
+};
+
+/** "1 tulipán", "4 tulipanes": el nombre de la flor que toca a la cantidad. */
+export function nombreFlor(especie: FlowerSpeciesId, cantidad: number): string {
+  return cantidad === 1 ? FLOWER_SPECIES[especie].nombre.toLowerCase() : PLURAL_FLOR[especie];
+}
+
 /** Matriz de la flor abierta por especie. Las otras etapas son compartidas. */
 export const BLOOM_MATRIX: Record<FlowerSpeciesId, Matrix> = {
   tulipan: M.TULIP,

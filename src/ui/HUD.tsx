@@ -1,5 +1,6 @@
 import { useRef } from 'react';
 import { useAuth } from '../state/auth';
+import { regaloDiarioDisponible } from '../state/economia';
 import { totalCeldas } from '../state/islas';
 import { contarFlores } from '../state/sim';
 import { useGame, type PanelId } from '../state/store';
@@ -9,6 +10,7 @@ const NAV: Array<{ id: Exclude<PanelId, null>; etiqueta: string }> = [
   { id: 'construir', etiqueta: 'Construir' },
   { id: 'animales', etiqueta: 'Animales' },
   { id: 'personaje', etiqueta: 'Personaje' },
+  { id: 'pedidos', etiqueta: 'Pedidos' },
   { id: 'regalos', etiqueta: 'Regalos' },
 ];
 
@@ -24,6 +26,10 @@ export function HUD() {
   const setPanel = useGame((s) => s.setPanel);
   const setModo = useGame((s) => s.setModo);
   const despertarRival = useGame((s) => s.despertarRival);
+  // Se recalcula en cada tick del juego, asi el punto aparece solo al pasar
+  // la medianoche sin tener que recargar.
+  const diarioListo = useGame((s) => regaloDiarioDisponible(s.estado, Date.now()));
+  const pedido = useGame((s) => s.estado.pedido);
 
   // Easter egg: cinco toques al titulo despiertan al vecino de al lado.
   const toques = useRef(0);
@@ -82,6 +88,14 @@ export function HUD() {
             onClick={() => setPanel(item.id)}
           >
             {item.etiqueta}
+            {item.id === 'pedidos' && pedido && (
+              <span className="chip-cuenta">
+                {pedido.progreso}/{pedido.cantidad}
+              </span>
+            )}
+            {item.id === 'regalos' && diarioListo && (
+              <span className="chip-punto" aria-label="Regalo diario disponible" />
+            )}
           </button>
         ))}
         <button className="chip" onClick={() => setModo('practica')} title="Practicá tiro al arco">

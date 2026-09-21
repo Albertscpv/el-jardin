@@ -12,6 +12,7 @@ import {
   FOODS,
   getAnimalVariant,
   getFlowerVariant,
+  nombreFlor,
   unArticulo,
 } from './content';
 import { crearIslaNueva, esAgua, esParcela, tieneSuelo, totalCeldas } from './islas';
@@ -22,6 +23,16 @@ import {
   leerLocal,
   partidaAlEntrar,
 } from './persistence';
+import {
+  anotarCosecha,
+  asegurarCaballos,
+  asegurarPedido,
+  pagarTiro,
+  reclamarRegaloDiario,
+  restanteTiroHoy,
+  regaloDiarioDisponible,
+  rechazarPedido,
+} from './economia';
 import { aplicarRegalos } from './regalos';
 import {
   advance,
@@ -68,6 +79,7 @@ export type PanelId =
   | 'personaje'
   | 'cuenta'
   | 'regalos'
+  | 'pedidos'
   | 'ayuda'
   | null;
 
@@ -134,8 +146,32 @@ interface Store {
   setMunicion: (m: Municion) => void;
   registrarDisparo: () => void;
   registrarImpacto: (distancia: number) => void;
+  reclamarRegaloDiario: () => void;
+  rechazarPedido: () => void;
   registrarMojada: () => void;
   despertarRival: () => void;
+}
+
+/**
+ * Todo lo que se le aplica a una partida al entrar, venga de donde venga:
+ * regalos pendientes, el caballo de cada isla y un pedido activo. Cada paso
+ * es idempotente, asi que volver a entrar no duplica nada.
+ */
+function prepararPartida(
+  base: GameState,
+  ahora: number,
+): { estado: GameState; avisos: string[]; cambio: boolean } {
+  const regalos = aplicarRegalos(base);
+  const caballos = asegurarCaballos(regalos.estado, ahora);
+  const estado = asegurarPedido(caballos.estado);
+
+  const avisos = [...regalos.avisos];
+  for (const c of caballos.nuevos) avisos.push(`${c.nombre} llegó a tu jardín: es tu caballo 🐴`);
+  if (regaloDiarioDisponible(estado, ahora)) {
+    avisos.push(`Tu regalo diario de ${BALANCE.regaloDiario} monedas te espera en Regalos 🎁`);
+  }
+  // Cada paso devuelve el mismo objeto si no tenia nada que hacer.
+  return { estado, avisos, cambio: estado !== base };
 }
 
 let siguienteToast = 1;
@@ -187,10 +223,18 @@ export const useGame = create<Store>()((set, get) => {
       const guardado = await cargarPartida();
       // El regalo se acredita sobre la partida que ya gano la eleccion entre
       // el navegador y la nube: aplicarlo antes, sobre las dos, lo duplicaria.
-      const { estado: base, avisos } = aplicarRegalos(guardado ?? crearEstadoInicial());
+      const {
+        estado: base,
+        avisos,
+        cambio,
+      } = prepararPartida(guardado ?? crearEstadoInicial(), Date.now());
       const { estado, eventos } = advance(base, Date.now());
 
       set({ estado, cargando: false });
+      // Lo que se acaba de acreditar tiene que llegar a la nube ya: si el
+      // jugador cierra sin tocar nada, otro dispositivo leeria la copia vieja
+      // y volveria a regalarle lo mismo.
+      if (cambio) get().guardar();
 
       avisos.forEach((a) => get().avisar(a, 'exito'));
 
@@ -259,9 +303,10 @@ export const useGame = create<Store>()((set, get) => {
         base = leerLocal();
       }
 
-      const regalados = aplicarRegalos(base ?? crearEstadoInicial());
+      const regalados = prepararPartida(base ?? crearEstadoInicial(), Date.now());
       const { estado, eventos } = advance(regalados.estado, Date.now());
       set({ estado, cargando: false });
+      if (regalados.cambio) get().guardar();
       EventBus.emit('mundo:resincronizar', {});
       regalados.avisos.forEach((a) => get().avisar(a, 'exito'));
       eventos.forEach((e) => get().avisar(e, 'info'));
@@ -418,6 +463,16 @@ export const useGame = create<Store>()((set, get) => {
           });
 
           EventBus.emit('efecto:cosechar', { celda: id, color: variante.palette['2'] ?? '#ffd447' });
+
+          const pedido = anotarCosecha(get().estado, variante.especie);
+          if (pedido.avanzo) mutar(() => pedido.estado);
+          if (pedido.entregado) {
+            const p = pedido.entregado;
+            avisar(`¡Pedido entregado a ${p.cliente}! +${p.recompensa} 🪙`, 'exito');
+          } else if (pedido.avanzo && pedido.estado.pedido) {
+            const p = pedido.estado.pedido;
+            avisar(`Pedido: ${p.progreso}/${p.cantidad} ${nombreFlor(p.especie, p.cantidad)}`, 'info');
+          }
           avisar(
             bonus
               ? `+${variante.precioVenta} monedas y una semilla de regalo 🌰`
@@ -530,8 +585,14 @@ export const useGame = create<Store>()((set, get) => {
         monedas: e.monedas - BALANCE.costoIsla,
         islas: [...e.islas, isla],
       }));
+      const { estado: conCaballo, nuevos } = asegurarCaballos(get().estado, Date.now());
+      if (nuevos.length > 0) {
+        mutar(() => conCaballo);
+        EventBus.emit('mundo:resincronizar', {});
+      }
       EventBus.emit('camara:mirar', { x: isla.ox + 2.5, z: isla.oz + 2.5 });
       avisar(`${isla.nombre} emergió del mar 🏝️`, 'exito');
+      for (const c of nuevos) avisar(`${c.nombre} vive en la isla nueva 🐴`, 'info');
     },
 
     renombrarIsla(islaId, nombre) {
@@ -703,9 +764,34 @@ export const useGame = create<Store>()((set, get) => {
         },
       }));
 
+      const { estado: pagado, pago } = pagarTiro(get().estado, distancia, Date.now());
+      if (pago > 0) mutar(() => pagado);
+
       if (record && distancia > 6) {
-        get().avisar(`¡Blanco a ${distancia.toFixed(1)} m! Nuevo récord 🎯`, 'exito');
+        get().avisar(`¡Blanco a ${distancia.toFixed(1)} m! Nuevo récord 🎯 +${pago} 🪙`, 'exito');
+      } else if (pago > 0) {
+        get().avisar(`🎯 +${pago} monedas`, 'exito');
       }
+      // Se avisa una sola vez, en el tiro que llega al tope. Los siguientes
+      // no pagan y tampoco dicen nada: repetirlo en cada flecha seria ruido.
+      if (pago > 0 && restanteTiroHoy(get().estado, Date.now()) === 0) {
+        get().avisar('Llegaste al tope de hoy en el campo de tiro. Mañana vuelve a pagar', 'info');
+      }
+    },
+
+    reclamarRegaloDiario() {
+      const antes = get().estado;
+      const ahora = Date.now();
+      if (!regaloDiarioDisponible(antes, ahora)) {
+        return get().avisar('Ya cobraste el regalo de hoy', 'info');
+      }
+      mutar((e) => reclamarRegaloDiario(e, ahora));
+      get().avisar(`+${BALANCE.regaloDiario} monedas del regalo diario 🎁`, 'exito');
+    },
+
+    rechazarPedido() {
+      mutar((e) => rechazarPedido(e));
+      get().avisar('Llegó otro pedido', 'info');
     },
 
     registrarMojada() {

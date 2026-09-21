@@ -84,18 +84,31 @@ export const BALANCE = {
 
   /* --- Territorio --- */
   /** Costo base de ganarle una celda al vacio. */
-  costoTierra: 10,
+  costoTierra: 5,
   /**
    * Cada celda encarece la siguiente: expandir sin fin deberia costar cada vez
    * mas, para que crecer sea una decision y no un tramite. El incremento baja
    * junto con el costo base, si no la curva se comia igual la rebaja despues
    * de veinte celdas.
    */
-  incrementoPorCelda: 0.3,
+  incrementoPorCelda: 0.15,
   /** Convertir tierra en parcela de siembra, y volver atras. */
   costoArar: 6,
   /** Fundar una isla nueva. */
-  costoIsla: 260,
+  costoIsla: 150,
+  /* --- Economia --- */
+  /** Lo que da el regalo diario. */
+  regaloDiario: 300,
+  /** Monedas por metro de distancia al acertarle a un muneco. */
+  monedasPorMetro: 0.35,
+  /**
+   * Tope de lo que paga el campo de tiro por dia. Sin tope, tirar flechas
+   * gratis a un muneco quieto le ganaria a cualquier otra forma de jugar.
+   */
+  topeTiroDiario: 150,
+  /** Fraccion del valor de venta que el pedido paga encima, por flor. */
+  bonoPedido: 0.6,
+
   /** Separacion entre islas, en tiles. */
   separacionIslas: 9,
 } as const;

@@ -288,6 +288,32 @@ input {
   transform: translateY(1px);
 }
 
+/* Contador dentro de un chip de navegacion: "2/4" del pedido. */
+.chip-cuenta {
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+/* Punto de aviso: hay algo esperando adentro. */
+.chip-punto {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin-left: 6px;
+  vertical-align: 2px;
+  border-radius: 50%;
+  background: var(--terracota);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--terracota) 30%, transparent);
+}
+
+.chip.activo .chip-cuenta {
+  background: rgba(0, 0, 0, 0.12);
+}
+
 .chip.activo {
   background: var(--miel);
   color: var(--tinta);
@@ -881,6 +907,29 @@ input {
   transition: width 0.4s ease;
 }
 
+/* Regalo diario: cuando esta listo tiene que llamar la atencion. */
+.fila.diario.listo {
+  border-color: color-mix(in srgb, var(--miel) 55%, transparent);
+  background: color-mix(in srgb, var(--miel) 10%, transparent);
+}
+
+/* Lista de formas de ganar monedas. */
+.fuentes {
+  margin: 0;
+  padding-left: 18px;
+  color: var(--tenue);
+  font-size: 13.5px;
+}
+
+.fuentes li {
+  margin-bottom: 9px;
+}
+
+.fuentes b {
+  color: var(--crema);
+  font-weight: 600;
+}
+
 .nombre-editable {
   width: 100%;
   max-width: 190px;
@@ -1248,6 +1297,14 @@ input {
 
 .enlace:hover:not(:disabled) {
   color: var(--crema);
+}
+
+/* El mismo enlace, pero dentro de una frase: sin el aire que lleva suelto. */
+.enlace.en-linea {
+  margin: 0;
+  padding: 0;
+  font-size: inherit;
+  color: var(--miel);
 }
 
 code {
