@@ -149,6 +149,7 @@ src/
   ui/           HUD, paneles y modales en React
 supabase/
   schema.sql    tabla y políticas RLS para el guardado en la nube
+  historial.sql versiones anteriores de cada jardín, para poder recuperarlas
 ```
 
 ## Desplegar en Vercel
@@ -221,7 +222,10 @@ iniciar sesión y sincronizar el jardín entre dispositivos.
 2. Corré [`supabase/schema.sql`](supabase/schema.sql) en el SQL Editor. Al final
    del archivo está la configuración que hay que tocar en el panel (Site URL y
    confirmación de correo).
-3. Copiá `.env.example` a `.env` y completá:
+3. Corré [`supabase/historial.sql`](supabase/historial.sql) también. Guarda la
+   versión anterior de cada jardín cuando cambia, así una versión pisada se puede
+   recuperar. Al final del archivo están las consultas para ver y restaurar.
+4. Copiá `.env.example` a `.env` y completá:
 
 ```
 VITE_SUPABASE_URL=https://tu-proyecto.supabase.co
