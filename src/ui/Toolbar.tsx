@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { FOODS } from '../state/content';
 import { costoProximaCelda } from '../state/config';
 import { totalCeldas } from '../state/islas';
@@ -30,47 +31,73 @@ export function Toolbar() {
   const regarTodo = useGame((s) => s.regarTodo);
   const islas = useGame((s) => s.estado.islas);
 
+  /**
+   * La barra apoyada abajo se come casi un tercio de la pantalla en un
+   * telefono. Plegarla devuelve esa franja al jardin sin perder de vista
+   * con que herramienta se esta jugando: el tirador la sigue mostrando.
+   */
+  const [abierto, setAbierto] = useState(true);
+
   const activa = HERRAMIENTAS.find((h) => h.id === herramienta);
   const costoCelda = costoProximaCelda(totalCeldas(islas));
 
   return (
-    <div className="dock vidrio">
-      <div className="dock-fila">
-        <div className="herramientas">
-          {HERRAMIENTAS.map((h) => (
-            <button
-              key={h.id}
-              className={herramienta === h.id ? 'herramienta activa' : 'herramienta'}
-              onClick={() => setHerramienta(h.id)}
-              title={h.ayuda}
-            >
-              <span className="herramienta-icono" aria-hidden>
-                {h.icono}
-              </span>
-              <span className="herramienta-nombre">{h.nombre}</span>
+    <div className={abierto ? 'dock vidrio' : 'dock vidrio plegado'}>
+      <button
+        className="dock-tirador"
+        onClick={() => setAbierto((v) => !v)}
+        aria-expanded={abierto}
+        title={abierto ? 'Plegar la barra' : 'Desplegar la barra'}
+      >
+        <span className="dock-tirador-activa">
+          <span aria-hidden>{activa?.icono}</span>
+          <strong>{activa?.nombre ?? 'Herramientas'}</strong>
+        </span>
+        <span className="dock-flecha" aria-hidden>
+          {abierto ? '▾' : '▴'}
+        </span>
+      </button>
+
+      {abierto && (
+        <>
+          <div className="dock-fila">
+            <div className="herramientas">
+              {HERRAMIENTAS.map((h) => (
+                <button
+                  key={h.id}
+                  className={herramienta === h.id ? 'herramienta activa' : 'herramienta'}
+                  onClick={() => setHerramienta(h.id)}
+                  title={h.ayuda}
+                >
+                  <span className="herramienta-icono" aria-hidden>
+                    {h.icono}
+                  </span>
+                  <span className="herramienta-nombre">{h.nombre}</span>
+                </button>
+              ))}
+            </div>
+
+            <button className="boton suave" onClick={regarTodo} title="Riega todas las parcelas">
+              💧 Regar todo
             </button>
-          ))}
-        </div>
+          </div>
 
-        <button className="boton suave" onClick={regarTodo} title="Riega todas las parcelas">
-          💧 Regar todo
-        </button>
-      </div>
-
-      {activa && (
-        <p className="dock-ayuda">
-          {activa.ayuda}
-          {herramienta === 'expandir' && (
-            <>
-              {' · '}
-              <b>{costoCelda} 🪙</b> cada celda
-            </>
+          {activa && (
+            <p className="dock-ayuda">
+              {activa.ayuda}
+              {herramienta === 'expandir' && (
+                <>
+                  {' · '}
+                  <b>{costoCelda} 🪙</b> cada celda
+                </>
+              )}
+            </p>
           )}
-        </p>
-      )}
 
-      {herramienta === 'plantar' && <TiraSemillas />}
-      {herramienta === 'alimentar' && <TiraComida />}
+          {herramienta === 'plantar' && <TiraSemillas />}
+          {herramienta === 'alimentar' && <TiraComida />}
+        </>
+      )}
     </div>
   );
 }

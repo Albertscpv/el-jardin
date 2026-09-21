@@ -7,7 +7,13 @@
  */
 
 import { BALANCE, SAVE_VERSION } from './config';
-import { ANIMAL_SPECIES, FLOWER_SPECIES, getFlowerVariant, variantsOfSpecies } from './content';
+import {
+  ANIMAL_SPECIES,
+  FLOWER_SPECIES,
+  getFlowerVariant,
+  unArticulo,
+  variantsOfSpecies,
+} from './content';
 import { celdaAleatoria, crearAvatarInicial, crearIslaInicial } from './islas';
 import type {
   AnimalSpeciesId,
@@ -142,7 +148,7 @@ export function advance(previo: GameState, ahora: number, rng = Math.random): Ad
       // Un visitante ignorado pierde confianza y termina yéndose.
       const confianza = animal.confianza - BALANCE.confianzaPerdidaPorSegundo * dt;
       if (confianza <= 0) {
-        eventos.push(`Un ${ANIMAL_SPECIES[animal.especie].nombre.toLowerCase()} se fue del jardín`);
+        eventos.push(`Se fue ${unArticulo(animal.especie)} del jardín`);
         continue;
       }
       animales.push({ ...animal, confianza: clamp100(confianza) });

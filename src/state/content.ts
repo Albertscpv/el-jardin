@@ -67,7 +67,7 @@ export const FLOWER_VARIANTS: FlowerVariant[] = [
     especie: 'tulipan',
     nombre: 'Tulipán rojo',
     rareza: 'comun',
-    precioSemilla: 6,
+    precioSemilla: 4,
     precioVenta: 14,
     palette: { '1': '#ff8a7a', '2': '#e8433f', '3': '#a71f2b' },
   },
@@ -76,7 +76,7 @@ export const FLOWER_VARIANTS: FlowerVariant[] = [
     especie: 'tulipan',
     nombre: 'Tulipán amarillo',
     rareza: 'comun',
-    precioSemilla: 6,
+    precioSemilla: 4,
     precioVenta: 15,
     palette: { '1': '#ffe07a', '2': '#f7c035', '3': '#c98a12' },
   },
@@ -85,7 +85,7 @@ export const FLOWER_VARIANTS: FlowerVariant[] = [
     especie: 'tulipan',
     nombre: 'Tulipán rosa',
     rareza: 'poco-comun',
-    precioSemilla: 9,
+    precioSemilla: 5,
     precioVenta: 22,
     palette: { '1': '#ffb3d1', '2': '#f06fa6', '3': '#b83d75' },
   },
@@ -94,7 +94,7 @@ export const FLOWER_VARIANTS: FlowerVariant[] = [
     especie: 'tulipan',
     nombre: 'Tulipán morado',
     rareza: 'rara',
-    precioSemilla: 16,
+    precioSemilla: 10,
     precioVenta: 42,
     palette: { '1': '#c9a6f0', '2': '#9b5de5', '3': '#6a2fa0' },
   },
@@ -105,7 +105,7 @@ export const FLOWER_VARIANTS: FlowerVariant[] = [
     especie: 'rosa',
     nombre: 'Rosa roja',
     rareza: 'comun',
-    precioSemilla: 14,
+    precioSemilla: 8,
     precioVenta: 38,
     palette: { '1': '#f4746e', '2': '#d8323c', '3': '#8f1a2c' },
   },
@@ -114,7 +114,7 @@ export const FLOWER_VARIANTS: FlowerVariant[] = [
     especie: 'rosa',
     nombre: 'Rosa rosada',
     rareza: 'poco-comun',
-    precioSemilla: 18,
+    precioSemilla: 11,
     precioVenta: 48,
     palette: { '1': '#ffc2da', '2': '#f27bb0', '3': '#b84a80' },
   },
@@ -123,7 +123,7 @@ export const FLOWER_VARIANTS: FlowerVariant[] = [
     especie: 'rosa',
     nombre: 'Rosa blanca',
     rareza: 'poco-comun',
-    precioSemilla: 18,
+    precioSemilla: 11,
     precioVenta: 50,
     palette: { '1': '#fffdf7', '2': '#e2ddcd', '3': '#a9a392' },
   },
@@ -132,7 +132,7 @@ export const FLOWER_VARIANTS: FlowerVariant[] = [
     especie: 'rosa',
     nombre: 'Rosa durazno',
     rareza: 'rara',
-    precioSemilla: 30,
+    precioSemilla: 18,
     precioVenta: 82,
     palette: { '1': '#ffd2a8', '2': '#f79f5c', '3': '#c26a2e' },
   },
@@ -143,7 +143,7 @@ export const FLOWER_VARIANTS: FlowerVariant[] = [
     especie: 'girasol',
     nombre: 'Girasol',
     rareza: 'comun',
-    precioSemilla: 20,
+    precioSemilla: 12,
     precioVenta: 58,
     palette: {
       '1': '#ffd447',
@@ -158,7 +158,7 @@ export const FLOWER_VARIANTS: FlowerVariant[] = [
     especie: 'girasol',
     nombre: 'Girasol rojizo',
     rareza: 'rara',
-    precioSemilla: 38,
+    precioSemilla: 23,
     precioVenta: 110,
     palette: {
       '1': '#f2a05a',
@@ -175,7 +175,7 @@ export const FLOWER_VARIANTS: FlowerVariant[] = [
     especie: 'margarita',
     nombre: 'Margarita',
     rareza: 'comun',
-    precioSemilla: 4,
+    precioSemilla: 3,
     precioVenta: 9,
     palette: {
       '1': '#fffef8',
@@ -190,7 +190,7 @@ export const FLOWER_VARIANTS: FlowerVariant[] = [
     especie: 'margarita',
     nombre: 'Margarita rosada',
     rareza: 'poco-comun',
-    precioSemilla: 8,
+    precioSemilla: 5,
     precioVenta: 20,
     palette: {
       '1': '#ffd6e6',
@@ -207,7 +207,7 @@ export const FLOWER_VARIANTS: FlowerVariant[] = [
     especie: 'lavanda',
     nombre: 'Lavanda',
     rareza: 'comun',
-    precioSemilla: 10,
+    precioSemilla: 6,
     precioVenta: 26,
     palette: { '1': '#cbb3f0', '2': '#9b7fd4', '3': '#6a4fa0' },
   },
@@ -216,7 +216,7 @@ export const FLOWER_VARIANTS: FlowerVariant[] = [
     especie: 'lavanda',
     nombre: 'Lavanda azul',
     rareza: 'poco-comun',
-    precioSemilla: 15,
+    precioSemilla: 9,
     precioVenta: 38,
     palette: { '1': '#a8c8f0', '2': '#6f96d8', '3': '#3f5fa0' },
   },
@@ -280,6 +280,39 @@ export const ANIMAL_SPECIES: Record<AnimalSpeciesId, AnimalSpecies> = {
     vuela: false,
     descripcion: 'Raro y desconfiado. Adoptarlo toma paciencia.',
   },
+
+  // Los equinos llegan tarde: necesitan un jardin grande para pastar, y
+  // comen heno, que no le interesa a ningun otro animal.
+  poni: {
+    id: 'poni',
+    nombre: 'Poni',
+    floresParaVisitar: 22,
+    comidaFavorita: 'manzana',
+    velocidad: 20,
+    vuela: false,
+    escala: 1.3,
+    descripcion: 'Chico, terco y muy sociable. El primero de los equinos en acercarse.',
+  },
+  yegua: {
+    id: 'yegua',
+    nombre: 'Yegua',
+    floresParaVisitar: 30,
+    comidaFavorita: 'heno',
+    velocidad: 24,
+    vuela: false,
+    escala: 1.65,
+    descripcion: 'Tranquila y observadora. Si confia en vos, no se va mas.',
+  },
+  caballo: {
+    id: 'caballo',
+    nombre: 'Caballo',
+    floresParaVisitar: 38,
+    comidaFavorita: 'heno',
+    velocidad: 30,
+    vuela: false,
+    escala: 1.8,
+    descripcion: 'El animal mas grande del jardin. Cuesta ganarselo y se nota cuando pasa.',
+  },
 };
 
 export const ANIMAL_MATRIX: Record<AnimalSpeciesId, Matrix> = {
@@ -288,6 +321,9 @@ export const ANIMAL_MATRIX: Record<AnimalSpeciesId, Matrix> = {
   conejo: M.RABBIT,
   gato: M.CAT,
   zorro: M.FOX,
+  poni: M.PONY,
+  yegua: M.HORSE,
+  caballo: M.HORSE,
 };
 
 const OJO = { e: '#2a2320', f: '#ffffff' };
@@ -392,6 +428,66 @@ export const ANIMAL_VARIANTS: AnimalVariant[] = [
     nombre: 'Ártico',
     palette: { a: '#e8eef6', b: '#b8c2d0', c: '#ffffff', d: '#3a3038', ...OJO },
   },
+
+  // --- Ponis -----------------------------------------------------------
+  {
+    id: 'poni-canela',
+    especie: 'poni',
+    nombre: 'Canela',
+    palette: { a: '#c98a52', b: '#96602f', c: '#f0d6b0', d: '#5a3a22', g: '#3f2c1c', ...OJO },
+  },
+  {
+    id: 'poni-pinto',
+    especie: 'poni',
+    nombre: 'Pinto',
+    palette: { a: '#f0e6d8', b: '#b8a894', c: '#ffffff', d: '#4a3a30', g: '#3a2e26', ...OJO },
+  },
+  {
+    id: 'poni-gris',
+    especie: 'poni',
+    nombre: 'Tordillo',
+    palette: { a: '#a8aab4', b: '#7a7c88', c: '#e4e6ee', d: '#4a4a56', g: '#33333d', ...OJO },
+  },
+
+  // --- Yeguas ----------------------------------------------------------
+  {
+    id: 'yegua-alazana',
+    especie: 'yegua',
+    nombre: 'Alazana',
+    palette: { a: '#c26a38', b: '#94441f', c: '#f0c496', d: '#e8d8b8', g: '#4a3020', ...OJO },
+  },
+  {
+    id: 'yegua-baya',
+    especie: 'yegua',
+    nombre: 'Baya',
+    palette: { a: '#d8a860', b: '#a87c3c', c: '#f6e2bc', d: '#2e2620', g: '#3a2e22', ...OJO },
+  },
+  {
+    id: 'yegua-blanca',
+    especie: 'yegua',
+    nombre: 'Blanca',
+    palette: { a: '#f4f0e8', b: '#cdc6b8', c: '#ffffff', d: '#e0d8c4', g: '#4a443a', ...OJO },
+  },
+
+  // --- Caballos --------------------------------------------------------
+  {
+    id: 'caballo-negro',
+    especie: 'caballo',
+    nombre: 'Azabache',
+    palette: { a: '#4a4048', b: '#2c262f', c: '#6e6474', d: '#1e1a22', g: '#171319', ...OJO },
+  },
+  {
+    id: 'caballo-zaino',
+    especie: 'caballo',
+    nombre: 'Zaino',
+    palette: { a: '#7a4a2e', b: '#512e1a', c: '#b0764a', d: '#2a1c12', g: '#241810', ...OJO },
+  },
+  {
+    id: 'caballo-tordillo',
+    especie: 'caballo',
+    nombre: 'Tordillo',
+    palette: { a: '#9aa0ad', b: '#6e7481', c: '#dde2ea', d: '#3a3e48', g: '#2a2e36', ...OJO },
+  },
 ];
 
 export const ANIMAL_VARIANT_BY_ID = new Map(ANIMAL_VARIANTS.map((v) => [v.id, v]));
@@ -400,6 +496,35 @@ export function getAnimalVariant(id: string): AnimalVariant {
   const v = ANIMAL_VARIANT_BY_ID.get(id);
   if (!v) throw new Error(`Variedad de animal desconocida: ${id}`);
   return v;
+}
+
+/** Especies de nombre femenino. Sin esto el juego dice "un yegua". */
+const FEMENINAS = new Set<AnimalSpeciesId>(['mariposa', 'yegua']);
+
+/** "una mariposa", "un caballo": el articulo que le toca a cada especie. */
+export function unArticulo(especie: AnimalSpeciesId): string {
+  const nombre = ANIMAL_SPECIES[especie].nombre.toLowerCase();
+  return `${FEMENINAS.has(especie) ? 'una' : 'un'} ${nombre}`;
+}
+
+/**
+ * Quienes prefieren esta comida, en plural y con su articulo.
+ *
+ * Se deriva de ANIMAL_SPECIES en vez de repetirse en una tabla aparte: esa
+ * tabla ya se habia quedado vieja una vez, y la tienda anunciaba que el heno
+ * no era favorito de nadie mientras los caballos lo pedian.
+ */
+export function favoritosDe(comida: FoodId): string {
+  const especies = (Object.keys(ANIMAL_SPECIES) as AnimalSpeciesId[]).filter(
+    (id) => ANIMAL_SPECIES[id].comidaFavorita === comida,
+  );
+  if (especies.length === 0) return 'nadie en particular';
+
+  const nombres = especies.map(
+    (id) => `${FEMENINAS.has(id) ? 'las' : 'los'} ${ANIMAL_SPECIES[id].nombre.toLowerCase()}s`,
+  );
+  if (nombres.length === 1) return nombres[0];
+  return `${nombres.slice(0, -1).join(', ')} y ${nombres[nombres.length - 1]}`;
 }
 
 export function variantsOfSpecies(especie: AnimalSpeciesId): AnimalVariant[] {
@@ -416,43 +541,60 @@ export const FOOD_MATRIX: Record<FoodId, Matrix> = {
   zanahoria: M.CARROT,
   pescado: M.FISH,
   bayas: M.BERRIES,
+  heno: M.HAY,
+  manzana: M.APPLE,
 };
 
 export const FOODS: Record<FoodId, FoodItem> = {
   nectar: {
     id: 'nectar',
     nombre: 'Néctar',
-    precio: 5,
+    precio: 3,
     saciedad: 30,
     palette: { a: '#f2b33a', c: '#ffe08a', d: '#b0b6c4' },
   },
   alpiste: {
     id: 'alpiste',
     nombre: 'Alpiste',
-    precio: 5,
+    precio: 3,
     saciedad: 30,
     palette: { a: '#e8c87a', c: '#fff0c0', d: '#8a6238' },
   },
   zanahoria: {
     id: 'zanahoria',
     nombre: 'Zanahoria',
-    precio: 7,
+    precio: 5,
     saciedad: 38,
     palette: { a: '#f0873a', b: '#c25f1e', d: '#5aa03c' },
   },
   bayas: {
     id: 'bayas',
     nombre: 'Bayas',
-    precio: 9,
+    precio: 6,
     saciedad: 42,
     palette: { a: '#c0396a', c: '#e87fa0', d: '#4a8a3c' },
   },
   pescado: {
     id: 'pescado',
     nombre: 'Pescado',
-    precio: 12,
+    precio: 8,
     saciedad: 50,
     palette: { a: '#7fa8c8', c: '#dbe8f2', e: '#2a2320' },
+  },
+  heno: {
+    id: 'heno',
+    nombre: 'Heno',
+    // Un caballo come mucho: el fardo llena mas que nada y cuesta acorde.
+    precio: 14,
+    saciedad: 70,
+    palette: { a: '#e0c274', b: '#b8954a', d: '#8a6a3a' },
+  },
+  manzana: {
+    id: 'manzana',
+    nombre: 'Manzana',
+    precio: 6,
+    saciedad: 34,
+    palette: { a: '#d8434a', c: '#f0959a', d: '#6a4a2a', e: '#5aa03c' },
   },
 };
 

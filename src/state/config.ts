@@ -84,16 +84,18 @@ export const BALANCE = {
 
   /* --- Territorio --- */
   /** Costo base de ganarle una celda al vacio. */
-  costoTierra: 18,
+  costoTierra: 10,
   /**
    * Cada celda encarece la siguiente: expandir sin fin deberia costar cada vez
-   * mas, para que crecer sea una decision y no un tramite.
+   * mas, para que crecer sea una decision y no un tramite. El incremento baja
+   * junto con el costo base, si no la curva se comia igual la rebaja despues
+   * de veinte celdas.
    */
-  incrementoPorCelda: 0.55,
+  incrementoPorCelda: 0.3,
   /** Convertir tierra en parcela de siembra, y volver atras. */
-  costoArar: 12,
+  costoArar: 6,
   /** Fundar una isla nueva. */
-  costoIsla: 500,
+  costoIsla: 260,
   /** Separacion entre islas, en tiles. */
   separacionIslas: 9,
 } as const;

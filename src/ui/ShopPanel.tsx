@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { FLOWER_SPECIES, FLOWER_VARIANTS, FOOD_LIST } from '../state/content';
+import { FLOWER_SPECIES, FLOWER_VARIANTS, FOOD_LIST, favoritosDe } from '../state/content';
 import { useGame } from '../state/store';
 import { Drawer } from './Drawer';
 import { iconoComida, iconoFlor } from './icons';
@@ -133,15 +133,4 @@ function Comida() {
 
 function etiquetaRareza(r: string): string {
   return r === 'poco-comun' ? 'poco común' : r;
-}
-
-function favoritosDe(foodId: string): string {
-  const mapa: Record<string, string> = {
-    nectar: 'las mariposas',
-    alpiste: 'los pájaros',
-    zanahoria: 'los conejos',
-    pescado: 'los gatos',
-    bayas: 'los zorros',
-  };
-  return mapa[foodId] ?? 'nadie en particular';
 }

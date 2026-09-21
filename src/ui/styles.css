@@ -368,10 +368,57 @@ input {
   padding: 10px 12px 12px;
 }
 
+/*
+ * Tirador: la fila que siempre se ve. Cuando la barra esta plegada es lo
+ * unico que queda, asi que tiene que decir con que herramienta se esta
+ * jugando; si no, plegar seria perder el hilo.
+ */
+.dock-tirador {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  padding: 4px 2px;
+  background: transparent;
+  border: none;
+  color: var(--tenue);
+}
+
+.dock-tirador-activa {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.dock-tirador-activa strong {
+  font-family: var(--display);
+  font-weight: 700;
+  color: var(--miel);
+}
+
+.dock-flecha {
+  font-size: 12px;
+  line-height: 1;
+  opacity: 0.75;
+  transition: opacity 0.18s;
+}
+
+.dock-tirador:hover .dock-flecha {
+  opacity: 1;
+}
+
+/* Plegada no necesita el aire de abajo: solo queda el tirador. */
+.dock.plegado {
+  padding-bottom: 6px;
+}
+
 .dock-fila {
   display: flex;
   align-items: center;
   gap: 10px;
+  margin-top: 8px;
 }
 
 .herramientas {
@@ -1425,10 +1472,19 @@ code {
     height: 48px;
   }
 
+  /*
+   * Apoyada contra el borde de abajo, que es donde llega el pulgar. Los
+   * 146px que reservaba eran para el joystick, que hoy no se monta: solo
+   * se devuelven cuando el personaje vuelve a estar activo.
+   */
   .dock {
-    bottom: calc(146px + env(safe-area-inset-bottom));
+    bottom: max(10px, env(safe-area-inset-bottom));
     width: calc(100% - 20px);
     padding: 9px 10px 10px;
+  }
+
+  .con-joystick .dock {
+    bottom: calc(146px + env(safe-area-inset-bottom));
   }
 
   .campo-barra,
@@ -1520,8 +1576,22 @@ code {
   .ficha {
     left: 10px;
     right: 10px;
-    bottom: calc(146px + env(safe-area-inset-bottom));
+    bottom: calc(96px + env(safe-area-inset-bottom));
     width: auto;
+  }
+
+  .con-joystick .ficha {
+    bottom: calc(146px + env(safe-area-inset-bottom));
+  }
+
+  /* En pantalla chica el tirador es el control principal de la barra: se
+     agranda para que sea un objetivo comodo para el dedo. */
+  .dock-tirador {
+    padding: 6px 2px;
+  }
+
+  .dock-tirador-activa {
+    font-size: 14px;
   }
 
   .drawer {

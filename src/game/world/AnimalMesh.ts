@@ -96,7 +96,9 @@ export class AnimalMesh {
     this.grupo.position.set(estado.x, this.alturaBase(), estado.z);
     this.querencia.set(estado.x, 0, estado.z);
     // Los animales son los protagonistas: se los agranda respecto del tile.
-    this.grupo.scale.setScalar(1.2);
+    // Cada especie ajusta desde ahi, para que un caballo no mida lo mismo
+    // que una mariposa.
+    this.grupo.scale.setScalar(1.2 * (especie.escala ?? 1));
     this.elegirDestino(true);
     this.actualizar(estado);
   }

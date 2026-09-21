@@ -5,8 +5,23 @@ import type { Palette } from '../game/art/render';
 /* ------------------------------------------------------------------ */
 
 export type FlowerSpeciesId = 'tulipan' | 'rosa' | 'girasol' | 'margarita' | 'lavanda';
-export type AnimalSpeciesId = 'mariposa' | 'pajaro' | 'conejo' | 'gato' | 'zorro';
-export type FoodId = 'nectar' | 'alpiste' | 'zanahoria' | 'pescado' | 'bayas';
+export type AnimalSpeciesId =
+  | 'mariposa'
+  | 'pajaro'
+  | 'conejo'
+  | 'gato'
+  | 'zorro'
+  | 'poni'
+  | 'yegua'
+  | 'caballo';
+export type FoodId =
+  | 'nectar'
+  | 'alpiste'
+  | 'zanahoria'
+  | 'pescado'
+  | 'bayas'
+  | 'heno'
+  | 'manzana';
 export type Rarity = 'comun' | 'poco-comun' | 'rara';
 
 export interface FlowerSpecies {
@@ -38,6 +53,11 @@ export interface AnimalSpecies {
   velocidad: number;
   /** Los que vuelan ignoran el suelo y flotan. */
   vuela: boolean;
+  /**
+   * Tamano del billboard respecto del resto. Sin esto un caballo se veria
+   * igual de chico que una mariposa. Por omision, 1.
+   */
+  escala?: number;
   descripcion: string;
 }
 
@@ -187,6 +207,12 @@ export interface GameState {
   records?: Records;
   /** Easter egg descubierto: habilita al vecino y las bombas de agua. */
   rivalDespierto?: boolean;
+  /**
+   * Ids de los regalos de balance ya entregados a esta partida. Es lo que
+   * hace que un regalo se cobre una sola vez sin tocar la version del
+   * guardado, que borraria todas las partidas existentes.
+   */
+  regalosRecibidos?: string[];
   creadoEn: number;
   /** Ultimo instante simulado; permite crecer mientras el juego esta cerrado. */
   ultimoTick: number;

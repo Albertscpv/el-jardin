@@ -560,3 +560,95 @@ export const NINO_RIVAL: Matrix = [
   '....pp....pp....',
   '...zzz....zzz...',
 ];
+
+/* ------------------------------------------------------------------ */
+/* Equinos                                                             */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Caballo y yegua comparten dibujo y se distinguen por la paleta, igual que
+ * los gatos entre si. Miran a la izquierda como el resto del bestiario: el
+ * billboard espeja la textura cuando el animal camina para el otro lado.
+ */
+export const HORSE: Matrix = [
+  '..dd............',
+  '..daa...........',
+  '..daaa..........',
+  '..daefa.........',
+  '..daaaa.........',
+  '...gaa..........',
+  '...daaa.........',
+  '...daaaaaaaa....',
+  '..aaaaaaaaaaad..',
+  '..aaaaaaaaaaadd.',
+  '..caaaaaaaaaadd.',
+  '..ccaaaaaaaaad..',
+  '...aa...aaa.....',
+  '...aa...aaa.....',
+  '...gg...ggg.....',
+  '................',
+];
+
+/** El poni es el mismo animal en chico: patas cortas y cuerpo compacto. */
+export const PONY: Matrix = [
+  '................',
+  '...dd...........',
+  '...daa..........',
+  '...daefa........',
+  '...daaaa........',
+  '....gaa.........',
+  '....daaaaaa.....',
+  '...aaaaaaaaad...',
+  '...aaaaaaaaadd..',
+  '...caaaaaaaadd..',
+  '...ccaaaaaaad...',
+  '....aa...aa.....',
+  '....aa...aa.....',
+  '....gg...gg.....',
+  '................',
+  '................',
+];
+
+/* ------------------------------------------------------------------ */
+/* Comida de los equinos                                               */
+/* ------------------------------------------------------------------ */
+
+/** Fardo de heno atado con dos cuerdas. */
+export const HAY: Matrix = [
+  '................',
+  '................',
+  '................',
+  '....aaaaaaaa....',
+  '...aabaabaaba...',
+  '...adddddddda...',
+  '...abaabaabaa...',
+  '...aabaabaaba...',
+  '...adddddddda...',
+  '...abaabaabaa...',
+  '....aaaaaaaa....',
+  '................',
+  '................',
+  '................',
+  '................',
+  '................',
+];
+
+/** Manzana: el premio, no la comida de todos los dias. */
+export const APPLE: Matrix = [
+  '................',
+  '................',
+  '.......d........',
+  '......dd.ee.....',
+  '.....adddee.....',
+  '....aaaaaaa.....',
+  '...acaaaaaaa....',
+  '...acaaaaaaa....',
+  '...aaaaaaaaa....',
+  '...aaaaaaaaa....',
+  '....aaaaaaa.....',
+  '.....aaaaa......',
+  '................',
+  '................',
+  '................',
+  '................',
+];

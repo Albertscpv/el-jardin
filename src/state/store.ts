@@ -7,7 +7,13 @@ import {
   costoProximaCelda,
   parseCeldaId,
 } from './config';
-import { ANIMAL_SPECIES, FOODS, getAnimalVariant, getFlowerVariant } from './content';
+import {
+  ANIMAL_SPECIES,
+  FOODS,
+  getAnimalVariant,
+  getFlowerVariant,
+  unArticulo,
+} from './content';
 import { crearIslaNueva, esAgua, esParcela, tieneSuelo, totalCeldas } from './islas';
 import {
   borrarLocal,
@@ -16,6 +22,7 @@ import {
   leerLocal,
   partidaAlEntrar,
 } from './persistence';
+import { aplicarRegalos } from './regalos';
 import {
   advance,
   aforo,
@@ -173,10 +180,14 @@ export const useGame = create<Store>()((set, get) => {
 
     async inicializar() {
       const guardado = await cargarPartida();
-      const base = guardado ?? crearEstadoInicial();
+      // El regalo se acredita sobre la partida que ya gano la eleccion entre
+      // el navegador y la nube: aplicarlo antes, sobre las dos, lo duplicaria.
+      const { estado: base, avisos } = aplicarRegalos(guardado ?? crearEstadoInicial());
       const { estado, eventos } = advance(base, Date.now());
 
       set({ estado, cargando: false });
+
+      avisos.forEach((a) => get().avisar(a, 'exito'));
 
       if (guardado) {
         const minutos = Math.round((Date.now() - base.ultimoTick) / 60_000);
@@ -243,9 +254,11 @@ export const useGame = create<Store>()((set, get) => {
         base = leerLocal();
       }
 
-      const { estado, eventos } = advance(base ?? crearEstadoInicial(), Date.now());
+      const regalados = aplicarRegalos(base ?? crearEstadoInicial());
+      const { estado, eventos } = advance(regalados.estado, Date.now());
       set({ estado, cargando: false });
       EventBus.emit('mundo:resincronizar', {});
+      regalados.avisos.forEach((a) => get().avisar(a, 'exito'));
       eventos.forEach((e) => get().avisar(e, 'info'));
 
       get().avisar(
@@ -718,11 +731,6 @@ export function nombreDe(animal: AnimalState): string {
   const especie = ANIMAL_SPECIES[animal.especie].nombre;
   const variante = getAnimalVariant(animal.variante).nombre;
   return `${especie} ${variante.toLowerCase()}`;
-}
-
-function unArticulo(especie: keyof typeof ANIMAL_SPECIES): string {
-  const nombre = ANIMAL_SPECIES[especie].nombre.toLowerCase();
-  return especie === 'mariposa' ? `una ${nombre}` : `un ${nombre}`;
 }
 
 /** Lo que dice el vecino cada vez que le pega una bomba. Todo en broma. */

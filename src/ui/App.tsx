@@ -38,6 +38,14 @@ export function App() {
   }, []);
 
   useEffect(() => {
+    // Handle de desarrollo, como el `__campo` del campo de tiro: permite
+    // inspeccionar y empujar la partida desde la consola sin abrir el juego
+    // a que cualquiera la toque en produccion.
+    if (!import.meta.env.DEV) return;
+    (window as unknown as Record<string, unknown>).__jardin = useGame;
+  }, []);
+
+  useEffect(() => {
     const id = setInterval(() => {
       // Con la pestaña oculta el navegador frena los timers; al volver, el
       // propio `advance` recupera el tiempo perdido de una sola vez.
@@ -80,8 +88,13 @@ export function App() {
     );
   }
 
+  // El joystick se queda con la franja de abajo. Avisarlo con una clase
+  // deja que el CSS reserve ese espacio solo cuando el joystick existe, en
+  // vez de dejar un hueco muerto con el personaje apagado.
+  const conJoystick = PERSONAJE_ACTIVO && esTactil();
+
   return (
-    <div className="app">
+    <div className={conJoystick ? 'app con-joystick' : 'app'}>
       {/* El jardín ocupa toda la pantalla; el resto flota encima. */}
       <GameCanvas />
 
@@ -90,7 +103,7 @@ export function App() {
       <AnimalSheet />
       <Toolbar />
 
-      {PERSONAJE_ACTIVO && esTactil() && <TouchControls />}
+      {conJoystick && <TouchControls />}
 
       <AnimatePresence>
         {panel === 'tienda' && <ShopPanel key="tienda" />}
