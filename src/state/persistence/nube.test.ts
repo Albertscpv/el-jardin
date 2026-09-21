@@ -11,16 +11,31 @@ interface Fila {
   estado: GameState;
 }
 
-const db: { fila: Fila | null; lecturaFalla: boolean; escrituras: string[] } = {
+const db: {
+  fila: Fila | null;
+  lecturaFalla: boolean;
+  escrituras: string[];
+  /** Si ya se corrio proteccion.sql y existe la funcion reemplazar_jardin. */
+  conProteccion: boolean;
+} = {
   fila: null,
   lecturaFalla: false,
   escrituras: [],
+  conProteccion: true,
 };
 
 function cliente() {
   return {
     auth: {
       getSession: async () => ({ data: { session: { user: { id: 'u1' } } } }),
+    },
+    rpc: async (nombre: string, args: { p_estado: GameState }) => {
+      if (nombre !== 'reemplazar_jardin' || !db.conProteccion) {
+        return { error: { code: 'PGRST202', message: 'Could not find the function' } };
+      }
+      db.escrituras.push('rpc');
+      db.fila = { usuario_id: 'u1', estado: args.p_estado };
+      return { error: null };
     },
     from: () => ({
       select: () => ({
@@ -82,6 +97,7 @@ beforeEach(() => {
   db.fila = null;
   db.lecturaFalla = false;
   db.escrituras = [];
+  db.conProteccion = true;
   olvidarLectura();
   vi.spyOn(console, 'warn').mockImplementation(() => {});
 });
@@ -124,12 +140,23 @@ describe('escribirEnNube', () => {
     expect(db.fila?.estado.monedas).toBe(5000);
   });
 
-  it('reemplazar, que solo usa "Reiniciar jardín", sí pisa', async () => {
+  it('reemplazar, que solo usa "Reiniciar jardín", pasa por la función de la base', async () => {
     db.fila = { usuario_id: 'u1', estado: jardin(1, 5000) };
     await leerDeNube();
 
     await escribirEnNube(jardin(9, 60), { reemplazar: true });
     expect(db.fila?.estado.creadoEn).toBe(9);
+    expect(db.escrituras).toEqual(['rpc']);
+  });
+
+  it('si todavía no se corrió proteccion.sql, reemplazar usa el guardado de antes', async () => {
+    db.conProteccion = false;
+    db.fila = { usuario_id: 'u1', estado: jardin(1, 5000) };
+    await leerDeNube();
+
+    await escribirEnNube(jardin(9, 60), { reemplazar: true });
+    expect(db.fila?.estado.creadoEn).toBe(9);
+    expect(db.escrituras).toEqual(['upsert']);
   });
 
   it('después de cerrar sesión hay que volver a leer antes de escribir', async () => {

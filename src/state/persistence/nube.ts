@@ -85,8 +85,17 @@ export async function escribirEnNube(
   const fila = { usuario_id: uid, estado, actualizado_en: new Date().toISOString() };
 
   if (reemplazar) {
-    const { error } = await sb.from('jardines').upsert(fila, { onConflict: 'usuario_id' });
-    if (error) throw error;
+    // Con proteccion.sql instalado, la base solo deja reemplazar un jardin
+    // por otro a traves de esta funcion.
+    const { error } = await sb.rpc('reemplazar_jardin', { p_estado: estado });
+    if (!error) return;
+    // PGRST202: la funcion no existe porque todavia no se corrio el SQL. Sin
+    // la funcion tampoco esta el bloqueo, asi que el guardado de antes anda.
+    if (error.code !== 'PGRST202') throw error;
+    const { error: sinProteccion } = await sb
+      .from('jardines')
+      .upsert(fila, { onConflict: 'usuario_id' });
+    if (sinProteccion) throw sinProteccion;
     return;
   }
 

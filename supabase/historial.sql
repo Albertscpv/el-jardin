@@ -159,11 +159,16 @@ create trigger archivar_jardin_al_borrar
 --   join public.jardines_historial h on h.usuario_id = j.usuario_id
 --   where h.id = 123;
 --
---   -- 2. La restauración.
+--   -- 2. La restauración. Si instalaste proteccion.sql, la base rechaza
+--   --    reemplazar un jardín por otro distinto; el set_config lo habilita
+--   --    solo dentro de este begin/commit.
+--   begin;
+--   select set_config('jardin.reemplazar', 'si', true);
 --   update public.jardines j
 --   set estado = h.estado, actualizado_en = now()
 --   from public.jardines_historial h
 --   where h.id = 123 and j.usuario_id = h.usuario_id;
+--   commit;
 --
 -- El paso 1 hace falta porque el trigger no siempre archiva lo que había:
 -- si la versión devuelta es del mismo jardín y hubo una copia periódica en
