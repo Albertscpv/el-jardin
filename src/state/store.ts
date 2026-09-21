@@ -21,6 +21,7 @@ import {
   cargarPartida,
   guardarPartida,
   leerLocal,
+  olvidarLectura,
   partidaAlEntrar,
 } from './persistence';
 import {
@@ -297,6 +298,7 @@ export const useGame = create<Store>()((set, get) => {
 
       let base: GameState | null = null;
       try {
+        if (cambio === 'salio') olvidarLectura();
         base = cambio === 'entro' ? await partidaAlEntrar() : leerLocal();
       } catch (e) {
         console.warn('[jardin] no se pudo cambiar de partida', e);
@@ -320,7 +322,9 @@ export const useGame = create<Store>()((set, get) => {
     reiniciar() {
       borrarLocal();
       set({ estado: crearEstadoInicial(), animalAbierto: null, panel: null, adoptando: null });
-      void guardarPartida(get().estado);
+      // Es la unica accion que tiene que reemplazar el jardin de la cuenta por
+      // otro: el jugador lo pidio. Cualquier otro guardado se niega a hacerlo.
+      void guardarPartida(get().estado, { reemplazar: true });
       EventBus.emit('mundo:resincronizar', {});
       get().avisar('Jardín nuevo. A sembrar de nuevo 🌱', 'info');
     },
