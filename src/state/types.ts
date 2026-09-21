@@ -223,6 +223,7 @@ export interface GameState {
 /* ------------------------------------------------------------------ */
 
 export type ToolId =
+  | 'mirar'
   | 'plantar'
   | 'regar'
   | 'cosechar'

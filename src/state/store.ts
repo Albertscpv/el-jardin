@@ -40,6 +40,7 @@ import type {
   FoodId,
   GameState,
   IslaState,
+  PlantState,
   Toast,
   ToolId,
 } from './types';
@@ -164,7 +165,10 @@ export const useGame = create<Store>()((set, get) => {
     estado: crearEstadoInicial(),
     cargando: true,
 
-    herramienta: 'plantar',
+    // Arranca en 'mirar' a proposito: la herramienta no se guarda con la
+    // partida, asi que cada carga empezaba con la de la sesion anterior y el
+    // primer toque ejecutaba lo ultimo que hubieras usado, pala incluida.
+    herramienta: 'mirar',
     semillaSeleccionada: 'margarita-blanca',
     comidaSeleccionada: 'nectar',
     panel: null,
@@ -306,12 +310,18 @@ export const useGame = create<Store>()((set, get) => {
       if (!isla) return;
 
       // El personaje camina a donde trabajás: no hace falta moverlo aparte.
-      get().moverAvatar(isla.ox + col + 0.5, isla.oz + row + 0.5);
+      // Mirar no es ir, así que esa herramienta no lo mueve.
+      if (herramienta !== 'mirar') {
+        get().moverAvatar(isla.ox + col + 0.5, isla.oz + row + 0.5);
+      }
 
       const planta = estado.cultivos[id];
       const arada = esParcela(isla, col, row);
 
       switch (herramienta) {
+        case 'mirar':
+          return avisar(describirCelda(planta, arada, esAgua(isla, col, row)), 'info');
+
         case 'arar': {
           if (esAgua(isla, col, row)) return avisar('Ahí hay agua', 'aviso');
           if (arada) {
@@ -732,6 +742,32 @@ export function nombreDe(animal: AnimalState): string {
   const especie = ANIMAL_SPECIES[animal.especie].nombre;
   const variante = getAnimalVariant(animal.variante).nombre;
   return `${especie} ${variante.toLowerCase()}`;
+}
+
+/**
+ * Que hay en una celda, en una linea. Es todo lo que hace la herramienta
+ * "Mirar": describe sin tocar nada.
+ */
+function describirCelda(planta: PlantState | undefined, arada: boolean, hayAgua: boolean): string {
+  if (!planta) {
+    if (hayAgua) return 'Un estanque. Es decorativo: no se puede arar ni sembrar';
+    if (arada) return 'Parcela arada y vacía, lista para sembrar';
+    return 'Césped. Con Arar se convierte en parcela de siembra';
+  }
+
+  const variante = getFlowerVariant(planta.variantId);
+  const etapa = stageOf(planta);
+  if (etapa === 'marchita') return `${variante.nombre}, marchita. Limpiala y volvé a sembrar`;
+
+  const nombreEtapa = {
+    semilla: 'recién sembrada',
+    brote: 'brotando',
+    capullo: 'en capullo',
+    flor: 'en flor',
+  }[etapa];
+  const sed = planta.humedad > 0.5 ? 'con agua' : planta.humedad > 0.15 ? 'le falta agua' : 'seca';
+
+  return `${variante.nombre}, ${nombreEtapa} · ${sed}`;
 }
 
 /** Lo que dice el vecino cada vez que le pega una bomba. Todo en broma. */

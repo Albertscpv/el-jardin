@@ -15,6 +15,12 @@ interface Herramienta {
 }
 
 const HERRAMIENTAS: Herramienta[] = [
+  {
+    id: 'mirar',
+    icono: '👀',
+    nombre: 'Mirar',
+    ayuda: 'Tocá sin que pase nada: mirá una planta o abrí la ficha de un animal',
+  },
   { id: 'plantar', icono: '🌱', nombre: 'Sembrar', ayuda: 'Elegí una semilla y tocá una parcela arada' },
   { id: 'regar', icono: '💧', nombre: 'Regar', ayuda: 'Sin agua la planta no crece y se marchita' },
   { id: 'cosechar', icono: '🧺', nombre: 'Cosechar', ayuda: 'Solo funciona con la flor abierta' },
