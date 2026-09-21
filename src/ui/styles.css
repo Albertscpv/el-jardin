@@ -197,6 +197,19 @@ input {
   color: var(--crema);
 }
 
+/* Cuando hay registro para ofrecer, el boton deja de parecer una etiqueta. */
+.hud-origen.invita {
+  color: var(--miel);
+  border-color: color-mix(in srgb, var(--miel) 55%, transparent);
+  background: color-mix(in srgb, var(--miel) 12%, transparent);
+  font-weight: 600;
+}
+
+.hud-origen.invita:hover {
+  background: color-mix(in srgb, var(--miel) 24%, transparent);
+  color: var(--crema);
+}
+
 .hud-origen.activo {
   background: var(--miel);
   border-color: var(--miel);
@@ -1221,7 +1234,7 @@ code {
 /* Campo de tiro (escenario 2D)                                        */
 /* ------------------------------------------------------------------ */
 
-.campo {
+.campo-tiro {
   position: absolute;
   inset: 0;
   background: #1d262e;

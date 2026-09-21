@@ -39,6 +39,7 @@ export function HUD() {
     }
   };
 
+  const cuenta = etiquetaDeCuenta(sesion, email);
   const adoptados = animales.filter((a) => a.estado === 'adoptado').length;
   const visitantes = animales.length - adoptados;
 
@@ -48,15 +49,17 @@ export function HUD() {
         <div className="hud-marca vidrio">
           <h1 onClick={tocarTitulo}>El Jardín</h1>
           <button
-            className={panel === 'cuenta' ? 'hud-origen activo' : 'hud-origen'}
+            className={[
+              'hud-origen',
+              cuenta.invita ? 'invita' : '',
+              panel === 'cuenta' ? 'activo' : '',
+            ]
+              .filter(Boolean)
+              .join(' ')}
             onClick={() => setPanel('cuenta')}
-            title={
-              sesion === 'dentro'
-                ? `Sesión iniciada como ${email ?? 'tu cuenta'}`
-                : 'Tu jardín se guarda solo en este navegador'
-            }
+            title={cuenta.ayuda}
           >
-            {sesion === 'dentro' ? '☁ sincronizado' : '💾 local'}
+            {cuenta.etiqueta}
           </button>
         </div>
 
@@ -113,4 +116,38 @@ function Stat({
       <strong>{valor}</strong>
     </div>
   );
+}
+
+/**
+ * Texto del boton de cuenta.
+ *
+ * Antes decia siempre "local" o "sincronizado": describia el estado, pero no
+ * invitaba a nada, y como es la unica puerta al registro nadie la encontraba.
+ * Cuando se puede crear una cuenta, el boton lo pide; cuando no, vuelve a ser
+ * un cartel de estado.
+ */
+function etiquetaDeCuenta(
+  sesion: ReturnType<typeof useAuth.getState>['estado'],
+  email: string | null,
+): { etiqueta: string; ayuda: string; invita: boolean } {
+  if (sesion === 'dentro') {
+    return {
+      etiqueta: '☁ sincronizado',
+      ayuda: `Sesión iniciada como ${email ?? 'tu cuenta'}`,
+      invita: false,
+    };
+  }
+  if (sesion === 'invitado') {
+    return {
+      etiqueta: '👤 Crear cuenta',
+      ayuda: 'Tu jardín se guarda solo en este navegador. Creá una cuenta para jugar en varios dispositivos.',
+      invita: true,
+    };
+  }
+  // 'cargando' y 'sin-configurar': no hay registro que ofrecer todavia.
+  return {
+    etiqueta: '💾 local',
+    ayuda: 'Tu jardín se guarda solo en este navegador',
+    invita: false,
+  };
 }

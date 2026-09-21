@@ -75,7 +75,7 @@ export function RangeScreen() {
   const punteria = disparos > 0 ? Math.round((records.impactos / disparos) * 100) : 0;
 
   return (
-    <div className="campo">
+    <div className="campo-tiro">
       <canvas ref={canvas} className="campo-lienzo" />
 
       <header className="campo-barra vidrio">
