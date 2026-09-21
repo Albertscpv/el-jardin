@@ -12,6 +12,7 @@ import { BuildPanel } from './BuildPanel';
 import { CameraControls } from './CameraControls';
 import { CharacterPanel } from './CharacterPanel';
 import { GameCanvas } from './GameCanvas';
+import { GiftsPanel } from './GiftsPanel';
 import { HelpPanel } from './HelpPanel';
 import { HUD } from './HUD';
 import { RangeScreen } from './RangeScreen';
@@ -111,6 +112,7 @@ export function App() {
         {panel === 'animales' && <AnimalsPanel key="animales" />}
         {panel === 'personaje' && <CharacterPanel key="personaje" />}
         {panel === 'cuenta' && <AuthPanel key="cuenta" />}
+        {panel === 'regalos' && <GiftsPanel key="regalos" />}
         {panel === 'ayuda' && <HelpPanel key="ayuda" />}
       </AnimatePresence>
 

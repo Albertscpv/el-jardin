@@ -398,15 +398,32 @@ input {
   color: var(--miel);
 }
 
+/*
+ * La flecha es el control de plegado, asi que tiene que parecer un boton y
+ * no un adorno del borde: sin fondo ni contorno se perdia contra el vidrio
+ * y nadie la encontraba.
+ */
 .dock-flecha {
-  font-size: 12px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 28px;
+  height: 28px;
+  font-size: 13px;
   line-height: 1;
-  opacity: 0.75;
-  transition: opacity 0.18s;
+  color: var(--miel);
+  background: color-mix(in srgb, var(--miel) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--miel) 45%, transparent);
+  border-radius: 999px;
+  transition: background 0.18s, transform 0.18s;
 }
 
 .dock-tirador:hover .dock-flecha {
-  opacity: 1;
+  background: color-mix(in srgb, var(--miel) 28%, transparent);
+}
+
+.dock-tirador:active .dock-flecha {
+  transform: translateY(1px);
 }
 
 /* Plegada no necesita el aire de abajo: solo queda el tirador. */
@@ -786,6 +803,24 @@ input {
 .rareza.rara {
   background: rgba(217, 105, 74, 0.22);
   color: #ffab8f;
+}
+
+/* Estado de un regalo. Misma forma que la rareza de las flores. */
+.insignia {
+  font-size: 9.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--tenue);
+  font-family: var(--cuerpo);
+}
+
+.insignia.cobrada {
+  background: rgba(143, 206, 116, 0.2);
+  color: var(--hoja);
 }
 
 .vacio-largo {
@@ -1592,6 +1627,13 @@ code {
 
   .dock-tirador-activa {
     font-size: 14px;
+  }
+
+  /* En tactil el objetivo tiene que aguantar un pulgar. */
+  .dock-flecha {
+    width: 34px;
+    height: 34px;
+    font-size: 15px;
   }
 
   .drawer {

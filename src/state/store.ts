@@ -66,6 +66,7 @@ export type PanelId =
   | 'construir'
   | 'personaje'
   | 'cuenta'
+  | 'regalos'
   | 'ayuda'
   | null;
 

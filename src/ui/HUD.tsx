@@ -9,6 +9,7 @@ const NAV: Array<{ id: Exclude<PanelId, null>; etiqueta: string }> = [
   { id: 'construir', etiqueta: 'Construir' },
   { id: 'animales', etiqueta: 'Animales' },
   { id: 'personaje', etiqueta: 'Personaje' },
+  { id: 'regalos', etiqueta: 'Regalos' },
 ];
 
 export function HUD() {
