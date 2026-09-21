@@ -87,7 +87,7 @@ export type CeldaLocal = string;
 /** Clave global de una celda: "islaId/col,row". */
 export type CeldaId = string;
 
-export type PropTipo = 'farol' | 'maceta' | 'regadera';
+export type PropTipo = 'farol' | 'farola' | 'maceta' | 'regadera';
 
 export interface PropColocado {
   tipo: PropTipo;
@@ -240,6 +240,8 @@ export interface GameState {
   pedido?: Pedido;
   pedidosCompletados?: number;
   tiroDiario?: TiroDiario;
+  /** Objetos comprados y todavia sin colocar, por tipo. */
+  objetos?: Partial<Record<PropTipo, number>>;
   creadoEn: number;
   /** Ultimo instante simulado; permite crecer mientras el juego esta cerrado. */
   ultimoTick: number;
@@ -258,7 +260,8 @@ export type ToolId =
   | 'mimar'
   | 'alimentar'
   | 'expandir'
-  | 'arar';
+  | 'arar'
+  | 'farola';
 
 export interface Toast {
   id: number;

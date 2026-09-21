@@ -34,6 +34,7 @@ import {
   regaloDiarioDisponible,
   rechazarPedido,
 } from './economia';
+import { comprarFarolas, propEn, usarFarola, type ResultadoFarola } from './objetos';
 import { aplicarRegalos } from './regalos';
 import {
   advance,
@@ -53,6 +54,7 @@ import type {
   GameState,
   IslaState,
   PlantState,
+  PropTipo,
   Toast,
   ToolId,
 } from './types';
@@ -125,6 +127,7 @@ interface Store {
   regarTodo: () => void;
   comprarSemilla: (variantId: string, cantidad?: number) => void;
   comprarComida: (foodId: FoodId, cantidad?: number) => void;
+  comprarFarolas: (cantidad?: number) => void;
 
   /* --- territorio --- */
   expandir: (islaId: string, col: number, row: number) => void;
@@ -369,10 +372,28 @@ export const useGame = create<Store>()((set, get) => {
 
       switch (herramienta) {
         case 'mirar':
-          return avisar(describirCelda(planta, arada, esAgua(isla, col, row)), 'info');
+          return avisar(
+            describirCelda(planta, arada, esAgua(isla, col, row), propEn(isla, col, row)?.tipo),
+            'info',
+          );
+
+        case 'farola': {
+          const { estado: tras, resultado } = usarFarola(get().estado, islaId, col, row);
+          if (tras !== get().estado) mutar(() => tras);
+          return avisar(MENSAJE_FAROLA[resultado], resultado === 'colocada' ? 'exito' : 'info');
+        }
 
         case 'arar': {
           if (esAgua(isla, col, row)) return avisar('Ahí hay agua', 'aviso');
+          const objeto = propEn(isla, col, row);
+          if (objeto) {
+            return avisar(
+              objeto.tipo === 'farola'
+                ? 'Ahí hay una farola. Guardala con la herramienta Farola'
+                : 'Ahí hay algo puesto: no se puede arar',
+              'aviso',
+            );
+          }
           if (arada) {
             if (planta) return avisar('Primero sacá lo que está sembrado', 'aviso');
             mutarIsla(islaId, (i) => ({
@@ -534,6 +555,16 @@ export const useGame = create<Store>()((set, get) => {
       }));
       set({ semillaSeleccionada: variantId });
       get().avisar(`+${cantidad} ${variante.nombre}`, 'exito');
+    },
+
+    comprarFarolas(cantidad = 1) {
+      const tras = comprarFarolas(get().estado, cantidad);
+      if (!tras) return get().avisar('No te alcanzan las monedas', 'aviso');
+      mutar(() => tras);
+      get().avisar(
+        cantidad === 1 ? '+1 farola. Ponela con la herramienta Farola' : `+${cantidad} farolas`,
+        'exito',
+      );
     },
 
     comprarComida(foodId, cantidad = 1) {
@@ -838,7 +869,15 @@ export function nombreDe(animal: AnimalState): string {
  * Que hay en una celda, en una linea. Es todo lo que hace la herramienta
  * "Mirar": describe sin tocar nada.
  */
-function describirCelda(planta: PlantState | undefined, arada: boolean, hayAgua: boolean): string {
+function describirCelda(
+  planta: PlantState | undefined,
+  arada: boolean,
+  hayAgua: boolean,
+  objeto?: PropTipo,
+): string {
+  if (objeto === 'farola') return 'Una farola. De noche alumbra lo que tiene alrededor';
+  if (objeto === 'farol') return 'Un farol de jardín. De noche se enciende solo';
+  if (objeto) return 'Un adorno del jardín';
   if (!planta) {
     if (hayAgua) return 'Un estanque. Es decorativo: no se puede arar ni sembrar';
     if (arada) return 'Parcela arada y vacía, lista para sembrar';
@@ -865,6 +904,17 @@ function describirCelda(planta: PlantState | undefined, arada: boolean, hayAgua:
 
   return `${variante.nombre}, ${nombreEtapa} · ${sed}`;
 }
+
+/** Lo que responde la herramienta Farola en cada caso. */
+const MENSAJE_FAROLA: Record<ResultadoFarola, string> = {
+  colocada: 'Farola puesta 🏮',
+  guardada: 'Farola guardada. Podés ponerla en otro lado',
+  'sin-farolas': 'No te quedan farolas. Hay en la Tienda, en Objetos',
+  ocupada: 'Ahí ya hay algo puesto',
+  agua: 'En el agua no se puede poner una farola',
+  parcela: 'Las farolas van en el césped: en una parcela taparían la siembra',
+  fuera: 'Ahí no hay tierra',
+};
 
 /** Lo que dice el vecino cada vez que le pega una bomba. Todo en broma. */
 const BURLAS = [

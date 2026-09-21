@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { FOODS } from '../state/content';
-import { costoProximaCelda } from '../state/config';
+import { BALANCE, costoProximaCelda } from '../state/config';
+import { FAROLA_ICONO, PALETA_FAROLA_ICONO } from '../game/art/props';
 import { totalCeldas } from '../state/islas';
 import { useGame } from '../state/store';
 import type { FoodId, ToolId } from '../state/types';
@@ -29,6 +30,7 @@ const HERRAMIENTAS: Herramienta[] = [
   { id: 'alimentar', icono: '🍽️', nombre: 'Alimentar', ayuda: 'Elegí comida y tocá un animal' },
   { id: 'arar', icono: '🪓', nombre: 'Arar', ayuda: 'Convierte césped en parcela, y al revés' },
   { id: 'expandir', icono: '🧱', nombre: 'Terreno', ayuda: 'Tocá una celda verde del borde para ganarla' },
+  { id: 'farola', icono: '🏮', nombre: 'Farola', ayuda: 'Tocá el césped para poner una · tocá una farola para guardarla' },
 ];
 
 export function Toolbar() {
@@ -102,6 +104,7 @@ export function Toolbar() {
 
           {herramienta === 'plantar' && <TiraSemillas />}
           {herramienta === 'alimentar' && <TiraComida />}
+          {herramienta === 'farola' && <TiraFarolas />}
         </>
       )}
     </div>
@@ -181,6 +184,35 @@ function TiraComida() {
           </button>
         );
       })}
+    </div>
+  );
+}
+
+function TiraFarolas() {
+  const cantidad = useGame((s) => s.estado.objetos?.farola ?? 0);
+  const monedas = useGame((s) => s.estado.monedas);
+  const comprar = useGame((s) => s.comprarFarolas);
+
+  return (
+    <div className="tira vacia">
+      <span className="item" aria-hidden>
+        <PixelIcon matrix={FAROLA_ICONO} palette={PALETA_FAROLA_ICONO} size={30} />
+        <span className="item-cantidad">{cantidad}</span>
+      </span>
+      <span>
+        {cantidad === 0
+          ? 'No te quedan farolas.'
+          : cantidad === 1
+            ? 'Tenés 1 para poner.'
+            : `Tenés ${cantidad} para poner.`}
+      </span>
+      <button
+        className="boton suave"
+        disabled={monedas < BALANCE.precioFarola}
+        onClick={() => comprar(1)}
+      >
+        Comprar · {BALANCE.precioFarola} 🪙
+      </button>
     </div>
   );
 }

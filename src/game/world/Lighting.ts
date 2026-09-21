@@ -4,7 +4,12 @@ import * as THREE from 'three';
 export const CICLO_DIA = 8 * 60_000;
 
 /** Tope de luces calidas simultaneas: mas obligaria a recompilar shaders. */
-const MAX_FAROLES = 6;
+/**
+ * Luces puntuales reales. Cada una encarece el sombreado de toda la escena,
+ * asi que son pocas y se reparten entre las farolas mas cercanas a lo que
+ * se esta mirando. El vidrio de cada farola brilla aparte, sin luz.
+ */
+const MAX_FAROLES = 8;
 
 interface Momento {
   t: number;
@@ -63,6 +68,9 @@ export class Lighting {
 
   private escena: THREE.Scene;
   private faroles: THREE.PointLight[] = [];
+  private posicionesFaroles: THREE.Vector3[] = [];
+  /** Donde estaba el foco la ultima vez que se repartieron las luces. */
+  private ultimoReparto = new THREE.Vector3(Infinity, 0, Infinity);
   private colorA = new THREE.Color();
   private colorB = new THREE.Color();
   private fondo = new THREE.Color();
@@ -109,8 +117,26 @@ export class Lighting {
       this.escena.add(luz);
       this.faroles.push(luz);
     }
+    this.posicionesFaroles = [...posiciones];
+    // Fuerza un reparto nuevo: cambio el terreno aunque la camara no se movio.
+    this.ultimoReparto.set(Infinity, 0, Infinity);
+  }
+
+  /**
+   * Da las luces a las farolas mas cercanas al foco de la camara. Solo se
+   * rehace si el foco se movio un poco: mover una luz es barato, pero
+   * ordenar en cada cuadro no hace falta.
+   */
+  repartirFaroles(foco: THREE.Vector3): void {
+    if (this.ultimoReparto.distanceToSquared(foco) < 1) return;
+    this.ultimoReparto.copy(foco);
+
+    const cercanas = [...this.posicionesFaroles]
+      .sort((a, b) => a.distanceToSquared(foco) - b.distanceToSquared(foco))
+      .slice(0, this.faroles.length);
+
     this.faroles.forEach((luz, i) => {
-      const pos = posiciones[i];
+      const pos = cercanas[i];
       luz.visible = Boolean(pos);
       if (pos) luz.position.copy(pos);
     });

@@ -1,11 +1,13 @@
 import { useState } from 'react';
+import { FAROLA_ICONO, PALETA_FAROLA_ICONO } from '../game/art/props';
+import { BALANCE } from '../state/config';
 import { FLOWER_SPECIES, FLOWER_VARIANTS, FOOD_LIST, favoritosDe } from '../state/content';
 import { useGame } from '../state/store';
 import { Drawer } from './Drawer';
 import { iconoComida, iconoFlor } from './icons';
 import { PixelIcon } from './PixelIcon';
 
-type Pestana = 'semillas' | 'comida';
+type Pestana = 'semillas' | 'comida' | 'objetos';
 
 export function ShopPanel() {
   const [pestana, setPestana] = useState<Pestana>('semillas');
@@ -27,9 +29,17 @@ export function ShopPanel() {
         >
           Comida
         </button>
+        <button
+          className={pestana === 'objetos' ? 'pestana activa' : 'pestana'}
+          onClick={() => setPestana('objetos')}
+        >
+          Objetos
+        </button>
       </div>
 
-      {pestana === 'semillas' ? <Semillas /> : <Comida />}
+      {pestana === 'semillas' && <Semillas />}
+      {pestana === 'comida' && <Comida />}
+      {pestana === 'objetos' && <Objetos />}
     </Drawer>
   );
 }
@@ -127,6 +137,55 @@ function Comida() {
           </li>
         );
       })}
+    </ul>
+  );
+}
+
+function Objetos() {
+  const monedas = useGame((s) => s.estado.monedas);
+  const tengo = useGame((s) => s.estado.objetos?.farola ?? 0);
+  const comprar = useGame((s) => s.comprarFarolas);
+  const setHerramienta = useGame((s) => s.setHerramienta);
+  const setPanel = useGame((s) => s.setPanel);
+  const precio = BALANCE.precioFarola;
+
+  return (
+    <ul className="lista">
+      <li className="fila">
+        <PixelIcon matrix={FAROLA_ICONO} palette={PALETA_FAROLA_ICONO} size={44} />
+
+        <div className="fila-texto">
+          <div className="fila-titulo">
+            <strong>Farola</strong>
+          </div>
+          <p className="fila-detalle">
+            De noche alumbra el pasto alrededor{tengo > 0 && ` · tenés ${tengo} para poner`}
+          </p>
+          <p className="fila-nota">
+            Se paga una vez: guardarla y ponerla en otro lado no cuesta nada.{' '}
+            {tengo > 0 && (
+              <button
+                className="enlace en-linea"
+                onClick={() => {
+                  setHerramienta('farola');
+                  setPanel(null);
+                }}
+              >
+                Ponerla ahora
+              </button>
+            )}
+          </p>
+        </div>
+
+        <div className="fila-acciones">
+          <button className="boton" disabled={monedas < precio} onClick={() => comprar(1)}>
+            {precio} 🪙
+          </button>
+          <button className="boton suave" disabled={monedas < precio * 5} onClick={() => comprar(5)}>
+            ×5
+          </button>
+        </div>
+      </li>
     </ul>
   );
 }

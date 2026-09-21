@@ -220,7 +220,14 @@ export class GardenWorld {
   private celdaBajoPuntero(): string | null {
     this.raycaster.setFromCamera(this.puntero, this.engine.camara);
 
-    const objetivos = [...this.terreno.parcelas.values(), ...this.terreno.suelo];
+    // Las farolas entran porque tapan su celda en pantalla. El rayo devuelve
+    // primero lo mas cercano a la camara, que es la lampara: tocarla cuenta
+    // como tocar la celda donde esta parada.
+    const objetivos = [
+      ...this.terreno.tocables,
+      ...this.terreno.parcelas.values(),
+      ...this.terreno.suelo,
+    ];
     const golpes = this.raycaster.intersectObjects(objetivos, false);
     const golpe = golpes[0];
     if (!golpe) return null;
@@ -499,6 +506,8 @@ export class GardenWorld {
     this.luces.centroSombras.copy(this.engine.camara.position);
     this.luces.centroSombras.y = 0;
     this.luces.actualizar();
+    this.luces.repartirFaroles(this.engine.foco as THREE.Vector3);
+    this.terreno.encenderFarolas(this.luces.noche);
 
     this.terreno.actualizar(dt);
     this.pasto.update(dt);

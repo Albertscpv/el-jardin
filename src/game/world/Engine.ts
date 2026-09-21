@@ -54,6 +54,11 @@ export class Engine {
 
   /* --- Estado de camara --- */
   private objetivo = new THREE.Vector3(0, 0, 0);
+
+  /** El punto al que mira la camara. Solo lectura: se mueve con los gestos. */
+  get foco(): Readonly<THREE.Vector3> {
+    return this.objetivo;
+  }
   private azimut = THREE.MathUtils.degToRad(45);
   private elevacion = THREE.MathUtils.degToRad(42);
   private zoom = 1;

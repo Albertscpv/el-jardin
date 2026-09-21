@@ -104,6 +104,11 @@ export const BALANCE = {
   costoArar: 6,
   /** Fundar una isla nueva. */
   costoIsla: 150,
+
+  /* --- Objetos --- */
+  /** Una farola. Se puede guardar y volver a poner gratis: se paga una vez. */
+  precioFarola: 45,
+
   /* --- Economia --- */
   /** Lo que da el regalo diario. */
   regaloDiario: 300,

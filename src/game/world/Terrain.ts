@@ -15,7 +15,11 @@ const VERDES = ['#5fa14a', '#5b9b46', '#64a84f', '#588f42', '#69ae53'];
 // contraluz, y con marrones oscuros se leeria como un bloque negro.
 const TIERRA = ['#7d5836', '#6e4d2f', '#61432a', '#553a24'];
 
-const MATRIZ_PROP: Record<PropTipo, { matriz: readonly string[]; paleta: Record<string, string>; fondo: number; escala: number }> = {
+/** Objetos que salen de una matriz extruida. La farola se arma aparte, con cajas. */
+const MATRIZ_PROP: Record<
+  Exclude<PropTipo, 'farola'>,
+  { matriz: readonly string[]; paleta: Record<string, string>; fondo: number; escala: number }
+> = {
   farol: { matriz: P.FAROL, paleta: P.PALETA_FAROL, fondo: 6, escala: 1.1 },
   maceta: { matriz: P.MACETA, paleta: P.PALETA_MACETA, fondo: 8, escala: 0.9 },
   regadera: { matriz: P.REGADERA, paleta: P.PALETA_REGADERA, fondo: 7, escala: 0.8 },
@@ -38,6 +42,20 @@ export class Terrain {
   readonly suelo: THREE.Mesh[] = [];
   /** Posiciones de los faroles, para colgarles una luz. */
   readonly faroles: THREE.Vector3[] = [];
+  /**
+   * Objetos altos que se pueden tocar. Una farola mide mas de dos tiles:
+   * quien la toca apunta a la lampara, que en pantalla queda sobre otra
+   * celda. Cada una sabe en que celda esta parada.
+   */
+  readonly tocables: THREE.Mesh[] = [];
+
+  /* Compartidos por todas las farolas: no se liberan al reconstruir. */
+  private geoFarola = cajasGeometry(P.cajasFarola(), 0.8);
+  private geoVidrio = new THREE.BoxGeometry(P.VIDRIO_FAROLA.ancho, P.VIDRIO_FAROLA.alto, P.VIDRIO_FAROLA.ancho);
+  /** Sin luz propia: `MeshBasicMaterial` no depende de las luces de la escena. */
+  private materialVidrio = new THREE.MeshBasicMaterial({ color: P.COLOR_VIDRIO_DIA });
+  private colorDia = new THREE.Color(P.COLOR_VIDRIO_DIA);
+  private colorNoche = new THREE.Color(P.COLOR_VIDRIO_NOCHE);
 
   private aguas: Array<{ malla: THREE.Mesh; base: Float32Array }> = [];
   private humedas = new Map<CeldaId, boolean>();
@@ -257,6 +275,10 @@ export class Terrain {
 
   private construirProps(isla: IslaState): void {
     for (const prop of isla.props) {
+      if (prop.tipo === 'farola') {
+        this.construirFarola(isla, prop.col, prop.row);
+        continue;
+      }
       const def = MATRIZ_PROP[prop.tipo];
       const { x, z } = celdaAMundo(isla, prop.col, prop.row);
 
@@ -275,6 +297,35 @@ export class Terrain {
 
       if (prop.tipo === 'farol') this.faroles.push(new THREE.Vector3(x, 1.25, z));
     }
+  }
+
+  private construirFarola(isla: IslaState, col: number, row: number): void {
+    const { x, z } = celdaAMundo(isla, col, row);
+    const celda = celdaId(isla.id, col, row);
+
+    const poste = new THREE.Mesh(this.geoFarola, materialVoxel());
+    poste.position.set(x, 0, z);
+    poste.castShadow = true;
+    poste.receiveShadow = true;
+    poste.userData.celda = celda;
+    this.grupo.add(poste);
+
+    const vidrio = new THREE.Mesh(this.geoVidrio, this.materialVidrio);
+    vidrio.position.set(x, P.VIDRIO_FAROLA.y + P.VIDRIO_FAROLA.alto / 2, z);
+    vidrio.userData.celda = celda;
+    this.grupo.add(vidrio);
+
+    this.tocables.push(poste, vidrio);
+    this.faroles.push(new THREE.Vector3(x, P.ALTURA_LUZ_FAROLA, z));
+  }
+
+  /**
+   * Enciende el vidrio de las farolas segun la hora. Las luces que
+   * proyectan sobre el pasto son pocas y se reparten; el vidrio brilla en
+   * todas, asi ninguna farola se ve apagada de noche.
+   */
+  encenderFarolas(noche: number): void {
+    this.materialVidrio.color.lerpColors(this.colorDia, this.colorNoche, noche);
   }
 
   /* ---------------------------------------------------------------- */
@@ -311,14 +362,16 @@ export class Terrain {
     for (const hijo of [...this.grupo.children]) {
       this.grupo.remove(hijo);
       const malla = hijo as THREE.Mesh;
-      if (malla.geometry && malla.geometry !== this.geoParcela) malla.geometry.dispose();
+      const compartida = [this.geoParcela, this.geoFarola, this.geoVidrio];
+      if (malla.geometry && !compartida.includes(malla.geometry)) malla.geometry.dispose();
       const material = malla.material;
       if (Array.isArray(material)) material.forEach((m) => m.dispose());
-      else material?.dispose();
+      else if (material !== this.materialVidrio) material?.dispose();
     }
     this.parcelas.clear();
     this.suelo.length = 0;
     this.faroles.length = 0;
+    this.tocables.length = 0;
     this.aguas = [];
     this.humedas.clear();
     this.tintes.clear();
@@ -327,5 +380,8 @@ export class Terrain {
   dispose(): void {
     this.vaciar();
     this.geoParcela.dispose();
+    this.geoFarola.dispose();
+    this.geoVidrio.dispose();
+    this.materialVidrio.dispose();
   }
 }
