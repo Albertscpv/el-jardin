@@ -12,7 +12,8 @@
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "icono": "node scripts/icono.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.116.0",
