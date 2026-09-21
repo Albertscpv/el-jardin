@@ -51,8 +51,16 @@ export const VECINAS: ReadonlyArray<readonly [number, number]> = [
 export const BALANCE = {
   /** Segundos que tarda la humedad llena en agotarse. */
   segundosDeHumedad: 210,
-  /** Segundos secos hasta que la planta se marchita del todo. */
-  segundosHastaMarchitar: 420,
+  /**
+   * Segundos secos hasta que la planta se marchita del todo: 10 horas.
+   *
+   * Tiene que ganarle a `maxSegundosOffline`. Con los 7 minutos de antes,
+   * cualquier ausencia larga volvía con el jardín entero muerto, porque al
+   * entrar se simulan hasta 8 horas de golpe. Así una noche sin regar se
+   * perdona y dos seguidas no. Sin agua la planta igual deja de crecer: el
+   * castigo por no regar pasa a ser no avanzar, no perderlo todo.
+   */
+  segundosHastaMarchitar: 10 * 3600,
   /** La humedad recuperada por un riego. */
   riego: 1,
 

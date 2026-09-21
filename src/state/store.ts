@@ -853,6 +853,12 @@ function describirCelda(planta: PlantState | undefined, arada: boolean, hayAgua:
   }[etapa];
   const sed = planta.humedad > 0.5 ? 'con agua' : planta.humedad > 0.15 ? 'le falta agua' : 'seca';
 
+  // Con horas de margen antes de marchitarse, 'seca' ya no alcanza: una recien
+  // secada y una a punto de morir se veian igual.
+  if (planta.marchitez > 0.6) {
+    return `${variante.nombre}, ${nombreEtapa} · se está marchitando, necesita agua ya`;
+  }
+
   return `${variante.nombre}, ${nombreEtapa} · ${sed}`;
 }
 
