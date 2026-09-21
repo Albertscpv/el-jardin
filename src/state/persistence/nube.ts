@@ -1,5 +1,5 @@
 import { SAVE_VERSION } from '../config';
-import type { GameState } from '../types';
+import type { GameState, RegaloPersonal } from '../types';
 import { obtenerCliente, supabaseConfigurado } from './cliente';
 
 /**
@@ -63,6 +63,8 @@ export interface OpcionesEscritura {
 
 /**
  * Guarda el jardin en la cuenta, sin pisar nunca un jardin distinto.
+ * Devuelve si de verdad llego a la nube: sin sesion, o sin haber leido
+ * primero, no se escribe nada y devuelve false.
  *
  * Cada jardin se reconoce por `creadoEn`, que se fija al crearlo y no
  * cambia. Se actualiza solo la fila de ese mismo jardin; si no hay fila se
@@ -73,12 +75,12 @@ export interface OpcionesEscritura {
 export async function escribirEnNube(
   estado: GameState,
   { reemplazar = false }: OpcionesEscritura = {},
-): Promise<void> {
+): Promise<boolean> {
   const uid = await usuarioActual();
-  if (!uid) return;
+  if (!uid) return false;
   if (leidaPara !== uid) {
     console.warn('[jardin] no se sube a la nube: todavia no se pudo leer la partida de la cuenta');
-    return;
+    return false;
   }
 
   const sb = obtenerCliente();
@@ -88,7 +90,7 @@ export async function escribirEnNube(
     // Con proteccion.sql instalado, la base solo deja reemplazar un jardin
     // por otro a traves de esta funcion.
     const { error } = await sb.rpc('reemplazar_jardin', { p_estado: estado });
-    if (!error) return;
+    if (!error) return true;
     // PGRST202: la funcion no existe porque todavia no se corrio el SQL. Sin
     // la funcion tampoco esta el bloqueo, asi que el guardado de antes anda.
     if (error.code !== 'PGRST202') throw error;
@@ -96,7 +98,7 @@ export async function escribirEnNube(
       .from('jardines')
       .upsert(fila, { onConflict: 'usuario_id' });
     if (sinProteccion) throw sinProteccion;
-    return;
+    return true;
   }
 
   const { data, error } = await sb
@@ -106,11 +108,11 @@ export async function escribirEnNube(
     .eq('estado->>creadoEn', String(estado.creadoEn))
     .select('usuario_id');
   if (error) throw error;
-  if (data && data.length > 0) return;
+  if (data && data.length > 0) return true;
 
   // No se actualizo nada: o la cuenta no tiene jardin todavia, o tiene otro.
   const { error: alCrear } = await sb.from('jardines').insert(fila);
-  if (!alCrear) return;
+  if (!alCrear) return true;
   // 23505: ya existe una fila para este usuario, y es de otro jardin.
   if (alCrear.code === '23505') throw new JardinDistinto();
   throw alCrear;
@@ -119,4 +121,34 @@ export async function escribirEnNube(
 /** Al salir de la cuenta, la proxima sesion tiene que volver a leer primero. */
 export function olvidarLectura(): void {
   leidaPara = null;
+}
+
+/**
+ * Regalos personales que un administrador le dejo a esta cuenta y todavia
+ * no se entregaron. Como la escritura, solo despues de haber leido bien la
+ * partida: entregarlos sobre una copia equivocada seria desperdiciarlos.
+ */
+export async function leerRegalosPersonales(): Promise<RegaloPersonal[]> {
+  const uid = await usuarioActual();
+  if (!uid || leidaPara !== uid) return [];
+
+  const { data, error } = await obtenerCliente()
+    .from('regalos_personales')
+    .select('id, mensaje, contenido')
+    .is('cobrado_en', null)
+    .order('creado_en');
+
+  // 42P01 / PGRST205: la tabla no existe porque no se corrio regalos.sql.
+  // No es un error del jugador: simplemente no hay regalos que buscar.
+  if (error) {
+    if (error.code === '42P01' || error.code === 'PGRST205') return [];
+    throw error;
+  }
+  return (data ?? []) as RegaloPersonal[];
+}
+
+/** Marca un regalo como entregado. La base solo deja marcar los propios. */
+export async function marcarRegaloCobrado(id: number): Promise<void> {
+  const { error } = await obtenerCliente().rpc('marcar_regalo_cobrado', { p_id: id });
+  if (error) throw error;
 }

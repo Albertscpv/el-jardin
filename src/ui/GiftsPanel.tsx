@@ -27,6 +27,7 @@ export function GiftsPanel() {
     return () => clearInterval(id);
   }, []);
   const diarioListo = regaloDiarioDisponible(estado, ahora);
+  const personales = [...(estado.regalosPersonales ?? [])].reverse();
 
   const cobrados = REGALOS.filter((r) => recibidos.includes(r.id));
   const total = cobrados.reduce((n, r) => n + r.monedas, 0);
@@ -58,6 +59,28 @@ export function GiftsPanel() {
           {diarioListo ? 'Reclamar' : 'Mañana'}
         </button>
       </div>
+
+      {personales.length > 0 && (
+        <>
+          <h3 className="seccion">Para vos</h3>
+          {personales.map((r) => (
+            <div className="fila" key={r.id}>
+              <span className="tarjeta-icono" aria-hidden>
+                💌
+              </span>
+              <div className="fila-texto">
+                <div className="fila-titulo">
+                  <strong>{r.mensaje || 'Un regalo'}</strong>
+                  <span className="insignia cobrada">
+                    {new Date(r.recibidoEn).toLocaleDateString()}
+                  </span>
+                </div>
+                {r.resumen.length > 0 && <p className="fila-detalle">{r.resumen.join(' · ')}</p>}
+              </div>
+            </div>
+          ))}
+        </>
+      )}
 
       <h3 className="seccion">Regalos únicos</h3>
 

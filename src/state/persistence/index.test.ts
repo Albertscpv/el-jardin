@@ -18,11 +18,17 @@ vi.mock('./nube', () => ({
   usuarioActual: vi.fn(),
   leerDeNube: vi.fn(),
   escribirEnNube: vi.fn(),
+  leerRegalosPersonales: vi.fn(),
+  marcarRegaloCobrado: vi.fn(),
 }));
 
 const { leerLocal, escribirLocal, respaldarLocal } = await import('./local');
-const { usuarioActual, leerDeNube, escribirEnNube } = await import('./nube');
-const { cargarPartida, guardarPartida, partidaAlEntrar } = await import('./index');
+const { usuarioActual, leerDeNube, escribirEnNube, leerRegalosPersonales, marcarRegaloCobrado } =
+  await import('./nube');
+const { cargarPartida, cobrarRegalosPendientes, guardarPartida, partidaAlEntrar } = await import(
+  './index'
+);
+const { crearEstadoInicial } = await import('../sim');
 
 /** Partida minima: solo importa `ultimoTick`, que es lo que desempata. */
 function partida(ultimoTick: number, marca: string, creadoEn = 1): GameState {
@@ -68,7 +74,8 @@ describe('guardarPartida', () => {
   it('guarda local aunque la nube falle', async () => {
     vi.mocked(escribirEnNube).mockRejectedValue(new Error('sin red'));
 
-    await expect(guardarPartida(partida(1, 'x'))).resolves.toBeUndefined();
+    // No rompe, y avisa que la nube no recibio nada.
+    await expect(guardarPartida(partida(1, 'x'))).resolves.toBe(false);
     expect(escribirLocal).toHaveBeenCalledOnce();
   });
 });
@@ -148,5 +155,77 @@ describe('guardarPartida', () => {
 
     await guardarPartida(partida(1, 'x'), { reemplazar: true });
     expect(escribirEnNube).toHaveBeenLastCalledWith(expect.anything(), { reemplazar: true });
+  });
+});
+
+describe('cobrarRegalosPendientes', () => {
+  const pendiente = { id: 5, mensaje: 'Tu jardín', contenido: { monedas: 3000 } };
+
+  it('entrega, guarda en la nube y recién entonces marca como cobrado', async () => {
+    const orden: string[] = [];
+    vi.mocked(leerRegalosPersonales).mockResolvedValue([pendiente]);
+    vi.mocked(escribirEnNube).mockImplementation(async () => {
+      orden.push('guardar');
+      return true;
+    });
+    vi.mocked(marcarRegaloCobrado).mockImplementation(async () => {
+      orden.push('marcar');
+    });
+
+    let estado = crearEstadoInicial();
+    const nuevos = await cobrarRegalosPendientes(() => estado, (e) => (estado = e), 1);
+
+    expect(nuevos.map((r) => r.id)).toEqual([5]);
+    expect(estado.monedas).toBe(60 + 3000);
+    expect(orden).toEqual(['guardar', 'marcar']);
+  });
+
+  it('si el guardado no llegó a la nube, no lo marca: queda pendiente', async () => {
+    vi.mocked(leerRegalosPersonales).mockResolvedValue([pendiente]);
+    vi.mocked(escribirEnNube).mockResolvedValue(false);
+
+    let estado = crearEstadoInicial();
+    await cobrarRegalosPendientes(() => estado, (e) => (estado = e), 1);
+
+    expect(marcarRegaloCobrado).not.toHaveBeenCalled();
+  });
+
+  it('no pisa lo que el jugador hizo mientras se buscaban los regalos', async () => {
+    let estado = crearEstadoInicial();
+    // Mientras la red responde, el jugador siembra y gasta.
+    vi.mocked(leerRegalosPersonales).mockImplementation(async () => {
+      estado = { ...estado, monedas: 10, floresCosechadas: 7 };
+      return [pendiente];
+    });
+    vi.mocked(escribirEnNube).mockResolvedValue(true);
+
+    await cobrarRegalosPendientes(() => estado, (e) => (estado = e), 1);
+
+    expect(estado.floresCosechadas).toBe(7);
+    expect(estado.monedas).toBe(10 + 3000);
+  });
+
+  it('uno ya anotado no se vuelve a entregar, pero se guarda y se marca', async () => {
+    vi.mocked(leerRegalosPersonales).mockResolvedValue([pendiente]);
+    vi.mocked(escribirEnNube).mockResolvedValue(true);
+
+    let estado = crearEstadoInicial();
+    await cobrarRegalosPendientes(() => estado, (e) => (estado = e), 1);
+    const tras = estado.monedas;
+    const nuevos = await cobrarRegalosPendientes(() => estado, (e) => (estado = e), 2);
+
+    expect(nuevos).toEqual([]);
+    expect(estado.monedas).toBe(tras);
+    expect(marcarRegaloCobrado).toHaveBeenCalledTimes(2);
+  });
+
+  it('si no se pueden buscar, no toca nada', async () => {
+    vi.mocked(leerRegalosPersonales).mockRejectedValue(new Error('sin red'));
+    let estado = crearEstadoInicial();
+    const antes = estado;
+
+    expect(await cobrarRegalosPendientes(() => estado, (e) => (estado = e), 1)).toEqual([]);
+    expect(estado).toBe(antes);
+    expect(escribirEnNube).not.toHaveBeenCalled();
   });
 });

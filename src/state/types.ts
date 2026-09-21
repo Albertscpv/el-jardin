@@ -206,6 +206,41 @@ export interface TiroDiario {
   ganado: number;
 }
 
+/**
+ * Lo que un regalo personal le da a un jugador. Lo escribe a mano un
+ * administrador en Supabase, asi que todo es opcional y el juego descarta
+ * lo que no reconoce en vez de romperse.
+ */
+export interface ContenidoRegalo {
+  monedas?: number;
+  /** variantId -> cantidad, como "tulipan-rojo": 5. */
+  semillas?: Record<string, number>;
+  comida?: Partial<Record<FoodId, number>>;
+  farolas?: number;
+  /** Animales ya adoptados. Sin variante, se elige una de la especie. */
+  animales?: Array<{ especie: AnimalSpeciesId; nombre?: string; variante?: string }>;
+  /** Islas nuevas, cada una con su caballo de la casa. */
+  islas?: number;
+  /** Celdas de tierra extra en la isla principal. */
+  tierra?: number;
+}
+
+/** Un regalo personal tal como viene de la base, pendiente de entregar. */
+export interface RegaloPersonal {
+  id: number;
+  mensaje: string;
+  contenido: ContenidoRegalo;
+}
+
+/** Un regalo personal ya entregado, para mostrarlo en el apartado Regalos. */
+export interface RegaloPersonalRecibido {
+  id: number;
+  mensaje: string;
+  recibidoEn: number;
+  /** Lo que se entrego de verdad, en frases cortas. */
+  resumen: string[];
+}
+
 export interface GameState {
   version: number;
   nombreJardin: string;
@@ -233,6 +268,8 @@ export interface GameState {
    * guardado, que borraria todas las partidas existentes.
    */
   regalosRecibidos?: string[];
+  /** Regalos personales ya entregados: evita entregar uno dos veces. */
+  regalosPersonales?: RegaloPersonalRecibido[];
   /** Dia local en que se cobro el ultimo regalo diario. */
   regaloDiario?: string;
   /** Islas que ya recibieron su caballo de la casa. */

@@ -1,6 +1,14 @@
-import type { GameState } from '../types';
+import { aplicarRegaloPersonal } from '../regalosPersonales';
+import type { GameState, RegaloPersonalRecibido } from '../types';
 import { escribirLocal, leerLocal, respaldarLocal } from './local';
-import { escribirEnNube, leerDeNube, usuarioActual, type OpcionesEscritura } from './nube';
+import {
+  escribirEnNube,
+  leerDeNube,
+  leerRegalosPersonales,
+  marcarRegaloCobrado,
+  usuarioActual,
+  type OpcionesEscritura,
+} from './nube';
 
 export { borrarLocal, escribirLocal, leerLocal, listarRespaldos } from './local';
 export { olvidarLectura } from './nube';
@@ -54,12 +62,13 @@ export async function cargarPartida(): Promise<GameState | null> {
 export async function guardarPartida(
   estado: GameState,
   opciones: OpcionesEscritura = {},
-): Promise<void> {
+): Promise<boolean> {
   escribirLocal(estado);
   try {
-    await escribirEnNube(estado, opciones);
+    return await escribirEnNube(estado, opciones);
   } catch (e) {
     console.warn('[jardin] no se pudo guardar en la nube, queda el guardado local', e);
+    return false;
   }
 }
 
@@ -82,4 +91,56 @@ export async function partidaAlEntrar(): Promise<GameState | null> {
 
   if (local) await escribirEnNube(local);
   return local;
+}
+
+/**
+ * Entrega los regalos personales pendientes de la cuenta. Devuelve los que
+ * se entregaron ahora, para contarle al jugador.
+ *
+ * El orden importa: se aplican al jardin, se guarda, y solo si el guardado
+ * llego a la nube se marcan como cobrados. Si algo falla en el medio, el
+ * regalo sigue pendiente y se reintenta al entrar la proxima vez; no se
+ * entrega dos veces porque el jardin anota cada regalo recibido.
+ *
+ * Recibe como leer y publicar el estado en vez de un estado fijo: buscar
+ * los regalos tarda lo que tarda la red, y si el jugador sembro algo en ese
+ * momento, guardar la copia de antes le borraria esa accion.
+ */
+export async function cobrarRegalosPendientes(
+  obtener: () => GameState,
+  publicar: (estado: GameState) => void,
+  ahora: number,
+): Promise<RegaloPersonalRecibido[]> {
+  let pendientes;
+  try {
+    pendientes = await leerRegalosPersonales();
+  } catch (e) {
+    console.warn('[jardin] no se pudieron buscar regalos personales', e);
+    return [];
+  }
+  if (pendientes.length === 0) return [];
+
+  // Sobre el estado de este instante, no el de antes de la espera.
+  let actual = obtener();
+  const nuevos: RegaloPersonalRecibido[] = [];
+  for (const regalo of pendientes) {
+    const r = aplicarRegaloPersonal(actual, regalo, ahora);
+    actual = r.estado;
+    if (r.aplicado) nuevos.push(actual.regalosPersonales!.at(-1)!);
+  }
+  if (nuevos.length > 0) publicar(actual);
+
+  // Se guarda siempre antes de marcar, aunque ya estuvieran anotados: la
+  // copia que los tiene tiene que estar en la nube antes de darlos por dados.
+  if (!(await guardarPartida(actual))) return nuevos;
+
+  for (const regalo of pendientes) {
+    try {
+      await marcarRegaloCobrado(regalo.id);
+    } catch (e) {
+      // El jardin ya lo tiene anotado: la proxima vez solo se marca.
+      console.warn('[jardin] no se pudo marcar el regalo como cobrado', e);
+    }
+  }
+  return nuevos;
 }

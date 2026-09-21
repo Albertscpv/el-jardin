@@ -151,6 +151,7 @@ supabase/
   schema.sql    tabla y políticas RLS para el guardado en la nube
   historial.sql versiones anteriores de cada jardín, para poder recuperarlas
   proteccion.sql la base rechaza reemplazar un jardín por otro distinto
+  regalos.sql   regalos personales para un jugador, escritos desde el SQL Editor
 ```
 
 ## Desplegar en Vercel
@@ -229,7 +230,10 @@ iniciar sesión y sincronizar el jardín entre dispositivos.
 4. Corré [`supabase/proteccion.sql`](supabase/proteccion.sql). Hace que la base
    rechace cualquier guardado que reemplace el jardín de una cuenta por otro,
    venga de la versión del juego que venga. Solo "Reiniciar jardín" puede.
-5. Copiá `.env.example` a `.env` y completá:
+5. Corré [`supabase/regalos.sql`](supabase/regalos.sql) si querés poder darle
+   algo a un jugador concreto (por ejemplo, devolverle un jardín perdido). Al
+   final del archivo está cómo escribir un regalo y la lista de nombres válidos.
+6. Copiá `.env.example` a `.env` y completá:
 
 ```
 VITE_SUPABASE_URL=https://tu-proyecto.supabase.co

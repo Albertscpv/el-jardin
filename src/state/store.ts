@@ -19,6 +19,7 @@ import { crearIslaNueva, esAgua, esParcela, tieneSuelo, totalCeldas } from './is
 import {
   borrarLocal,
   cargarPartida,
+  cobrarRegalosPendientes,
   guardarPartida,
   leerLocal,
   olvidarLectura,
@@ -151,6 +152,8 @@ interface Store {
   registrarDisparo: () => void;
   registrarImpacto: (distancia: number) => void;
   reclamarRegaloDiario: () => void;
+  /** Busca y entrega los regalos que un administrador le dejo a la cuenta. */
+  cobrarRegalosPersonales: () => Promise<void>;
   rechazarPedido: () => void;
   registrarMojada: () => void;
   despertarRival: () => void;
@@ -250,6 +253,9 @@ export const useGame = create<Store>()((set, get) => {
       }
       eventos.forEach((e) => get().avisar(e, 'info'));
       EventBus.emit('mundo:resincronizar', {});
+      // Despues de cargar: los regalos van sobre la partida que gano, y solo
+      // hay cuenta que revisar si la nube se leyo bien.
+      void get().cobrarRegalosPersonales();
     },
 
     tick() {
@@ -320,6 +326,7 @@ export const useGame = create<Store>()((set, get) => {
         cambio === 'entro' ? 'Cargamos tu jardín ☁️' : 'Volviste a la partida de este navegador',
         'info',
       );
+      if (cambio === 'entro') void get().cobrarRegalosPersonales();
     },
 
     reiniciar() {
@@ -822,6 +829,23 @@ export const useGame = create<Store>()((set, get) => {
       }
       mutar((e) => reclamarRegaloDiario(e, ahora));
       get().avisar(`+${BALANCE.regaloDiario} monedas del regalo diario 🎁`, 'exito');
+    },
+
+    async cobrarRegalosPersonales() {
+      const nuevos = await cobrarRegalosPendientes(
+        () => get().estado,
+        (estado) => {
+          set({ estado });
+          EventBus.emit('mundo:resincronizar', {});
+        },
+        Date.now(),
+      );
+      for (const r of nuevos) {
+        get().avisar(
+          `🎁 ${r.mensaje || 'Recibiste un regalo'} · lo ves en Regalos`,
+          'exito',
+        );
+      }
     },
 
     rechazarPedido() {
