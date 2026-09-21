@@ -47,7 +47,7 @@ export function HUD() {
     <header className="hud">
       <div className="hud-izquierda">
         <div className="hud-marca vidrio">
-          <h1 onClick={tocarTitulo}>El Jardín</h1>
+          <h1 onClick={tocarTitulo}>El Jardín de Pan</h1>
           <button
             className={[
               'hud-origen',

@@ -1,4 +1,4 @@
--- Esquema para el guardado en la nube de El Jardín.
+-- Esquema para el guardado en la nube de El Jardín de Pan.
 -- Ejecutalo en el SQL Editor de tu proyecto de Supabase.
 --
 -- Cada jardín pertenece a una cuenta de auth.users. Las políticas RLS de

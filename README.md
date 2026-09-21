@@ -1,4 +1,4 @@
-# El Jardín
+# El Jardín de Pan
 
 Un jardín virtual en pixel art 3D, sobre islas flotantes. Sembrás flores, las
 regás, las cosechás, y los animales que van llegando se pueden alimentar, mimar,
