@@ -241,6 +241,17 @@ export interface RegaloPersonalRecibido {
   resumen: string[];
 }
 
+export type TipoCasa = 'enL' | 'alFrente' | 'azotea' | 'chalet';
+
+/** Una casa puesta en el jardin. col/row es la esquina de su huella. */
+export interface CasaColocada {
+  id: string;
+  tipo: TipoCasa;
+  islaId: string;
+  col: number;
+  row: number;
+}
+
 export interface GameState {
   version: number;
   nombreJardin: string;
@@ -279,6 +290,10 @@ export interface GameState {
   tiroDiario?: TiroDiario;
   /** Objetos comprados y todavia sin colocar, por tipo. */
   objetos?: Partial<Record<PropTipo, number>>;
+  /** Casas puestas. Opcional: una partida anterior a las casas no lo tiene. */
+  casas?: CasaColocada[];
+  /** Casas compradas y todavia sin poner, por tipo. */
+  casasGuardadas?: Partial<Record<TipoCasa, number>>;
   creadoEn: number;
   /** Ultimo instante simulado; permite crecer mientras el juego esta cerrado. */
   ultimoTick: number;
@@ -298,7 +313,8 @@ export type ToolId =
   | 'alimentar'
   | 'expandir'
   | 'arar'
-  | 'farola';
+  | 'farola'
+  | 'casa';
 
 export interface Toast {
   id: number;

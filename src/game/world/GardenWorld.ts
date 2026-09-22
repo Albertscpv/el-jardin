@@ -29,6 +29,9 @@ import { Lighting } from './Lighting';
 import { PlantMesh } from './PlantMesh';
 import { Sky } from './Sky';
 import { ALTURA_BANCAL, Terrain } from './Terrain';
+import { CapaCasas, ESCALA_FLOR_MACETA } from './Casas';
+import { celdasOcupadasPorCasas, esMaceta } from '../../state/casas';
+import type { CasaColocada } from '../../state/types';
 
 /** Cada cuanto se persiste la posicion de los animales. */
 const GUARDAR_POSICIONES_CADA = 4;
@@ -64,6 +67,8 @@ export class GardenWorld {
 
   private desuscribir: Array<() => void> = [];
   private islasVistas: IslaState[] | null = null;
+  private casasVistas: CasaColocada[] | undefined | null = null;
+  private casas = new CapaCasas();
   private herramientaVista: string | null = null;
   private tiempo = 0;
   private acumuladorPosiciones = 0;
@@ -76,6 +81,7 @@ export class GardenWorld {
 
     this.terreno = new Terrain(estado.islas);
     this.engine.escena.add(this.terreno.grupo);
+    this.engine.escena.add(this.casas.grupo);
 
     this.luces = new Lighting(this.engine.escena);
     this.luces.setFaroles(this.terreno.faroles);
@@ -224,6 +230,7 @@ export class GardenWorld {
     // primero lo mas cercano a la camara, que es la lampara: tocarla cuenta
     // como tocar la celda donde esta parada.
     const objetivos = [
+      ...this.casas.tocables,
       ...this.terreno.tocables,
       ...this.terreno.parcelas.values(),
       ...this.terreno.suelo,
@@ -275,11 +282,18 @@ export class GardenWorld {
 
   private sincronizar(estado: GameState): void {
     /* --- Territorio: se rehace solo si cambió la forma de las islas --- */
-    if (estado.islas !== this.islasVistas) {
+    if (estado.islas !== this.islasVistas || estado.casas !== this.casasVistas) {
       this.islasVistas = estado.islas;
-      this.terreno.reconstruir(estado.islas);
-      this.pasto.reconstruir(estado.islas);
-      this.luces.setFaroles(this.terreno.faroles);
+      this.casasVistas = estado.casas;
+      const tapadas = celdasOcupadasPorCasas(estado);
+      this.terreno.reconstruir(estado.islas, tapadas);
+      this.pasto.reconstruir(estado.islas, tapadas);
+      this.casas.reconstruir(estado.casas ?? [], estado.islas);
+      // Las luces de las casas entran al mismo reparto que los faroles, mas suaves.
+      this.luces.setFaroles(
+        [...this.terreno.faroles, ...this.casas.luces],
+        [...this.terreno.faroles.map(() => 1), ...this.casas.fuerzas],
+      );
       this.sincronizarFantasmas(estado);
     }
 
@@ -295,11 +309,11 @@ export class GardenWorld {
       if (malla) {
         malla.cambiarTextura(textura);
       } else {
-        const { islaId, col, row } = parseCeldaId(id);
-        const isla = estado.islas.find((i) => i.id === islaId);
-        if (!isla) continue;
-        const { x, z } = celdaAMundo(isla, col, row);
-        const nueva = new PlantMesh(x, z, textura);
+        const p = this.posicionDeCelda(id);
+        if (!p) continue;
+        const nueva = esMaceta(id)
+          ? new PlantMesh(p.x, p.z, textura, p.y, ESCALA_FLOR_MACETA)
+          : new PlantMesh(p.x, p.z, textura);
         this.engine.escena.add(nueva.grupo);
         this.plantas.set(id, nueva);
       }
@@ -326,7 +340,7 @@ export class GardenWorld {
           animal,
           texturaAnimal(animal.variante),
           texturaComida(ANIMAL_SPECIES[animal.especie].comidaFavorita),
-          (x, z, radio) => celdaCercana(useGame.getState().estado.islas, x, z, radio),
+          (x, z, radio) => this.destinoLibre(x, z, radio),
           texturasPoses(animal.variante),
         );
         this.engine.escena.add(nueva.grupo);
@@ -387,10 +401,25 @@ export class GardenWorld {
   /* Efectos                                                           */
   /* ---------------------------------------------------------------- */
 
-  private posicionDeCelda(id: string): { x: number; z: number } | null {
+  /** Un destino de paseo que no quede adentro de una casa. */
+  private destinoLibre(x: number, z: number, radio: number): { x: number; z: number } {
+    const estado = useGame.getState().estado;
+    const tapadas = celdasOcupadasPorCasas(estado);
+    for (let intento = 0; intento < 6; intento++) {
+      const p = celdaCercana(estado.islas, x, z, radio);
+      const celda = celdaEnMundo(estado.islas, p.x, p.z);
+      if (!celda || !tapadas.has(celdaId(celda.isla.id, celda.col, celda.row))) return p;
+    }
+    return celdaCercana(estado.islas, x, z, radio);
+  }
+
+  /** Donde se apoya lo que crece en una celda o en una maceta. */
+  private posicionDeCelda(id: string): { x: number; y: number; z: number } | null {
+    if (esMaceta(id)) return this.casas.macetas.get(id) ?? null;
     const { islaId, col, row } = parseCeldaId(id);
     const isla = useGame.getState().estado.islas.find((i) => i.id === islaId);
-    return isla ? celdaAMundo(isla, col, row) : null;
+    if (!isla) return null;
+    return { ...celdaAMundo(isla, col, row), y: ALTURA_BANCAL };
   }
 
   private conectarEventos(): void {
@@ -410,7 +439,7 @@ export class GardenWorld {
         const p = this.posicionDeCelda(celda);
         if (!p) return;
         this.efectos.emitir({
-          x: p.x, y: ALTURA_BANCAL, z: p.z,
+          x: p.x, y: p.y, z: p.z,
           cantidad: 12, colores: ['#8a6238', '#6b4a2e', '#a3763f'],
           velocidad: 1.3, empuje: 1.5, vida: 0.6,
         });
@@ -430,7 +459,7 @@ export class GardenWorld {
         const p = this.posicionDeCelda(celda);
         if (!p) return;
         this.efectos.emitir({
-          x: p.x, y: ALTURA_BANCAL + 0.9, z: p.z,
+          x: p.x, y: p.y + 0.9, z: p.z,
           cantidad: 14, colores: ['#9fd8f5', '#5bb4e8', '#8ec5ff'],
           velocidad: 0.7, empuje: -0.4, gravedad: 7, vida: 0.7, escala: 0.07,
         });
@@ -443,7 +472,7 @@ export class GardenWorld {
           const p = this.posicionDeCelda(id);
           if (!p || n++ > 40) continue;
           this.efectos.emitir({
-            x: p.x, y: ALTURA_BANCAL + 0.9, z: p.z,
+            x: p.x, y: p.y + 0.9, z: p.z,
             cantidad: 4, colores: ['#9fd8f5', '#5bb4e8'],
             velocidad: 0.5, empuje: -0.3, gravedad: 7, vida: 0.6, escala: 0.06,
           });
@@ -454,7 +483,7 @@ export class GardenWorld {
         const p = this.posicionDeCelda(celda);
         if (!p) return;
         this.efectos.emitir({
-          x: p.x, y: ALTURA_BANCAL + 0.6, z: p.z,
+          x: p.x, y: p.y + 0.6, z: p.z,
           cantidad: 20, colores: [color, '#fff3c4', '#ffd447'],
           velocidad: 2.2, empuje: 2.4, vida: 0.9, escala: 0.1,
         });
@@ -489,6 +518,7 @@ export class GardenWorld {
         const estado = useGame.getState().estado;
         // Fuerza la reconstrucción del terreno aunque la referencia coincida.
         this.islasVistas = null;
+        this.casasVistas = null;
         this.sincronizar(estado);
         this.engine.centrar(limitesMundo(estado.islas));
       }),
@@ -509,6 +539,7 @@ export class GardenWorld {
     this.luces.actualizar();
     this.luces.repartirFaroles(this.engine.foco as THREE.Vector3);
     this.terreno.encenderFarolas(this.luces.noche);
+    this.casas.encender(this.luces.noche);
 
     this.terreno.actualizar(dt);
     this.pasto.update(dt);
@@ -562,6 +593,7 @@ export class GardenWorld {
     for (const animal of this.animales.values()) animal.dispose();
     this.avatar?.dispose();
     this.terreno.dispose();
+    this.casas.dispose();
     this.plantas.clear();
     this.animales.clear();
     this.engine.destruir();

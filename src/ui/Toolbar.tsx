@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { FOODS } from '../state/content';
 import { BALANCE, costoProximaCelda } from '../state/config';
-import { FAROLA_ICONO, PALETA_FAROLA_ICONO } from '../game/art/props';
+import { CASA_ICONO, FAROLA_ICONO, PALETA_CASA_ICONO, PALETA_FAROLA_ICONO } from '../game/art/props';
+import { CASAS, TIPOS_CASA } from '../state/casas';
 import { totalCeldas } from '../state/islas';
 import { useGame } from '../state/store';
 import type { FoodId, ToolId } from '../state/types';
@@ -31,6 +32,7 @@ const HERRAMIENTAS: Herramienta[] = [
   { id: 'arar', icono: '🪓', nombre: 'Arar', ayuda: 'Convierte césped en parcela, y al revés' },
   { id: 'expandir', icono: '🧱', nombre: 'Terreno', ayuda: 'Tocá una celda verde del borde para ganarla' },
   { id: 'farola', icono: '🏮', nombre: 'Farola', ayuda: 'Tocá el césped para poner una · tocá una farola para guardarla' },
+  { id: 'casa', icono: '🏠', nombre: 'Casa', ayuda: 'Tocá el césped para poner la casa · tocá una casa para guardarla y moverla' },
 ];
 
 export function Toolbar() {
@@ -105,6 +107,7 @@ export function Toolbar() {
           {herramienta === 'plantar' && <TiraSemillas />}
           {herramienta === 'alimentar' && <TiraComida />}
           {herramienta === 'farola' && <TiraFarolas />}
+          {herramienta === 'casa' && <TiraCasas />}
         </>
       )}
     </div>
@@ -213,6 +216,44 @@ function TiraFarolas() {
       >
         Comprar · {BALANCE.precioFarola} 🪙
       </button>
+    </div>
+  );
+}
+
+function TiraCasas() {
+  const guardadas = useGame((s) => s.estado.casasGuardadas);
+  const seleccionada = useGame((s) => s.casaSeleccionada);
+  const setCasa = useGame((s) => s.setCasa);
+  const setPanel = useGame((s) => s.setPanel);
+
+  const disponibles = TIPOS_CASA.filter((t) => (guardadas?.[t] ?? 0) > 0);
+  if (disponibles.length === 0) {
+    return (
+      <div className="tira vacia">
+        <span>No tenés casas guardadas. Hay en la Tienda, en Objetos.</span>
+        <button className="boton suave" onClick={() => setPanel('tienda')}>
+          Ir a la tienda
+        </button>
+      </div>
+    );
+  }
+
+  // Si la elegida ya no esta guardada, la que se pone es la primera que haya.
+  const activa = seleccionada && disponibles.includes(seleccionada) ? seleccionada : disponibles[0];
+  return (
+    <div className="tira">
+      {disponibles.map((t) => (
+        <button
+          key={t}
+          className={activa === t ? 'item activo' : 'item'}
+          onClick={() => setCasa(t)}
+          title={CASAS[t].nombre}
+        >
+          <PixelIcon matrix={CASA_ICONO} palette={PALETA_CASA_ICONO} size={30} />
+          <span className="item-cantidad">{guardadas?.[t] ?? 0}</span>
+        </button>
+      ))}
+      <span className="tira-nota">{CASAS[activa].nombre}</span>
     </div>
   );
 }

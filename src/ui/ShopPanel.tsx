@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { FAROLA_ICONO, PALETA_FAROLA_ICONO } from '../game/art/props';
+import { CASA_ICONO, FAROLA_ICONO, PALETA_CASA_ICONO, PALETA_FAROLA_ICONO } from '../game/art/props';
+import { CASAS, TIPOS_CASA } from '../state/casas';
 import { BALANCE } from '../state/config';
 import { FLOWER_SPECIES, FLOWER_VARIANTS, FOOD_LIST, favoritosDe } from '../state/content';
 import { useGame } from '../state/store';
@@ -186,7 +187,56 @@ function Objetos() {
           </button>
         </div>
       </li>
+
+      {TIPOS_CASA.map((tipo) => (
+        <FilaCasa key={tipo} tipo={tipo} />
+      ))}
     </ul>
+  );
+}
+
+function FilaCasa({ tipo }: { tipo: (typeof TIPOS_CASA)[number] }) {
+  const monedas = useGame((s) => s.estado.monedas);
+  const tengo = useGame((s) => s.estado.casasGuardadas?.[tipo] ?? 0);
+  const comprar = useGame((s) => s.comprarCasa);
+  const setCasa = useGame((s) => s.setCasa);
+  const setPanel = useGame((s) => s.setPanel);
+  const casa = CASAS[tipo];
+
+  return (
+    <li className="fila">
+      <PixelIcon matrix={CASA_ICONO} palette={PALETA_CASA_ICONO} size={44} />
+
+      <div className="fila-texto">
+        <div className="fila-titulo">
+          <strong>{casa.nombre}</strong>
+        </div>
+        <p className="fila-detalle">
+          {casa.macetas} macetas · ocupa {casa.ancho} × {casa.fondo} celdas
+          {tengo > 0 && ` · tenés ${tengo} para poner`}
+        </p>
+        <p className="fila-nota">
+          {casa.descripcion}{' '}
+          {tengo > 0 && (
+            <button
+              className="enlace en-linea"
+              onClick={() => {
+                setCasa(tipo);
+                setPanel(null);
+              }}
+            >
+              Ponerla ahora
+            </button>
+          )}
+        </p>
+      </div>
+
+      <div className="fila-acciones">
+        <button className="boton" disabled={monedas < casa.precio} onClick={() => comprar(tipo)}>
+          {casa.precio} 🪙
+        </button>
+      </div>
+    </li>
   );
 }
 

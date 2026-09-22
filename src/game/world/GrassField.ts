@@ -45,7 +45,7 @@ export class GrassField {
     this.reconstruir(islas);
   }
 
-  reconstruir(islas: IslaState[]): void {
+  reconstruir(islas: IslaState[], tapadas: ReadonlySet<string> = new Set()): void {
     for (const hijo of [...this.grupo.children]) {
       this.grupo.remove(hijo);
       (hijo as THREE.Mesh).geometry.dispose();
@@ -59,7 +59,7 @@ export class GrassField {
       for (const local of isla.suelo) {
         const { col, row } = parseCeldaLocal(local);
         if (esParcela(isla, col, row) || esAgua(isla, col, row)) continue;
-        if (ocupadas.has(local)) continue;
+        if (ocupadas.has(local) || tapadas.has(`${isla.id}/${local}`)) continue;
 
         const ruido = ruidoCelda(`${isla.id}:pasto`, col, row);
         // No todos los tiles llevan pasto alto: el cesped raso tiene que respirar.

@@ -545,6 +545,14 @@ input {
   display: none;
 }
 
+.tira-nota {
+  align-self: center;
+  padding-left: 4px;
+  font-size: 13px;
+  color: var(--tenue);
+  white-space: nowrap;
+}
+
 .tira.vacia {
   align-items: center;
   gap: 12px;

@@ -36,6 +36,20 @@ import {
   rechazarPedido,
 } from './economia';
 import { comprarFarolas, propEn, usarFarola, type ResultadoFarola } from './objetos';
+import {
+  CASAS,
+  TIPOS_CASA,
+  casaDeId,
+  casaEnCelda,
+  comprarCasa as comprarCasaPura,
+  esCuerpoCasa,
+  esMaceta,
+  guardadas,
+  guardarCasa,
+  macetasOcupadas,
+  ponerCasa,
+  type ResultadoCasa,
+} from './casas';
 import { aplicarRegalos } from './regalos';
 import {
   advance,
@@ -56,6 +70,7 @@ import type {
   IslaState,
   PlantState,
   PropTipo,
+  TipoCasa,
   Toast,
   ToolId,
 } from './types';
@@ -96,6 +111,8 @@ interface Store {
   herramienta: ToolId;
   semillaSeleccionada: string | null;
   comidaSeleccionada: FoodId | null;
+  /** La casa que pone la herramienta Casa. */
+  casaSeleccionada: TipoCasa | null;
   panel: PanelId;
   animalAbierto: string | null;
   adoptando: string | null;
@@ -117,6 +134,10 @@ interface Store {
   setHerramienta: (h: ToolId) => void;
   setSemilla: (id: string) => void;
   setComida: (id: FoodId) => void;
+  setCasa: (tipo: TipoCasa) => void;
+  comprarCasa: (tipo: TipoCasa) => void;
+  /** Tocar el cuerpo de una casa: con la herramienta Casa la guarda; si no, la describe. */
+  tocarCasa: (casaId: string) => void;
   setPanel: (p: PanelId) => void;
   abrirAnimal: (uid: string | null) => void;
   cerrarAdopcion: () => void;
@@ -214,6 +235,7 @@ export const useGame = create<Store>()((set, get) => {
     herramienta: 'mirar',
     semillaSeleccionada: 'margarita-blanca',
     comidaSeleccionada: 'nectar',
+    casaSeleccionada: null,
     panel: null,
     animalAbierto: null,
     adoptando: null,
@@ -346,6 +368,36 @@ export const useGame = create<Store>()((set, get) => {
     setHerramienta: (herramienta) => set({ herramienta }),
     setSemilla: (semillaSeleccionada) => set({ semillaSeleccionada, herramienta: 'plantar' }),
     setComida: (comidaSeleccionada) => set({ comidaSeleccionada, herramienta: 'alimentar' }),
+    setCasa: (casaSeleccionada) => set({ casaSeleccionada, herramienta: 'casa' }),
+
+    comprarCasa(tipo) {
+      const tras = comprarCasaPura(get().estado, tipo);
+      if (!tras) return get().avisar('No te alcanzan las monedas', 'aviso');
+      mutar(() => tras);
+      set({ casaSeleccionada: tipo });
+      get().avisar(`${CASAS[tipo].nombre} comprada. Ponela con la herramienta Casa 🏠`, 'exito');
+    },
+
+    tocarCasa(casaId) {
+      const { estado, herramienta, avisar } = get();
+      const casa = (estado.casas ?? []).find((c) => c.id === casaId);
+      if (!casa) return;
+      const modelo = CASAS[casa.tipo];
+
+      if (herramienta === 'casa') {
+        const { estado: tras, resultado } = guardarCasa(estado, casaId);
+        if (resultado === 'macetas-con-flores') {
+          return avisar('Tiene flores en las macetas: cosechalas o limpialas antes de moverla', 'aviso');
+        }
+        if (resultado !== 'guardada') return;
+        mutar(() => tras);
+        set({ casaSeleccionada: casa.tipo });
+        return avisar(`${modelo.nombre} guardada. Tocá el césped para ponerla en otro lado`, 'info');
+      }
+
+      const flores = macetasOcupadas(estado, casa);
+      avisar(`${modelo.nombre} · ${flores} de ${modelo.macetas} macetas sembradas. Para moverla, usá la herramienta Casa`, 'info');
+    },
     setPanel: (panel) => set((s) => ({ panel: s.panel === panel ? null : panel })),
     abrirAnimal: (animalAbierto) => set({ animalAbierto }),
     cerrarAdopcion: () => set({ adoptando: null }),
@@ -364,27 +416,59 @@ export const useGame = create<Store>()((set, get) => {
 
     usarEnCelda(id) {
       const { estado, herramienta, semillaSeleccionada, avisar } = get();
+
+      // El cuerpo de una casa y sus macetas no son celdas de una isla.
+      if (esCuerpoCasa(id)) return get().tocarCasa(casaDeId(id)!);
+      const maceta = esMaceta(id);
+      if (maceta && !HERRAMIENTAS_MACETA.has(herramienta)) {
+        if (herramienta === 'casa') return get().tocarCasa(casaDeId(id)!);
+        return avisar('En las macetas se siembra, se riega, se cosecha y se limpia', 'info');
+      }
+
       const { islaId, col, row } = parseCeldaId(id);
-      const isla = estado.islas.find((i) => i.id === islaId);
-      if (!isla) return;
+      // En una maceta no hay isla, pero las herramientas que llegan hasta aca
+      // (sembrar, regar, cosechar, limpiar, mirar) no la usan.
+      const isla = estado.islas.find((i) => i.id === islaId)!;
+      if (!isla && !maceta) return;
 
       // El personaje camina a donde trabajás: no hace falta moverlo aparte.
       // Mirar no es ir, así que esa herramienta no lo mueve.
-      if (herramienta !== 'mirar') {
+      if (herramienta !== 'mirar' && !maceta) {
         get().moverAvatar(isla.ox + col + 0.5, isla.oz + row + 0.5);
       }
 
       const planta = estado.cultivos[id];
-      const arada = esParcela(isla, col, row);
+      // Una maceta siempre admite siembra: es la parcela de la terraza.
+      const arada = maceta || esParcela(isla, col, row);
+      const casaAca = maceta ? undefined : casaEnCelda(estado, islaId, col, row);
 
       switch (herramienta) {
         case 'mirar':
+          if (maceta) {
+            return avisar(planta ? describirCelda(planta, true, false) : 'Maceta vacía: elegí una semilla y sembrá', 'info');
+          }
+          if (casaAca) return get().tocarCasa(casaAca.id);
           return avisar(
             describirCelda(planta, arada, esAgua(isla, col, row), propEn(isla, col, row)?.tipo),
             'info',
           );
 
+        case 'casa': {
+          if (casaAca) return get().tocarCasa(casaAca.id);
+          const elegida = get().casaSeleccionada;
+          const tipo =
+            elegida && guardadas(estado, elegida) > 0
+              ? elegida
+              : TIPOS_CASA.find((t) => guardadas(estado, t) > 0);
+          if (!tipo) return avisar('No tenés casas para poner. Hay en la Tienda, en Objetos', 'aviso');
+          const nuevaId = `casa-${Date.now().toString(36)}-${Math.floor(Math.random() * 1e6).toString(36)}`;
+          const { estado: tras, resultado } = ponerCasa(estado, tipo, islaId, col, row, nuevaId);
+          if (tras !== estado) mutar(() => tras);
+          return avisar(MENSAJE_CASA[resultado], resultado === 'puesta' ? 'exito' : 'aviso');
+        }
+
         case 'farola': {
+          if (casaAca) return avisar('Ahí está tu casa', 'aviso');
           const { estado: tras, resultado } = usarFarola(get().estado, islaId, col, row);
           if (tras !== get().estado) mutar(() => tras);
           return avisar(MENSAJE_FAROLA[resultado], resultado === 'colocada' ? 'exito' : 'info');
@@ -392,6 +476,7 @@ export const useGame = create<Store>()((set, get) => {
 
         case 'arar': {
           if (esAgua(isla, col, row)) return avisar('Ahí hay agua', 'aviso');
+          if (casaAca) return avisar('Ahí está tu casa: no se puede arar', 'aviso');
           const objeto = propEn(isla, col, row);
           if (objeto) {
             return avisar(
@@ -930,6 +1015,20 @@ function describirCelda(
 
   return `${variante.nombre}, ${nombreEtapa} · ${sed}`;
 }
+
+/** Las herramientas que tienen sentido sobre una maceta. */
+const HERRAMIENTAS_MACETA = new Set(['mirar', 'plantar', 'regar', 'cosechar', 'pala']);
+
+/** Lo que responde la herramienta Casa en cada caso. */
+const MENSAJE_CASA: Record<ResultadoCasa, string> = {
+  puesta: 'Casa puesta 🏠 Sembrá en las macetas de la terraza',
+  'sin-casas': 'No tenés casas para poner. Hay en la Tienda, en Objetos',
+  'no-entra': 'No entra ahí: tiene que caber entera sobre la isla',
+  agua: 'No se puede poner sobre el agua',
+  parcela: 'Ahí hay parcelas: la casa va sobre el césped',
+  ocupada: 'Ahí ya hay algo puesto',
+  fuera: 'Ahí no hay tierra',
+};
 
 /** Lo que responde la herramienta Farola en cada caso. */
 const MENSAJE_FAROLA: Record<ResultadoFarola, string> = {

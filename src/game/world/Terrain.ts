@@ -50,6 +50,8 @@ export class Terrain {
   readonly tocables: THREE.Mesh[] = [];
   /** Todas las islas: la cerca de una tiene que saber si del otro lado hay otra. */
   private islas: IslaState[] = [];
+  /** Celdas bajo una casa: ahi no van arbustos ni piedras. */
+  private tapadas: ReadonlySet<string> = new Set();
 
   /* Compartidos por todas las farolas: no se liberan al reconstruir. */
   private geoFarola = cajasGeometry(P.cajasFarola(), 0.8);
@@ -73,8 +75,9 @@ export class Terrain {
   /* Construccion                                                      */
   /* ---------------------------------------------------------------- */
 
-  reconstruir(islas: IslaState[]): void {
+  reconstruir(islas: IslaState[], tapadas: ReadonlySet<string> = new Set()): void {
     this.islas = islas;
+    this.tapadas = tapadas;
     this.vaciar();
 
     const cajas: Caja[] = [];
@@ -205,7 +208,9 @@ export class Terrain {
     ruido: number,
     cajas: Caja[],
   ): void {
-    const ocupada = isla.props.some((p) => p.col === col && p.row === row);
+    const ocupada =
+      isla.props.some((p) => p.col === col && p.row === row) ||
+      this.tapadas.has(celdaId(isla.id, col, row));
     if (ocupada) return;
 
     if (ruido < 0.09) {

@@ -69,6 +69,11 @@ export class Lighting {
   private escena: THREE.Scene;
   private faroles: THREE.PointLight[] = [];
   private posicionesFaroles: THREE.Vector3[] = [];
+  /**
+   * Fuerza de cada farol, respecto de uno comun. Las luces de una casa van
+   * pegadas a paredes blancas: con la fuerza de un farol las quemaban.
+   */
+  private fuerzas: number[] = [];
   /** Donde estaba el foco la ultima vez que se repartieron las luces. */
   private ultimoReparto = new THREE.Vector3(Infinity, 0, Infinity);
   private colorA = new THREE.Color();
@@ -111,13 +116,14 @@ export class Lighting {
    * Se reutilizan las existentes: crear y destruir luces obliga a Three a
    * recompilar todos los shaders de la escena.
    */
-  setFaroles(posiciones: THREE.Vector3[]): void {
+  setFaroles(posiciones: THREE.Vector3[], fuerzas: number[] = []): void {
     while (this.faroles.length < Math.min(posiciones.length, MAX_FAROLES)) {
       const luz = new THREE.PointLight('#ffc978', 0, 7, 2);
       this.escena.add(luz);
       this.faroles.push(luz);
     }
     this.posicionesFaroles = [...posiciones];
+    this.fuerzas = posiciones.map((_, i) => fuerzas[i] ?? 1);
     // Fuerza un reparto nuevo: cambio el terreno aunque la camara no se movio.
     this.ultimoReparto.set(Infinity, 0, Infinity);
   }
@@ -131,14 +137,17 @@ export class Lighting {
     if (this.ultimoReparto.distanceToSquared(foco) < 1) return;
     this.ultimoReparto.copy(foco);
 
-    const cercanas = [...this.posicionesFaroles]
-      .sort((a, b) => a.distanceToSquared(foco) - b.distanceToSquared(foco))
+    const cercanas = this.posicionesFaroles
+      .map((pos, i) => ({ pos, fuerza: this.fuerzas[i] }))
+      .sort((a, b) => a.pos.distanceToSquared(foco) - b.pos.distanceToSquared(foco))
       .slice(0, this.faroles.length);
 
     this.faroles.forEach((luz, i) => {
-      const pos = cercanas[i];
-      luz.visible = Boolean(pos);
-      if (pos) luz.position.copy(pos);
+      const elegida = cercanas[i];
+      luz.visible = Boolean(elegida);
+      if (!elegida) return;
+      luz.position.copy(elegida.pos);
+      luz.userData.fuerza = elegida.fuerza;
     });
   }
 
@@ -184,7 +193,7 @@ export class Lighting {
 
     this.faseDia = t;
     this.noche = THREE.MathUtils.lerp(a.noche, b.noche, k);
-    for (const luz of this.faroles) luz.intensity = this.noche * 9;
+    for (const luz of this.faroles) luz.intensity = this.noche * 9 * (luz.userData.fuerza ?? 1);
   }
 
   private mezcla(hexA: string, hexB: string, k: number): THREE.Color {

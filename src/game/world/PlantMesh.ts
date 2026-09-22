@@ -23,8 +23,11 @@ export class PlantMesh {
   private tiempo = 0;
   /** Segundos restantes del rebote al cambiar de etapa. */
   private rebote = 0;
+  /** Alto de esta planta: en una maceta es mas chica que en la tierra. */
+  private alto: number;
 
-  constructor(x: number, z: number, textura: THREE.Texture) {
+  constructor(x: number, z: number, textura: THREE.Texture, y = ALTURA_BANCAL, escala = 1) {
+    this.alto = ALTO * escala;
     this.material = new THREE.MeshLambertMaterial({
       map: textura,
       // `alphaTest` en vez de transparencia: bordes duros y sombras correctas.
@@ -41,8 +44,8 @@ export class PlantMesh {
       this.grupo.add(plano);
     }
 
-    this.grupo.position.set(x, ALTURA_BANCAL, z);
-    this.grupo.scale.setScalar(ALTO);
+    this.grupo.position.set(x, y, z);
+    this.grupo.scale.setScalar(this.alto);
   }
 
   cambiarTextura(textura: THREE.Texture): void {
@@ -63,9 +66,9 @@ export class PlantMesh {
     if (this.rebote > 0) {
       this.rebote = Math.max(0, this.rebote - dt);
       const k = this.rebote / 0.26;
-      this.grupo.scale.set(ALTO * (1 + k * 0.18), ALTO * (1 - k * 0.14), ALTO * (1 + k * 0.18));
+      this.grupo.scale.set(this.alto * (1 + k * 0.18), this.alto * (1 - k * 0.14), this.alto * (1 + k * 0.18));
     } else {
-      this.grupo.scale.setScalar(ALTO);
+      this.grupo.scale.setScalar(this.alto);
     }
   }
 

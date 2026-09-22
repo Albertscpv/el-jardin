@@ -158,3 +158,31 @@ export const PALETA_FAROLA_ICONO: Palette = {
   D: '#5a5962',
   l: '#ffe39a',
 };
+
+/** Una casa como icono, para la tienda y la barra. Los modelos 3D son de cajas. */
+export const CASA_ICONO: Matrix = [
+  '................',
+  '.......rr.......',
+  '.....rrrrrr.....',
+  '...rrrrrrrrrr...',
+  '.rrrrrrrrrrrrrr.',
+  '..wwwwwwwwwwww..',
+  '..wggwwwwwwggw..',
+  '..wggwwwwwwggw..',
+  '..wwwwwwwwwwww..',
+  '..wwwwwddwwwww..',
+  '..wggwwddwwggw..',
+  '..wggwwddwwggw..',
+  '..wwwwwddwwwww..',
+  '..zzzzzzzzzzzz..',
+  '................',
+  '................',
+];
+
+export const PALETA_CASA_ICONO: Palette = {
+  r: '#7a4a2e',
+  w: '#f4efe6',
+  g: '#9cc4df',
+  d: '#6b4326',
+  z: '#d6cbb8',
+};
