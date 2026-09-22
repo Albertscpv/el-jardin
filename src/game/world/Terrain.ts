@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { celdaAMundo, celdaId, celdaLocal, parseCeldaLocal, VECINAS } from '../../state/config';
-import { bordesDeIsla, esAgua, esParcela, ruidoCelda } from '../../state/islas';
+import { bordesDeIsla, celdaEnMundo, esAgua, esParcela, ruidoCelda } from '../../state/islas';
 import type { CeldaId, IslaState, PropTipo } from '../../state/types';
 import * as P from '../art/props';
 import { cajasGeometry, materialVoxel, voxelGeometry, type Caja } from '../art/voxel';
@@ -48,6 +48,8 @@ export class Terrain {
    * celda. Cada una sabe en que celda esta parada.
    */
   readonly tocables: THREE.Mesh[] = [];
+  /** Todas las islas: la cerca de una tiene que saber si del otro lado hay otra. */
+  private islas: IslaState[] = [];
 
   /* Compartidos por todas las farolas: no se liberan al reconstruir. */
   private geoFarola = cajasGeometry(P.cajasFarola(), 0.8);
@@ -72,6 +74,7 @@ export class Terrain {
   /* ---------------------------------------------------------------- */
 
   reconstruir(islas: IslaState[]): void {
+    this.islas = islas;
     this.vaciar();
 
     const cajas: Caja[] = [];
@@ -247,6 +250,9 @@ export class Terrain {
 
     for (const { col, row, dc, dr } of bordesDeIsla(isla)) {
       const { x, z } = celdaAMundo(isla, col, row);
+      // Si del otro lado hay tierra de otra isla, las dos quedaron unidas:
+      // ese lado es un paso, no un borde.
+      if (celdaEnMundo(this.islas, x + dc, z + dr)) continue;
       const bx = x + dc * 0.5;
       const bz = z + dr * 0.5;
 

@@ -373,6 +373,7 @@ export class GardenWorld {
     for (const isla of estado.islas) {
       for (const { col, row } of celdasExpandibles(isla)) {
         const { x, z } = celdaAMundo(isla, col, row);
+        if (celdaEnMundo(estado.islas, x, z)) continue;
         const malla = new THREE.Mesh(geo.clone(), this.materialFantasma);
         malla.position.set(x, 0.02, z);
         malla.userData = { islaId: isla.id, col, row, x, z };

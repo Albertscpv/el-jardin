@@ -15,7 +15,7 @@ import {
   nombreFlor,
   unArticulo,
 } from './content';
-import { crearIslaNueva, esAgua, esParcela, tieneSuelo, totalCeldas } from './islas';
+import { celdaEnMundo, crearIslaNueva, esAgua, esParcela, tieneSuelo, totalCeldas } from './islas';
 import {
   borrarLocal,
   cargarPartida,
@@ -597,6 +597,8 @@ export const useGame = create<Store>()((set, get) => {
       const isla = estado.islas.find((i) => i.id === islaId);
       if (!isla) return;
       if (tieneSuelo(isla, col, row)) return;
+      // Ya es tierra de otra isla: comprarla superpondria las dos.
+      if (celdaEnMundo(estado.islas, isla.ox + col + 0.5, isla.oz + row + 0.5)) return;
 
       const costo = costoProximaCelda(totalCeldas(estado.islas));
       if (estado.monedas < costo) {
