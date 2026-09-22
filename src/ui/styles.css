@@ -476,16 +476,17 @@ input {
   white-space: nowrap;
 }
 
+/*
+ * Las herramientas se acomodan en varias filas en vez de irse de lado.
+ * Con scroll horizontal las ultimas quedaban escondidas y no habia nada
+ * que indicara que seguian ahi.
+ */
 .herramientas {
   display: flex;
+  flex-wrap: wrap;
   gap: 4px;
-  overflow-x: auto;
-  scrollbar-width: none;
   flex: 1;
-}
-
-.herramientas::-webkit-scrollbar {
-  display: none;
+  min-width: 0;
 }
 
 .herramienta {
@@ -493,6 +494,7 @@ input {
   flex-direction: column;
   align-items: center;
   gap: 2px;
+  flex: 0 0 auto;
   min-width: 64px;
   padding: 7px 8px;
   background: transparent;
@@ -1645,13 +1647,19 @@ code {
     padding-right: 6px;
   }
 
+  /* En pantalla angosta entran seis por fila: dos filas y nada escondido. */
   .herramienta {
-    min-width: 56px;
-    padding: 6px;
+    flex: 1 1 48px;
+    min-width: 0;
+    padding: 6px 2px;
   }
 
   .herramienta-icono {
-    font-size: 17px;
+    font-size: 16px;
+  }
+
+  .herramienta-nombre {
+    font-size: 9.5px;
   }
 
   /* La franja entre el HUD y el panel de abajo es la única zona libre.
