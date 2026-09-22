@@ -20,6 +20,7 @@ import {
   texturasPoses,
 } from '../art/gameTextures';
 import { EventBus } from '../EventBus';
+import { controles } from '../input/Controls';
 import { AnimalMesh } from './AnimalMesh';
 import { AvatarMesh } from './AvatarMesh';
 import { Effects } from './Effects';
@@ -128,6 +129,8 @@ export class GardenWorld {
     this.islasVistas = estado.islas;
 
     this.conectarEntrada();
+    // WASD y flechas mueven al personaje; sin esto el teclado no llega a nadie.
+    if (PERSONAJE_ACTIVO) this.desuscribir.push(controles.conectarTeclado());
     this.conectarEventos();
     this.conectarStore();
 
