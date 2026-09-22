@@ -1,6 +1,13 @@
 import { climaActual, type Clima } from '../../state/clima';
 import * as M from '../art/matrices';
 import { drawMatrix, seededRandom, type Palette } from '../art/render';
+import {
+  ALTO_PERSONAJE,
+  ANCHO_PERSONAJE,
+  APARIENCIA_RIVAL,
+  paletaPersonaje,
+  spritePersonaje,
+} from '../art/personaje';
 
 /* ------------------------------------------------------------------ */
 /* Camara y mundo                                                      */
@@ -84,9 +91,13 @@ const PALETA_MUNECO: Palette = {
   d: '#8a5a33', r: '#b8764a', R: '#8a5232', s: '#6b4326',
 };
 
-const PALETA_RIVAL: Palette = {
-  h: '#3a2a20', g: '#d84a4a', k: '#e8b48c', K: '#c08a64',
-  e: '#2a2320', r: '#5a8ad8', p: '#3a4a5a', z: '#2a2f38',
+/** El vecino se dibuja con el mismo sistema que el jugador: camina y, empapado, cierra los ojos. */
+const PALETA_RIVAL: Palette = paletaPersonaje(APARIENCIA_RIVAL);
+const POSES_RIVAL = {
+  quieto: spritePersonaje(APARIENCIA_RIVAL, 'quieto'),
+  pasoA: spritePersonaje(APARIENCIA_RIVAL, 'pasoA'),
+  pasoB: spritePersonaje(APARIENCIA_RIVAL, 'pasoB'),
+  empapado: spritePersonaje(APARIENCIA_RIVAL, 'parpadeo'),
 };
 
 const PALETA_BOMBA: Palette = { b: '#4aa8e0', w: '#bfe8ff', n: '#2c6b96' };
@@ -696,7 +707,12 @@ export class FirstPersonRange {
     ctx.save();
     ctx.translate(base.sx, base.sy - salto);
     if (this.rivalDir > 0) ctx.scale(-1, 1);
-    drawMatrix(ctx, M.NINO_RIVAL, PALETA_RIVAL, alto / 16, -alto / 2, -alto);
+    const cuadro = Math.floor(this.tiempo / 0.14) % 4;
+    const sprite = empapado
+      ? POSES_RIVAL.empapado
+      : cuadro === 1 ? POSES_RIVAL.pasoA : cuadro === 3 ? POSES_RIVAL.pasoB : POSES_RIVAL.quieto;
+    const escala = alto / ALTO_PERSONAJE;
+    drawMatrix(ctx, sprite, PALETA_RIVAL, escala, (-ANCHO_PERSONAJE * escala) / 2, -alto);
     ctx.restore();
 
     if (empapado) {

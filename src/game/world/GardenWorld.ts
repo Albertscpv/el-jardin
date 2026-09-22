@@ -69,6 +69,8 @@ export class GardenWorld {
   private islasVistas: IslaState[] | null = null;
   private casasVistas: CasaColocada[] | undefined | null = null;
   private casas = new CapaCasas();
+  /** Celdas bajo una casa: no se pisan. */
+  private tapadas: ReadonlySet<string> = new Set();
   private herramientaVista: string | null = null;
   private tiempo = 0;
   private acumuladorPosiciones = 0;
@@ -145,11 +147,36 @@ export class GardenWorld {
   /* Suelo                                                             */
   /* ---------------------------------------------------------------- */
 
-  /** Si el personaje puede pararse ahi. El agua no se pisa. */
+  /** Si el personaje puede pararse ahi. El agua y las casas no se pisan. */
   private pisable = (x: number, z: number): boolean => {
     const encontrada = celdaEnMundo(useGame.getState().estado.islas, x, z);
-    return Boolean(encontrada && !esAgua(encontrada.isla, encontrada.col, encontrada.row));
+    if (!encontrada) return false;
+    const { isla, col, row } = encontrada;
+    return !esAgua(isla, col, row) && !this.tapadas.has(celdaId(isla.id, col, row));
   };
+
+  /**
+   * Si una casa quedo encima del personaje (la pusieron donde estaba, o es
+   * una partida de antes), lo saca a la celda libre mas cercana.
+   */
+  private rescatarAvatar(): void {
+    if (!this.avatar || this.pisable(this.avatar.x, this.avatar.z)) return;
+    const { islas } = useGame.getState().estado;
+    let mejor: { x: number; z: number; d: number } | null = null;
+    for (const isla of islas) {
+      for (const local of isla.suelo) {
+        const [col, row] = local.split(',').map(Number);
+        const x = isla.ox + col + 0.5;
+        const z = isla.oz + row + 0.5;
+        if (!this.pisable(x, z)) continue;
+        const d = Math.hypot(x - this.avatar.x, z - this.avatar.z);
+        if (!mejor || d < mejor.d) mejor = { x, z, d };
+      }
+    }
+    if (!mejor) return;
+    this.avatar.ubicar(mejor.x, mejor.z);
+    useGame.getState().moverAvatar(mejor.x, mejor.z);
+  }
 
   /* ---------------------------------------------------------------- */
   /* Entrada                                                           */
@@ -286,6 +313,8 @@ export class GardenWorld {
       this.islasVistas = estado.islas;
       this.casasVistas = estado.casas;
       const tapadas = celdasOcupadasPorCasas(estado);
+      this.tapadas = tapadas;
+      this.rescatarAvatar();
       this.terreno.reconstruir(estado.islas, tapadas);
       this.pasto.reconstruir(estado.islas, tapadas);
       this.casas.reconstruir(estado.casas ?? [], estado.islas);
@@ -431,6 +460,15 @@ export class GardenWorld {
       EventBus.on('camara:mirar', ({ x, z }) => this.engine.mirar(x, z)),
 
       EventBus.on('camara:zoom', ({ delta }) => this.engine.aplicarZoom(delta)),
+
+      // El personaje reacciona a lo que hace: se agacha al trabajar y festeja.
+      EventBus.on('efecto:plantar', () => this.avatar?.reaccionar('trabajo')),
+      EventBus.on('efecto:regar', () => this.avatar?.reaccionar('trabajo')),
+      EventBus.on('efecto:regarTodo', () => this.avatar?.reaccionar('trabajo')),
+      EventBus.on('efecto:comer', () => this.avatar?.reaccionar('trabajo')),
+      EventBus.on('efecto:cosechar', () => this.avatar?.reaccionar('festejo')),
+      EventBus.on('efecto:adoptar', () => this.avatar?.reaccionar('festejo')),
+      EventBus.on('efecto:mimar', () => this.avatar?.reaccionar('festejo')),
       EventBus.on('avatar:cambio', () =>
         this.avatar?.aplicarAspecto(useGame.getState().estado.avatar),
       ),

@@ -2,13 +2,23 @@ import * as THREE from 'three';
 import { matrizAvatar, paletaAvatar } from '../../state/content';
 import type { AvatarState } from '../../state/types';
 import { texturaDeMatriz } from '../art/spriteTexture';
+import { ALTO_PERSONAJE, ANCHO_PERSONAJE, type Pose } from '../art/personaje';
 import { controles } from '../input/Controls';
 
 const geometriaPlano = new THREE.PlaneGeometry(1, 1);
 geometriaPlano.translate(0, 0.5, 0);
 
 /** Altura del personaje en unidades de mundo. */
-const ALTO = 1.35;
+const ALTO = 1.6;
+/** El sprite es mas alto que ancho: el plano tiene que respetarlo. */
+const PROPORCION = ANCHO_PERSONAJE / ALTO_PERSONAJE;
+/** Segundos por paso al caminar. */
+const PASO = 0.13;
+/** Cuanto dura cada gesto. */
+const DURACION: Record<Reaccion, number> = { festejo: 0.9, trabajo: 0.45 };
+
+/** Gestos que se disparan desde afuera: al cosechar, al sembrar... */
+export type Reaccion = 'festejo' | 'trabajo';
 /** Unidades por segundo caminando. */
 const VELOCIDAD = 3.4;
 /** Magnitud minima del joystick para que cuente como intencion de moverse. */
@@ -34,6 +44,14 @@ export class AvatarMesh {
   private tiempo = 0;
   private caminando = false;
   private firma = '';
+  private aspecto: AvatarState;
+  private poseActual: Pose | null = null;
+  /** Momento del proximo parpadeo y hasta cuando dura el actual. */
+  private proximoParpadeo = 2;
+  private parpadeoHasta = 0;
+  /** Gesto en curso, o esperando a que el personaje llegue a destino. */
+  private gesto: { tipo: Reaccion; hasta: number } | null = null;
+  private gestoPendiente: { tipo: Reaccion; vence: number } | null = null;
 
   /** Direccion horizontal hacia la que apunta, para disparar desde aqui. */
   readonly mirada = new THREE.Vector3(0, 0, -1);
@@ -42,6 +60,7 @@ export class AvatarMesh {
   private derecha = new THREE.Vector3();
 
   constructor(avatar: AvatarState) {
+    this.aspecto = avatar;
     this.material = new THREE.MeshLambertMaterial({
       alphaTest: 0.5,
       transparent: false,
@@ -53,27 +72,53 @@ export class AvatarMesh {
     this.grupo.add(this.cuerpo);
 
     this.grupo.position.set(avatar.x, 0, avatar.z);
-    this.grupo.scale.setScalar(ALTO);
+    this.grupo.scale.set(ALTO * PROPORCION, ALTO, ALTO * PROPORCION);
     this.destino.set(avatar.x, 0, avatar.z);
 
     this.aplicarAspecto(avatar);
   }
 
-  /** Regenera la textura solo si cambió alguna elección del jugador. */
+  /** Cambia el aspecto; las texturas de cada pose se generan al usarse. */
   aplicarAspecto(avatar: AvatarState): void {
     const firma = [
       avatar.piel, avatar.pelo, avatar.ropa, avatar.pantalon,
       avatar.sombrero, avatar.colorSombrero,
+      avatar.peinado, avatar.prenda, avatar.accesorio, avatar.colorAccesorio,
     ].join('|');
     if (firma === this.firma) return;
     this.firma = firma;
+    this.aspecto = avatar;
+    this.poseActual = null;
+    this.mostrar('quieto');
+  }
 
-    this.material.map = texturaDeMatriz(
-      `avatar:${firma}`,
-      matrizAvatar(avatar),
-      paletaAvatar(avatar),
+  /**
+   * Un gesto: festejar o ponerse a trabajar. Si el personaje todavia esta
+   * caminando hacia la planta, el gesto espera a que llegue.
+   */
+  reaccionar(tipo: Reaccion): void {
+    // Festejar le gana a trabajar: cosechar tambien es "hacer algo".
+    if (this.gesto?.tipo === 'festejo' && tipo === 'trabajo') return;
+    this.gestoPendiente = { tipo, vence: this.tiempo + 3 };
+  }
+
+  private mostrar(pose: Pose): void {
+    if (pose === this.poseActual) return;
+    this.poseActual = pose;
+    const nuevo = texturaDeMatriz(
+      `avatar:${this.firma}:${pose}`,
+      matrizAvatar(this.aspecto, pose),
+      paletaAvatar(this.aspecto),
     );
-    this.material.needsUpdate = true;
+    const primera = !this.material.map;
+    this.material.map = nuevo;
+    if (primera) this.material.needsUpdate = true;
+  }
+
+  /** Lo pone en un lugar sin caminar hasta ahi. */
+  ubicar(x: number, z: number): void {
+    this.grupo.position.set(x, 0, z);
+    this.destino.set(x, 0, z);
   }
 
   irA(x: number, z: number): void {
@@ -181,8 +226,51 @@ export class AvatarMesh {
     if (Math.abs(haciaDerecha) > 0.01) this.mirandoIzquierda = haciaDerecha < 0;
   }
 
-  private animar(): void {
+  private elegirPose(): Pose {
+    const t = this.tiempo;
+
+    if (this.gestoPendiente) {
+      if (!this.caminando) {
+        this.gesto = {
+          tipo: this.gestoPendiente.tipo,
+          hasta: t + DURACION[this.gestoPendiente.tipo],
+        };
+        this.gestoPendiente = null;
+      } else if (t > this.gestoPendiente.vence) {
+        this.gestoPendiente = null;
+      }
+    }
+    if (this.gesto && t > this.gesto.hasta) this.gesto = null;
+    if (this.gesto && !this.caminando) return this.gesto.tipo;
+
     if (this.caminando) {
+      // quieto, paso, quieto, el otro paso: se lee como caminar sin cuadros de mas.
+      const cuadro = Math.floor(t / PASO) % 4;
+      return cuadro === 1 ? 'pasoA' : cuadro === 3 ? 'pasoB' : 'quieto';
+    }
+
+    if (t > this.proximoParpadeo) {
+      this.parpadeoHasta = t + 0.13;
+      this.proximoParpadeo = t + 2.2 + Math.random() * 3.5;
+    }
+    return t < this.parpadeoHasta ? 'parpadeo' : 'quieto';
+  }
+
+  private animar(): void {
+    this.mostrar(this.elegirPose());
+
+    if (this.gesto?.tipo === 'festejo' && !this.caminando) {
+      // Dos saltitos de alegria.
+      const resto = this.gesto.hasta - this.tiempo;
+      this.cuerpo.position.y = Math.abs(Math.sin(resto * 7)) * 0.16;
+      this.cuerpo.rotation.z = 0;
+      this.cuerpo.scale.y = 1;
+    } else if (this.gesto?.tipo === 'trabajo' && !this.caminando) {
+      // Se agacha un poco, como quien riega.
+      this.cuerpo.position.y = 0;
+      this.cuerpo.rotation.z = 0;
+      this.cuerpo.scale.y = 0.94;
+    } else if (this.caminando) {
       // Trote: rebote ligado al reloj, con una inclinacion apenas perceptible.
       this.cuerpo.position.y = Math.abs(Math.sin(this.tiempo * 11)) * 0.07;
       this.cuerpo.rotation.z = Math.sin(this.tiempo * 11) * 0.05;

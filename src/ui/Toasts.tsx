@@ -4,6 +4,7 @@ import { useGame } from '../state/store';
 export function Toasts() {
   const toasts = useGame((s) => s.toasts);
   const descartar = useGame((s) => s.descartarToast);
+  const abrirTienda = useGame((s) => s.abrirTienda);
 
   return (
     <div className="toasts" role="status" aria-live="polite">
@@ -17,7 +18,10 @@ export function Toasts() {
             animate={{ opacity: 1, x: 0, scale: 1 }}
             exit={{ opacity: 0, x: 40, scale: 0.92 }}
             transition={{ type: 'spring', stiffness: 420, damping: 34 }}
-            onClick={() => descartar(t.id)}
+            onClick={() => {
+              descartar(t.id);
+              if (t.abrirTienda) abrirTienda(t.abrirTienda);
+            }}
           >
             {t.texto}
           </motion.button>

@@ -10,9 +10,13 @@ import type {
   FlowerVariant,
   FoodId,
   FoodItem,
+  Accesorio,
   AvatarState,
+  Peinado,
+  Prenda,
   Sombrero,
 } from './types';
+import { paletaPersonaje, spritePersonaje, type Pose } from '../game/art/personaje';
 
 /* ------------------------------------------------------------------ */
 /* Flores                                                              */
@@ -648,42 +652,44 @@ export const COLORES_SOMBRERO = ['#e0b463', '#c85a4a', '#5a8ad8', '#e8e4d8', '#3
 export const SOMBREROS: Array<{ id: Sombrero; nombre: string }> = [
   { id: 'ninguno', nombre: 'Sin sombrero' },
   { id: 'paja', nombre: 'De paja' },
-  { id: 'gorro', nombre: 'Gorro' },
+  { id: 'capelina', nombre: 'Capelina' },
+  { id: 'gorra', nombre: 'Gorra' },
+  { id: 'gorro', nombre: 'Gorro de lana' },
 ];
 
-/** Oscurece un color hex para derivar sombras sin pedirlas al jugador. */
-function oscurecer(hex: string, factor: number): string {
-  const n = parseInt(hex.slice(1), 16);
-  const r = Math.round(((n >> 16) & 255) * factor);
-  const g = Math.round(((n >> 8) & 255) * factor);
-  const b = Math.round((n & 255) * factor);
-  return `#${((r << 16) | (g << 8) | b).toString(16).padStart(6, '0')}`;
-}
+export const PEINADOS: Array<{ id: Peinado; nombre: string }> = [
+  { id: 'corto', nombre: 'Corto' },
+  { id: 'largo', nombre: 'Largo' },
+  { id: 'coletas', nombre: 'Coletas' },
+  { id: 'rodete', nombre: 'Rodete' },
+  { id: 'rulos', nombre: 'Rulos' },
+];
+
+export const PRENDAS: Array<{ id: Prenda; nombre: string }> = [
+  { id: 'remera', nombre: 'Remera' },
+  { id: 'jardinero', nombre: 'Jardinero' },
+  { id: 'vestido', nombre: 'Vestido' },
+];
+
+export const ACCESORIOS: Array<{ id: Accesorio; nombre: string }> = [
+  { id: 'ninguno', nombre: 'Nada' },
+  { id: 'flor', nombre: 'Flor en el pelo' },
+  { id: 'lentes', nombre: 'Lentes' },
+  { id: 'panuelo', nombre: 'Pañuelo' },
+];
+
+export const COLORES_ACCESORIO = ['#e86a8a', '#f2b33a', '#6f96d8', '#8ac86a', '#b06fb0', '#e8e4d8'];
 
 /**
- * Paleta del avatar a partir de las cuatro elecciones del jugador.
- * Las sombras se derivan solas: elegir ocho colores seria un trabajo, no
- * una personalizacion.
+ * Paleta del avatar a partir de las elecciones del jugador. Las sombras,
+ * el contorno y las mejillas se derivan solos: elegir veinte colores seria
+ * un trabajo, no una personalizacion.
  */
 export function paletaAvatar(avatar: AvatarState): Palette {
-  return {
-    k: avatar.piel,
-    K: oscurecer(avatar.piel, 0.78),
-    h: avatar.pelo,
-    H: oscurecer(avatar.pelo, 0.72),
-    r: avatar.ropa,
-    R: oscurecer(avatar.ropa, 0.74),
-    p: avatar.pantalon,
-    z: oscurecer(avatar.pantalon, 0.6),
-    e: '#2a2320',
-    s: avatar.colorSombrero,
-    S: oscurecer(avatar.colorSombrero, 0.74),
-  };
+  return paletaPersonaje(avatar);
 }
 
-/** Matriz final del avatar, con el sombrero ya superpuesto. */
-export function matrizAvatar(avatar: AvatarState): Matrix {
-  if (avatar.sombrero === 'paja') return M.componerMatrices(M.AVATAR, M.SOMBRERO_PAJA);
-  if (avatar.sombrero === 'gorro') return M.componerMatrices(M.AVATAR, M.SOMBRERO_GORRO);
-  return M.AVATAR;
+/** Sprite del avatar en una pose, con pelo, accesorio y sombrero puestos. */
+export function matrizAvatar(avatar: AvatarState, pose: Pose = 'quieto'): Matrix {
+  return spritePersonaje(avatar, pose);
 }

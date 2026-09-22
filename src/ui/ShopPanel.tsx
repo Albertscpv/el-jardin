@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { CASA_ICONO, FAROLA_ICONO, PALETA_CASA_ICONO, PALETA_FAROLA_ICONO } from '../game/art/props';
 import { CASAS, TIPOS_CASA } from '../state/casas';
 import { BALANCE } from '../state/config';
@@ -8,10 +7,10 @@ import { Drawer } from './Drawer';
 import { iconoComida, iconoFlor } from './icons';
 import { PixelIcon } from './PixelIcon';
 
-type Pestana = 'semillas' | 'comida' | 'objetos';
-
 export function ShopPanel() {
-  const [pestana, setPestana] = useState<Pestana>('semillas');
+  // La pestaña vive en el store: un aviso de "falta comida" abre directo en Comida.
+  const pestana = useGame((s) => s.pestanaTienda);
+  const setPestana = useGame((s) => s.setPestanaTienda);
   const monedas = useGame((s) => s.estado.monedas);
   const setPanel = useGame((s) => s.setPanel);
 

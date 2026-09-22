@@ -421,69 +421,6 @@ export function assertRectangular(name: string, m: Matrix): void {
 /* ------------------------------------------------------------------ */
 
 /**
- * Avatar del jugador, de frente.
- *   k/K piel y su sombra  ·  h/H pelo  ·  r/R ropa  ·  p pantalon
- *   z zapatos  ·  e ojos  ·  s/S sombrero
- */
-export const AVATAR: Matrix = [
-  '................',
-  '.....hhhhhh.....',
-  '....hhhhhhhh....',
-  '....hkkkkkkh....',
-  '....hkekkekh....',
-  '....hkkkkkkh....',
-  '....hkkKKkkh....',
-  '.....kkkkkk.....',
-  '....rrrrrrrr....',
-  '...krrrrrrrrk...',
-  '...krrrrrrrrk...',
-  '...kRRRRRRRRk...',
-  '....pppppppp....',
-  '....pppppppp....',
-  '....pp....pp....',
-  '...zzz....zzz...',
-];
-
-/** Se superpone sobre AVATAR; solo dibuja donde no hay punto. */
-export const SOMBRERO_PAJA: Matrix = [
-  '.....SSSSSS.....',
-  '....ssssssss....',
-  '..SSSSSSSSSSSS..',
-  '................',
-  '................',
-  '................',
-  '................',
-  '................',
-  '................',
-  '................',
-  '................',
-  '................',
-  '................',
-  '................',
-  '................',
-  '................',
-];
-
-export const SOMBRERO_GORRO: Matrix = [
-  '.....ssssss.....',
-  '....ssssssss....',
-  '....SSSSSSSS....',
-  '................',
-  '................',
-  '................',
-  '................',
-  '................',
-  '................',
-  '................',
-  '................',
-  '................',
-  '................',
-  '................',
-  '................',
-  '................',
-];
-
-/**
  * Superpone matrices del mismo tamano: gana la ultima que no sea transparente.
  * Se usa para ponerle sombrero al avatar sin duplicar el dibujo del cuerpo.
  */
@@ -539,26 +476,6 @@ export const MUNECO_PAJA: Matrix = [
   '......PPPP......',
   '.......ss.......',
   '.......ss.......',
-];
-
-/** El niño de al lado: nuestra competencia. Mismo esquema que el avatar. */
-export const NINO_RIVAL: Matrix = [
-  '................',
-  '................',
-  '................',
-  '.....hhhhhh.....',
-  '....gggggggg....',
-  '....hkkkkkkh....',
-  '....hkekkekh....',
-  '....hkkKKkkh....',
-  '.....kkkkkk.....',
-  '....rrrrrrrr....',
-  '...krrrrrrrrk...',
-  '...krrrrrrrrk...',
-  '....pppppppp....',
-  '....pppppppp....',
-  '....pp....pp....',
-  '...zzz....zzz...',
 ];
 
 /* ------------------------------------------------------------------ */

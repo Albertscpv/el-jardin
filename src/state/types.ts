@@ -119,7 +119,10 @@ export interface IslaState {
 /* Personaje                                                           */
 /* ------------------------------------------------------------------ */
 
-export type Sombrero = 'ninguno' | 'paja' | 'gorro';
+export type Sombrero = 'ninguno' | 'paja' | 'gorro' | 'capelina' | 'gorra';
+export type Peinado = 'corto' | 'largo' | 'coletas' | 'rodete' | 'rulos';
+export type Prenda = 'remera' | 'jardinero' | 'vestido';
+export type Accesorio = 'ninguno' | 'flor' | 'lentes' | 'panuelo';
 
 export interface AvatarState {
   nombre: string;
@@ -129,6 +132,14 @@ export interface AvatarState {
   pantalon: string;
   sombrero: Sombrero;
   colorSombrero: string;
+  /*
+   * Agregados despues: opcionales para que los personajes ya guardados
+   * carguen igual. Sin valor, se ven como antes (pelo corto y remera).
+   */
+  peinado?: Peinado;
+  prenda?: Prenda;
+  accesorio?: Accesorio;
+  colorAccesorio?: string;
   /** Posicion en el mundo 3D. */
   x: number;
   z: number;
@@ -320,4 +331,8 @@ export interface Toast {
   id: number;
   texto: string;
   tono: 'exito' | 'aviso' | 'info';
+  /** Si al tocarlo abre la tienda en esa pestaña (por ejemplo, cuando falta comida). */
+  abrirTienda?: PestanaTienda;
 }
+
+export type PestanaTienda = 'semillas' | 'comida' | 'objetos';

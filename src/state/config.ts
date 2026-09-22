@@ -1,11 +1,11 @@
 import type { CeldaId, CeldaLocal, IslaState } from './types';
 
 /**
- * El personaje que camina por el jardin esta apagado por pedido.
- * Ponerlo en true vuelve a montar la malla y los controles: nada se borro,
- * solo no se instancia.
+ * El personaje que camina por el jardin. Estuvo apagado un tiempo mientras
+ * se rediseñaba (ver art/personaje.ts). En false no se instancia ni la
+ * malla ni el joystick; nada del guardado depende de esto.
  */
-export const PERSONAJE_ACTIVO = false;
+export const PERSONAJE_ACTIVO = true;
 
 /** Pixeles por tile en las matrices de arte. Define la escala del voxel. */
 export const TILE = 16;

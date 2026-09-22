@@ -464,6 +464,18 @@ input {
   margin-top: 8px;
 }
 
+/* Atajos de todo el jardin: uno arriba del otro para no robarle ancho a las herramientas. */
+.dock-atajos {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.dock-atajos .boton {
+  white-space: nowrap;
+}
+
 .herramientas {
   display: flex;
   gap: 4px;
@@ -1622,6 +1634,17 @@ code {
     gap: 8px;
   }
 
+  /* En el celular los atajos van lado a lado, cada uno con la mitad. */
+  .dock-atajos {
+    flex-direction: row;
+  }
+
+  .dock-atajos .boton {
+    flex: 1;
+    padding-left: 6px;
+    padding-right: 6px;
+  }
+
   .herramienta {
     min-width: 56px;
     padding: 6px;
@@ -1752,4 +1775,9 @@ code {
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+.boton.ancho {
+  width: 100%;
+  margin-bottom: 12px;
 }

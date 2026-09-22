@@ -9,6 +9,7 @@ import { PixelIcon } from './PixelIcon';
 export function AnimalsPanel() {
   const animales = useGame((s) => s.estado.animales);
   const setPanel = useGame((s) => s.setPanel);
+  const alimentarTodos = useGame((s) => s.alimentarTodos);
 
   const adoptados = animales.filter((a) => a.estado === 'adoptado');
   const visitantes = animales.filter((a) => a.estado === 'visitante');
@@ -19,6 +20,12 @@ export function AnimalsPanel() {
       subtitulo={`${adoptados.length} en casa · ${visitantes.length} de visita`}
       onCerrar={() => setPanel(null)}
     >
+      {animales.length > 0 && (
+        <button className="boton ancho" onClick={alimentarTodos}>
+          🥕 Alimentar a todos con su comida favorita
+        </button>
+      )}
+
       {animales.length === 0 && (
         <p className="vacio-largo">
           Todavía no vino nadie. Los animales aparecen solos cuando hay flores abiertas: una

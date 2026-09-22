@@ -35,6 +35,7 @@ import {
   regaloDiarioDisponible,
   rechazarPedido,
 } from './economia';
+import { alimentarTodos as alimentarTodosPuro } from './alimentar';
 import { comprarFarolas, propEn, usarFarola, type ResultadoFarola } from './objetos';
 import {
   CASAS,
@@ -70,6 +71,7 @@ import type {
   IslaState,
   PlantState,
   PropTipo,
+  PestanaTienda,
   TipoCasa,
   Toast,
   ToolId,
@@ -141,12 +143,19 @@ interface Store {
   setPanel: (p: PanelId) => void;
   abrirAnimal: (uid: string | null) => void;
   cerrarAdopcion: () => void;
-  avisar: (texto: string, tono?: Toast['tono']) => void;
+  avisar: (texto: string, tono?: Toast['tono'], extra?: { abrirTienda?: PestanaTienda; duracion?: number }) => void;
+  /** Pestaña que muestra la tienda al abrirse. */
+  pestanaTienda: PestanaTienda;
+  setPestanaTienda: (p: PestanaTienda) => void;
+  /** Abre la tienda (sin alternar) directo en una pestaña. */
+  abrirTienda: (p: PestanaTienda) => void;
   descartarToast: (id: number) => void;
 
   /* --- jardin --- */
   usarEnCelda: (id: CeldaId) => void;
   regarTodo: () => void;
+  /** Le da a cada animal con hambre su comida favorita; avisa lo que falta. */
+  alimentarTodos: () => void;
   comprarSemilla: (variantId: string, cantidad?: number) => void;
   comprarComida: (foodId: FoodId, cantidad?: number) => void;
   comprarFarolas: (cantidad?: number) => void;
@@ -402,11 +411,16 @@ export const useGame = create<Store>()((set, get) => {
     abrirAnimal: (animalAbierto) => set({ animalAbierto }),
     cerrarAdopcion: () => set({ adoptando: null }),
 
-    avisar(texto, tono = 'info') {
+    avisar(texto, tono = 'info', extra = {}) {
       const id = siguienteToast++;
-      set((s) => ({ toasts: [...s.toasts.slice(-4), { id, texto, tono }] }));
-      setTimeout(() => get().descartarToast(id), 4200);
+      const toast: Toast = { id, texto, tono, ...(extra.abrirTienda ? { abrirTienda: extra.abrirTienda } : {}) };
+      set((s) => ({ toasts: [...s.toasts.slice(-4), toast] }));
+      setTimeout(() => get().descartarToast(id), extra.duracion ?? 4200);
     },
+
+    pestanaTienda: 'semillas',
+    setPestanaTienda: (pestanaTienda) => set({ pestanaTienda }),
+    abrirTienda: (pestanaTienda) => set({ panel: 'tienda', pestanaTienda }),
 
     descartarToast: (id) => set((s) => ({ toasts: s.toasts.filter((t) => t.id !== id) })),
 
@@ -633,6 +647,39 @@ export const useGame = create<Store>()((set, get) => {
       });
       EventBus.emit('efecto:regarTodo', {});
       get().avisar(`Regaste ${secas} ${secas === 1 ? 'planta' : 'plantas'} 💧`, 'exito');
+    },
+
+    alimentarTodos() {
+      const { estado, avisar } = get();
+      const { estado: tras, comieron, faltan, conHambre } = alimentarTodosPuro(estado);
+      if (conHambre === 0) return avisar('Nadie tiene hambre ahora 🐾', 'info');
+
+      if (comieron.length > 0) {
+        mutar(() => tras);
+        for (const c of comieron) {
+          EventBus.emit('efecto:comer', { uid: c.uid });
+          revisarAdopcion(c.uid);
+        }
+      }
+
+      const porNombre = (uid: string) => {
+        const a = estado.animales.find((x) => x.uid === uid);
+        return a ? nombreDe(a) : 'alguien';
+      };
+      const comieronTexto =
+        comieron.length === 0
+          ? 'Nadie pudo comer'
+          : `Comieron ${comieron.length} ${comieron.length === 1 ? 'animal' : 'animales'}`;
+
+      if (faltan.length === 0) return avisar(`${comieronTexto} 🥕`, 'exito');
+
+      const detalle = faltan
+        .map((f) => `${f.porciones} de ${FOODS[f.comida].nombre.toLowerCase()} (${enLista(f.uids.map(porNombre))})`)
+        .join('; ');
+      avisar(`${comieronTexto}. Falta: ${detalle}. Tocá acá para comprar`, 'aviso', {
+        abrirTienda: 'comida',
+        duracion: 9000,
+      });
     },
 
     comprarSemilla(variantId, cantidad = 1) {
@@ -968,6 +1015,13 @@ export const useGame = create<Store>()((set, get) => {
 /* ------------------------------------------------------------------ */
 /* Utilidades de texto                                                 */
 /* ------------------------------------------------------------------ */
+
+/** "A", "A y B", "A, B y 2 más". */
+function enLista(nombres: string[]): string {
+  if (nombres.length <= 1) return nombres[0] ?? '';
+  if (nombres.length <= 3) return `${nombres.slice(0, -1).join(', ')} y ${nombres[nombres.length - 1]}`;
+  return `${nombres.slice(0, 2).join(', ')} y ${nombres.length - 2} más`;
+}
 
 export function nombreDe(animal: AnimalState): string {
   if (animal.nombre) return animal.nombre;

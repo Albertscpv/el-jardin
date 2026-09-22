@@ -39,6 +39,7 @@ export function Toolbar() {
   const herramienta = useGame((s) => s.herramienta);
   const setHerramienta = useGame((s) => s.setHerramienta);
   const regarTodo = useGame((s) => s.regarTodo);
+  const alimentarTodos = useGame((s) => s.alimentarTodos);
   const islas = useGame((s) => s.estado.islas);
 
   /**
@@ -87,9 +88,18 @@ export function Toolbar() {
               ))}
             </div>
 
-            <button className="boton suave" onClick={regarTodo} title="Riega todas las parcelas">
-              💧 Regar todo
-            </button>
+            <div className="dock-atajos">
+              <button className="boton suave" onClick={regarTodo} title="Riega todas las parcelas">
+                💧 Regar todo
+              </button>
+              <button
+                className="boton suave"
+                onClick={alimentarTodos}
+                title="Le da a cada animal con hambre su comida favorita"
+              >
+                🥕 Alimentar a todos
+              </button>
+            </div>
           </div>
 
           {activa && (
