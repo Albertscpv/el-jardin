@@ -164,7 +164,7 @@ interface Store {
  * regalos pendientes, el caballo de cada isla y un pedido activo. Cada paso
  * es idempotente, asi que volver a entrar no duplica nada.
  */
-function prepararPartida(
+export function prepararPartida(
   base: GameState,
   ahora: number,
 ): { estado: GameState; avisos: string[]; cambio: boolean } {
