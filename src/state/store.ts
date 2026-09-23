@@ -37,6 +37,14 @@ import {
 } from './economia';
 import { alimentarTodos as alimentarTodosPuro } from './alimentar';
 import {
+  AHI_HAY_CASA,
+  NADA_ACA,
+  NADA_QUE_REGAR,
+  SIN_MONEDAS,
+  TODAVIA_NO_ESTA,
+  unaDe,
+} from './frases';
+import {
   alternarNenufar,
   celdasDeAgua,
   secarCelda,
@@ -292,7 +300,7 @@ export const useGame = create<Store>()((set, get) => {
       if (guardado) {
         const minutos = Math.round((Date.now() - base.ultimoTick) / 60_000);
         if (minutos >= 2) {
-          get().avisar(`Volviste después de ${formatearLapso(minutos)}`, 'info');
+          get().avisar(`Te extrañamos: pasaron ${formatearLapso(minutos)}`, 'info');
         }
       }
       eventos.forEach((e) => get().avisar(e, 'info'));
@@ -325,7 +333,7 @@ export const useGame = create<Store>()((set, get) => {
           }
         }
         animales = [...animales, crearVisitante(elegida, estado)];
-        get().avisar(`Llegó ${unArticulo(elegida)} al jardín`, 'info');
+        get().avisar(`Se apareció ${unArticulo(elegida)} por el jardín`, 'info');
       }
 
       set({ estado: { ...estado, animales } });
@@ -380,7 +388,7 @@ export const useGame = create<Store>()((set, get) => {
       // otro: el jugador lo pidio. Cualquier otro guardado se niega a hacerlo.
       void guardarPartida(get().estado, { reemplazar: true });
       EventBus.emit('mundo:resincronizar', {});
-      get().avisar('Jardín nuevo. A sembrar de nuevo 🌱', 'info');
+      get().avisar('Tierra limpia. A empezar otra vez 🌱', 'info');
     },
 
     /* ---------------------------------------------------------------- */
@@ -395,18 +403,18 @@ export const useGame = create<Store>()((set, get) => {
 
     comprarJuego(id) {
       const tras = comprarJuegoPuro(get().estado, id);
-      if (!tras) return get().avisar('No te alcanzan las monedas', 'aviso');
+      if (!tras) return get().avisar(unaDe(SIN_MONEDAS), 'aviso');
       mutar(() => tras);
       set({ juegoSeleccionado: id });
-      get().avisar(`${JUEGOS[id].nombre} comprado. Ponelo con la herramienta Juegos 🛝`, 'exito');
+      get().avisar(`${JUEGOS[id].nombre} tuyo. Ponelo donde quieras con la herramienta Juegos 🛝`, 'exito');
     },
 
     comprarCasa(tipo) {
       const tras = comprarCasaPura(get().estado, tipo);
-      if (!tras) return get().avisar('No te alcanzan las monedas', 'aviso');
+      if (!tras) return get().avisar(unaDe(SIN_MONEDAS), 'aviso');
       mutar(() => tras);
       set({ casaSeleccionada: tipo });
-      get().avisar(`${CASAS[tipo].nombre} comprada. Ponela con la herramienta Casa 🏠`, 'exito');
+      get().avisar(`${CASAS[tipo].nombre} tuya. Elegí dónde va con la herramienta Casa 🏠`, 'exito');
     },
 
     tocarCasa(casaId) {
@@ -418,16 +426,16 @@ export const useGame = create<Store>()((set, get) => {
       if (herramienta === 'casa') {
         const { estado: tras, resultado } = guardarCasa(estado, casaId);
         if (resultado === 'macetas-con-flores') {
-          return avisar('Tiene flores en las macetas: cosechalas o limpialas antes de moverla', 'aviso');
+          return avisar('Tiene flores en las macetas. Cosechalas o limpialas y después la movemos', 'aviso');
         }
         if (resultado !== 'guardada') return;
         mutar(() => tras);
         set({ casaSeleccionada: casa.tipo });
-        return avisar(`${modelo.nombre} guardada. Tocá el césped para ponerla en otro lado`, 'info');
+        return avisar(`${modelo.nombre} levantada. Tocá el césped donde la quieras ahora`, 'info');
       }
 
       const flores = macetasOcupadas(estado, casa);
-      avisar(`${modelo.nombre} · ${flores} de ${modelo.macetas} macetas sembradas. Para moverla, usá la herramienta Casa`, 'info');
+      avisar(`${modelo.nombre}, con ${flores} de ${modelo.macetas} macetas sembradas. Para moverla, usá la herramienta Casa`, 'info');
     },
     setPanel: (panel) => set((s) => ({ panel: s.panel === panel ? null : panel })),
     abrirAnimal: (animalAbierto) => set({ animalAbierto }),
@@ -458,7 +466,7 @@ export const useGame = create<Store>()((set, get) => {
       const maceta = esMaceta(id);
       if (maceta && !HERRAMIENTAS_MACETA.has(herramienta)) {
         if (herramienta === 'casa') return get().tocarCasa(casaDeId(id)!);
-        return avisar('En las macetas se siembra, se riega, se cosecha y se limpia', 'info');
+        return avisar('En las macetas solo se siembra, se riega, se cosecha y se limpia', 'info');
       }
 
       const { islaId, col, row } = parseCeldaId(id);
@@ -496,7 +504,7 @@ export const useGame = create<Store>()((set, get) => {
             elegida && guardadas(estado, elegida) > 0
               ? elegida
               : TIPOS_CASA.find((t) => guardadas(estado, t) > 0);
-          if (!tipo) return avisar('No tenés casas para poner. Hay en la Tienda, en Objetos', 'aviso');
+          if (!tipo) return avisar('No te queda ninguna casa. Hay en la Tienda, en Objetos', 'aviso');
           const nuevaId = `casa-${Date.now().toString(36)}-${Math.floor(Math.random() * 1e6).toString(36)}`;
           const { estado: tras, resultado } = ponerCasa(estado, tipo, islaId, col, row, nuevaId);
           if (tras !== estado) mutar(() => tras);
@@ -514,31 +522,31 @@ export const useGame = create<Store>()((set, get) => {
               'info',
             );
           }
-          if (casaAca) return avisar('Ahí está tu casa', 'aviso');
+          if (casaAca) return avisar(unaDe(AHI_HAY_CASA), 'aviso');
           const { estado: tras, resultado, mojadas } = verterAgua(get().estado, islaId, col, row);
           if (tras !== get().estado) mutar(() => tras);
           if (resultado !== 'vertida') return avisar(MENSAJE_AGUA[resultado], 'aviso');
           EventBus.emit('efecto:regar', { celda: id });
-          return avisar(`Agua: se mojaron ${mojadas} celdas 💧`, 'exito');
+          return avisar(`El agua se derramó por ${mojadas} pedacitos 💧`, 'exito');
         }
 
         case 'juego': {
-          if (casaAca) return avisar('Ahí está tu casa', 'aviso');
+          if (casaAca) return avisar(unaDe(AHI_HAY_CASA), 'aviso');
           const objeto = propEn(isla, col, row);
           // Tocar un juego lo guarda, sea cual sea el elegido en la barra.
           const tipo = objeto && esJuego(objeto.tipo) ? objeto.tipo : get().juegoSeleccionado;
           const { estado: tras, resultado } = usarObjeto(get().estado, tipo, islaId, col, row);
           if (tras !== get().estado) mutar(() => tras);
-          if (resultado === 'colocada') return avisar(`${JUEGOS[tipo].nombre} puesto 🛝`, 'exito');
+          if (resultado === 'colocada') return avisar(`${JUEGOS[tipo].nombre} listo para usar 🛝`, 'exito');
           if (resultado === 'guardada') {
             set({ juegoSeleccionado: tipo });
-            return avisar(`${JUEGOS[tipo].nombre} guardado`, 'info');
+            return avisar(`${JUEGOS[tipo].nombre} levantado. Va donde vos digas`, 'info');
           }
           return avisar(MENSAJE_JUEGO(resultado, tipo), 'aviso');
         }
 
         case 'farola': {
-          if (casaAca) return avisar('Ahí está tu casa', 'aviso');
+          if (casaAca) return avisar(unaDe(AHI_HAY_CASA), 'aviso');
           const { estado: tras, resultado } = usarFarola(get().estado, islaId, col, row);
           if (tras !== get().estado) mutar(() => tras);
           return avisar(MENSAJE_FAROLA[resultado], resultado === 'colocada' ? 'exito' : 'info');
@@ -546,7 +554,7 @@ export const useGame = create<Store>()((set, get) => {
 
         case 'arar': {
           if (esAgua(isla, col, row)) return avisar('Ahí hay agua', 'aviso');
-          if (casaAca) return avisar('Ahí está tu casa: no se puede arar', 'aviso');
+          if (casaAca) return avisar('Ahí está la casa: el arado no entra', 'aviso');
           const objeto = propEn(isla, col, row);
           if (objeto) {
             return avisar(
@@ -557,16 +565,16 @@ export const useGame = create<Store>()((set, get) => {
             );
           }
           if (arada) {
-            if (planta) return avisar('Primero sacá lo que está sembrado', 'aviso');
+            if (planta) return avisar('Primero levantá lo que está sembrado', 'aviso');
             mutarIsla(islaId, (i) => ({
               ...i,
               parcelas: i.parcelas.filter((c) => c !== celdaLocal(col, row)),
             }));
             mutar((e) => ({ ...e, monedas: e.monedas + Math.floor(BALANCE.costoArar / 2) }));
-            return avisar('Parcela devuelta a césped', 'info');
+            return avisar('Ahí vuelve a haber pasto', 'info');
           }
           if (estado.monedas < BALANCE.costoArar) {
-            return avisar(`Arar cuesta ${BALANCE.costoArar} monedas`, 'aviso');
+            return avisar(`Arar sale ${BALANCE.costoArar} monedas`, 'aviso');
           }
           mutar((e) => ({
             ...e,
@@ -576,15 +584,15 @@ export const useGame = create<Store>()((set, get) => {
             ),
           }));
           EventBus.emit('efecto:plantar', { celda: id });
-          return avisar('Tierra lista para sembrar', 'exito');
+          return avisar('Tierra removida, lista para la semilla', 'exito');
         }
 
         case 'plantar': {
-          if (!arada) return avisar('Ahí no hay tierra arada. Usá la azada', 'aviso');
-          if (planta) return avisar('Esa parcela ya está ocupada', 'aviso');
-          if (!semillaSeleccionada) return avisar('Elegí una semilla primero', 'aviso');
+          if (!arada) return avisar('Esa tierra está sin arar. Pasale la azada', 'aviso');
+          if (planta) return avisar('Esa parcela ya tiene su planta', 'aviso');
+          if (!semillaSeleccionada) return avisar('Elegí primero qué querés sembrar', 'aviso');
           if ((estado.semillas[semillaSeleccionada] ?? 0) <= 0) {
-            return avisar('No te quedan semillas de esa flor', 'aviso');
+            return avisar('Se te acabaron esas semillas', 'aviso');
           }
 
           const variante = getFlowerVariant(semillaSeleccionada);
@@ -608,7 +616,7 @@ export const useGame = create<Store>()((set, get) => {
         }
 
         case 'regar': {
-          if (!planta) return avisar('Ahí no hay nada que regar', 'aviso');
+          if (!planta) return avisar(unaDe(NADA_QUE_REGAR), 'aviso');
           mutar((e) => ({
             ...e,
             cultivos: {
@@ -625,12 +633,12 @@ export const useGame = create<Store>()((set, get) => {
         }
 
         case 'cosechar': {
-          if (!planta) return avisar('Ahí no hay nada', 'aviso');
+          if (!planta) return avisar(unaDe(NADA_ACA), 'aviso');
           const etapa = stageOf(planta);
           if (etapa === 'marchita') {
-            return avisar('Está marchita. Usá la pala para limpiarla', 'aviso');
+            return avisar('Esa ya se secó. Limpiala con la pala y volvé a probar', 'aviso');
           }
-          if (etapa !== 'flor') return avisar('Todavía no está lista', 'aviso');
+          if (etapa !== 'flor') return avisar(unaDe(TODAVIA_NO_ESTA), 'aviso');
 
           const variante = getFlowerVariant(planta.variantId);
           const bonus = Math.random() < BALANCE.probabilidadSemilla;
@@ -672,9 +680,9 @@ export const useGame = create<Store>()((set, get) => {
         case 'pala': {
           if (!maceta && esAgua(isla, col, row)) {
             const { estado: tras, secada } = secarCelda(get().estado, islaId, col, row);
-            if (!secada) return avisar('Ahí no hay nada que quitar', 'aviso');
+            if (!secada) return avisar('Ahí no hay nada para sacar', 'aviso');
             mutar(() => tras);
-            return avisar('Celda secada', 'info');
+            return avisar('Listo: ese pedacito se secó', 'info');
           }
           if (!planta) return avisar('Ahí no hay nada que quitar', 'aviso');
           mutar((e) => {
@@ -682,19 +690,19 @@ export const useGame = create<Store>()((set, get) => {
             delete cultivos[id];
             return { ...e, cultivos };
           });
-          avisar('Parcela despejada', 'info');
+          avisar('Parcela limpia otra vez', 'info');
           return;
         }
 
         default:
-          avisar('Esa herramienta no se usa en la tierra', 'aviso');
+          avisar('Esa herramienta no es para el suelo', 'aviso');
       }
     },
 
     regarTodo() {
       const { estado } = get();
       const secas = Object.values(estado.cultivos).filter((p) => p.humedad < 0.95).length;
-      if (secas === 0) return get().avisar('Todo el jardín está regado', 'info');
+      if (secas === 0) return get().avisar('Está todo con agua. Nadie tiene sed', 'info');
 
       mutar((e) => {
         const cultivos: GameState['cultivos'] = {};
@@ -708,13 +716,13 @@ export const useGame = create<Store>()((set, get) => {
         return { ...e, cultivos };
       });
       EventBus.emit('efecto:regarTodo', {});
-      get().avisar(`Regaste ${secas} ${secas === 1 ? 'planta' : 'plantas'} 💧`, 'exito');
+      get().avisar(`${secas} ${secas === 1 ? 'planta agradecida' : 'plantas agradecidas'} 💧`, 'exito');
     },
 
     alimentarTodos() {
       const { estado, avisar } = get();
       const { estado: tras, comieron, faltan, conHambre } = alimentarTodosPuro(estado);
-      if (conHambre === 0) return avisar('Nadie tiene hambre ahora 🐾', 'info');
+      if (conHambre === 0) return avisar('Están todos llenos 🐾', 'info');
 
       if (comieron.length > 0) {
         mutar(() => tras);
@@ -730,15 +738,17 @@ export const useGame = create<Store>()((set, get) => {
       };
       const comieronTexto =
         comieron.length === 0
-          ? 'Nadie pudo comer'
-          : `Comieron ${comieron.length} ${comieron.length === 1 ? 'animal' : 'animales'}`;
+          ? 'No alcanzó para nadie'
+          : comieron.length === 1
+            ? 'Uno con la panza llena'
+            : `${comieron.length} con la panza llena`;
 
       if (faltan.length === 0) return avisar(`${comieronTexto} 🥕`, 'exito');
 
       const detalle = faltan
         .map((f) => `${f.porciones} de ${FOODS[f.comida].nombre.toLowerCase()} (${enLista(f.uids.map(porNombre))})`)
         .join('; ');
-      avisar(`${comieronTexto}. Falta: ${detalle}. Tocá acá para comprar`, 'aviso', {
+      avisar(`${comieronTexto}. Faltó ${detalle}. Tocá acá y lo comprás`, 'aviso', {
         abrirTienda: 'comida',
         duracion: 9000,
       });
@@ -747,7 +757,7 @@ export const useGame = create<Store>()((set, get) => {
     comprarSemilla(variantId, cantidad = 1) {
       const variante = getFlowerVariant(variantId);
       const costo = variante.precioSemilla * cantidad;
-      if (get().estado.monedas < costo) return get().avisar('No te alcanzan las monedas', 'aviso');
+      if (get().estado.monedas < costo) return get().avisar(unaDe(SIN_MONEDAS), 'aviso');
 
       mutar((e) => ({
         ...e,
@@ -755,12 +765,12 @@ export const useGame = create<Store>()((set, get) => {
         semillas: { ...e.semillas, [variantId]: (e.semillas[variantId] ?? 0) + cantidad },
       }));
       set({ semillaSeleccionada: variantId });
-      get().avisar(`+${cantidad} ${variante.nombre}`, 'exito');
+      get().avisar(`+${cantidad} ${variante.nombre} para el bolsillo`, 'exito');
     },
 
     comprarFarolas(cantidad = 1) {
       const tras = comprarFarolas(get().estado, cantidad);
-      if (!tras) return get().avisar('No te alcanzan las monedas', 'aviso');
+      if (!tras) return get().avisar(unaDe(SIN_MONEDAS), 'aviso');
       mutar(() => tras);
       get().avisar(
         cantidad === 1 ? '+1 farola. Ponela con la herramienta Farola' : `+${cantidad} farolas`,
@@ -771,7 +781,7 @@ export const useGame = create<Store>()((set, get) => {
     comprarComida(foodId, cantidad = 1) {
       const comida = FOODS[foodId];
       const costo = comida.precio * cantidad;
-      if (get().estado.monedas < costo) return get().avisar('No te alcanzan las monedas', 'aviso');
+      if (get().estado.monedas < costo) return get().avisar(unaDe(SIN_MONEDAS), 'aviso');
 
       mutar((e) => ({
         ...e,
@@ -796,7 +806,7 @@ export const useGame = create<Store>()((set, get) => {
 
       const costo = costoProximaCelda(totalCeldas(estado.islas));
       if (estado.monedas < costo) {
-        return avisar(`Esa celda cuesta ${costo} monedas`, 'aviso');
+        return avisar(`Ese pedazo sale ${costo} monedas`, 'aviso');
       }
 
       mutar((e) => ({
@@ -808,13 +818,13 @@ export const useGame = create<Store>()((set, get) => {
       }));
 
       EventBus.emit('efecto:expandir', { celda: hacerCeldaId(islaId, col, row) });
-      avisar(`Jardín ampliado · −${costo} 🪙`, 'exito');
+      avisar(`Un pedacito más de jardín · −${costo} 🪙`, 'exito');
     },
 
     fundarIsla() {
       const { estado, avisar } = get();
       if (estado.monedas < BALANCE.costoIsla) {
-        return avisar(`Fundar una isla cuesta ${BALANCE.costoIsla} monedas`, 'aviso');
+        return avisar(`Fundar una isla sale ${BALANCE.costoIsla} monedas`, 'aviso');
       }
 
       const isla = crearIslaNueva(estado.islas);
@@ -829,8 +839,8 @@ export const useGame = create<Store>()((set, get) => {
         EventBus.emit('mundo:resincronizar', {});
       }
       EventBus.emit('camara:mirar', { x: isla.ox + 2.5, z: isla.oz + 2.5 });
-      avisar(`${isla.nombre} emergió del mar 🏝️`, 'exito');
-      for (const c of nuevos) avisar(`${c.nombre} vive en la isla nueva 🐴`, 'info');
+      avisar(`${isla.nombre} asomó entre las nubes 🏝️`, 'exito');
+      for (const c of nuevos) avisar(`${c.nombre} ya se mudó a la isla nueva 🐴`, 'info');
     },
 
     renombrarIsla(islaId, nombre) {
@@ -849,9 +859,9 @@ export const useGame = create<Store>()((set, get) => {
       if (!animal) return;
 
       if (herramienta === 'alimentar') {
-        if (!comidaSeleccionada) return avisar('Elegí qué darle de comer', 'aviso');
+        if (!comidaSeleccionada) return avisar('Elegí primero qué darle', 'aviso');
         if ((estado.comida[comidaSeleccionada] ?? 0) <= 0) {
-          return avisar('Te quedaste sin esa comida', 'aviso');
+          return avisar('Se te acabó esa comida', 'aviso');
         }
 
         const comida = FOODS[comidaSeleccionada];
@@ -910,7 +920,7 @@ export const useGame = create<Store>()((set, get) => {
 
     adoptar(uid, nombre) {
       const limpio = nombre.trim().slice(0, 18);
-      if (!limpio) return get().avisar('Ponele un nombre primero', 'aviso');
+      if (!limpio) return get().avisar('Falta lo más importante: el nombre', 'aviso');
 
       mutarAnimal(uid, (a) => ({
         ...a,
@@ -925,7 +935,7 @@ export const useGame = create<Store>()((set, get) => {
 
       set({ adoptando: null, animalAbierto: uid });
       EventBus.emit('efecto:adoptar', { uid });
-      get().avisar(`${limpio} ahora vive en tu jardín 💚`, 'exito');
+      get().avisar(`${limpio} se queda a vivir con vos 💚`, 'exito');
     },
 
     renombrar(uid, nombre) {
@@ -939,7 +949,7 @@ export const useGame = create<Store>()((set, get) => {
       mutar((e) => ({ ...e, animales: e.animales.filter((a) => a.uid !== uid) }));
       set({ animalAbierto: null });
       EventBus.emit('mundo:resincronizar', {});
-      if (animal) get().avisar(`${nombreDe(animal)} volvió a su casa`, 'info');
+      if (animal) get().avisar(`${nombreDe(animal)} se volvió a su casa. Suerte, amigo`, 'info');
     },
 
     /** Persiste la posicion del animal sin disparar guardado ni re-render caro. */
@@ -1102,16 +1112,16 @@ function describirCelda(
   hayAgua: boolean,
   objeto?: PropTipo,
 ): string {
-  if (objeto === 'farola') return 'Una farola. De noche alumbra lo que tiene alrededor';
+  if (objeto === 'farola') return 'Una farola. De noche alumbra todo lo que tiene alrededor';
   if (objeto && esJuego(objeto)) {
     return `${JUEGOS[objeto].nombre}: ${JUEGOS[objeto].descripcion} Con la herramienta Juegos se guarda`;
   }
-  if (objeto === 'farol') return 'Un farol de jardín. De noche se enciende solo';
-  if (objeto) return 'Un adorno del jardín';
+  if (objeto === 'farol') return 'Un farol de jardín: se enciende solo cuando cae el sol';
+  if (objeto) return 'Un adorno, ahí donde lo dejaste';
   if (!planta) {
-    if (hayAgua) return 'Un estanque. Es decorativo: no se puede arar ni sembrar';
-    if (arada) return 'Parcela arada y vacía, lista para sembrar';
-    return 'Césped. Con Arar se convierte en parcela de siembra';
+    if (hayAgua) return 'Agua. Acá no se siembra, pero de acá salen las ranas y los peces';
+    if (arada) return 'Tierra arada y vacía, esperando una semilla';
+    return 'Pasto. Con la azada se vuelve tierra para sembrar';
   }
 
   const variante = getFlowerVariant(planta.variantId);
@@ -1138,11 +1148,11 @@ function describirCelda(
 /** Lo que responde la herramienta Agua cuando no se puede verter. */
 const MENSAJE_AGUA: Record<ResultadoAgua, string> = {
   vertida: '',
-  'ya-hay-agua': 'Ahí ya hay agua',
-  parcela: 'Ahí hay una parcela arada: el agua va sobre el césped',
-  ocupada: 'Ahí hay algo puesto',
-  fuera: 'Ahí no hay tierra',
-  'sin-lugar': 'No hay lugar para el agua',
+  'ya-hay-agua': 'Ahí ya hay agua de sobra',
+  parcela: 'Esa parcela está arada: el agua va sobre el pasto',
+  ocupada: 'Ese lugar ya está ocupado',
+  fuera: 'Ahí no hay tierra que mojar',
+  'sin-lugar': 'No le queda lugar por dónde correr',
 };
 
 /** Las herramientas que tienen sentido sobre una maceta. */
@@ -1150,13 +1160,13 @@ const HERRAMIENTAS_MACETA = new Set(['mirar', 'plantar', 'regar', 'cosechar', 'p
 
 /** Lo que responde la herramienta Casa en cada caso. */
 const MENSAJE_CASA: Record<ResultadoCasa, string> = {
-  puesta: 'Casa puesta 🏠 Sembrá en las macetas de la terraza',
-  'sin-casas': 'No tenés casas para poner. Hay en la Tienda, en Objetos',
-  'no-entra': 'No entra ahí: tiene que caber entera sobre la isla',
-  agua: 'No se puede poner sobre el agua',
-  parcela: 'Ahí hay parcelas: la casa va sobre el césped',
-  ocupada: 'Ahí ya hay algo puesto',
-  fuera: 'Ahí no hay tierra',
+  puesta: 'Casa lista 🏠 Ahora a llenar de flores las macetas de la terraza',
+  'sin-casas': 'No te queda ninguna casa. Hay en la Tienda, en Objetos',
+  'no-entra': 'Ahí no entra entera. Buscale un lugar más ancho',
+  agua: 'Sobre el agua no se puede construir',
+  parcela: 'Ahí hay parcelas sembradas: la casa va sobre el pasto',
+  ocupada: 'Ese lugar ya está ocupado',
+  fuera: 'Ahí no hay tierra donde apoyarla',
 };
 
 /** Lo que responde la herramienta Farola en cada caso. */
@@ -1165,26 +1175,26 @@ function MENSAJE_JUEGO(resultado: ResultadoFarola, tipo: JuegoId): string {
   const nombre = JUEGOS[tipo].nombre.toLowerCase();
   switch (resultado) {
     case 'sin-farolas':
-      return `No te quedan. El ${nombre} se compra en Construir`;
+      return `No te queda ninguno. El ${nombre} se compra en Construir`;
     case 'agua':
-      return 'En el agua no se puede poner un juego';
+      return 'En el agua no, que se oxida';
     case 'parcela':
-      return `El ${nombre} va en el césped: en una parcela taparía la siembra`;
+      return `El ${nombre} va en el pasto: en una parcela pisaría la siembra`;
     case 'ocupada':
-      return 'Ahí ya hay algo puesto';
+      return 'Ese lugar ya está ocupado';
     default:
-      return 'Ahí no hay tierra';
+      return 'Ahí no hay tierra donde apoyarlo';
   }
 }
 
 const MENSAJE_FAROLA: Record<ResultadoFarola, string> = {
-  colocada: 'Farola puesta 🏮',
-  guardada: 'Farola guardada. Podés ponerla en otro lado',
-  'sin-farolas': 'No te quedan farolas. Hay en la Tienda, en Objetos',
-  ocupada: 'Ahí ya hay algo puesto',
-  agua: 'En el agua no se puede poner una farola',
-  parcela: 'Las farolas van en el césped: en una parcela taparían la siembra',
-  fuera: 'Ahí no hay tierra',
+  colocada: 'Farola en su lugar 🏮 De noche vas a ver la diferencia',
+  guardada: 'Farola levantada. Ponela donde te guste más',
+  'sin-farolas': 'No te queda ninguna. Hay en la Tienda, en Objetos',
+  ocupada: 'Ese lugar ya está ocupado',
+  agua: 'En el agua no se aguanta una farola',
+  parcela: 'Las farolas van en el pasto: en una parcela le harían sombra a la siembra',
+  fuera: 'Ahí no hay tierra donde clavarla',
 };
 
 /** Lo que dice el vecino cada vez que le pega una bomba. Todo en broma. */

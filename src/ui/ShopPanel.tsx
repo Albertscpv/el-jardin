@@ -15,7 +15,7 @@ export function ShopPanel() {
   const setPanel = useGame((s) => s.setPanel);
 
   return (
-    <Drawer titulo="Tienda" subtitulo={`Tenés ${monedas} monedas`} onCerrar={() => setPanel(null)}>
+    <Drawer titulo="Tienda" subtitulo={`Tenés ${monedas} monedas en el bolsillo`} onCerrar={() => setPanel(null)}>
       <div className="pestanas">
         <button
           className={pestana === 'semillas' ? 'pestana activa' : 'pestana'}
@@ -66,7 +66,7 @@ function Semillas() {
                 <span className={`rareza ${v.rareza}`}>{etiquetaRareza(v.rareza)}</span>
               </div>
               <p className="fila-detalle">
-                {especie.minutosCrecimiento} min · se vende a {v.precioVenta} 🪙
+                Lista en {especie.minutosCrecimiento} min · se vende a {v.precioVenta} 🪙
                 {tengo > 0 && ` · tenés ${tengo}`}
               </p>
               <p className="fila-nota">{especie.descripcion}</p>
@@ -118,7 +118,7 @@ function Comida() {
                 Quita {c.saciedad} de hambre{tengo > 0 && ` · tenés ${tengo}`}
               </p>
               <p className="fila-nota">
-                Favorita de {favoritosDe(c.id)}. A su animal favorito le da más confianza.
+                La debilidad de {favoritosDe(c.id)}: a ellos les da más confianza que a nadie.
               </p>
             </div>
 

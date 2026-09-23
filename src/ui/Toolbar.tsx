@@ -23,20 +23,20 @@ const HERRAMIENTAS: Herramienta[] = [
     id: 'mirar',
     icono: '👀',
     nombre: 'Mirar',
-    ayuda: 'Tocá sin que pase nada: mirá una planta o abrí la ficha de un animal',
+    ayuda: 'Mirá sin tocar nada: qué hay en cada lugar, cómo anda cada animal',
   },
-  { id: 'plantar', icono: '🌱', nombre: 'Sembrar', ayuda: 'Elegí una semilla y tocá una parcela arada' },
-  { id: 'regar', icono: '💧', nombre: 'Regar', ayuda: 'Sin agua la planta no crece y se marchita' },
-  { id: 'cosechar', icono: '🧺', nombre: 'Cosechar', ayuda: 'Solo funciona con la flor abierta' },
-  { id: 'pala', icono: '🧹', nombre: 'Limpiar', ayuda: 'Vacía la parcela, marchita o no' },
-  { id: 'mimar', icono: '🫶', nombre: 'Mimar', ayuda: 'Tocá un animal para subirle el ánimo' },
-  { id: 'alimentar', icono: '🍽️', nombre: 'Alimentar', ayuda: 'Elegí comida y tocá un animal' },
-  { id: 'arar', icono: '🪓', nombre: 'Arar', ayuda: 'Convierte césped en parcela, y al revés' },
-  { id: 'expandir', icono: '🧱', nombre: 'Terreno', ayuda: 'Tocá una celda verde del borde para ganarla' },
-  { id: 'farola', icono: '🏮', nombre: 'Farola', ayuda: 'Tocá el césped para poner una · tocá una farola para guardarla' },
-  { id: 'agua', icono: '🌊', nombre: 'Agua', ayuda: 'Tocá el césped para volcar un balde · tocá el agua para poner un nenúfar · la pala la seca' },
-  { id: 'juego', icono: '🛝', nombre: 'Juegos', ayuda: 'Tocá el césped para poner el juego elegido · tocá un juego para guardarlo' },
-  { id: 'casa', icono: '🏠', nombre: 'Casa', ayuda: 'Tocá el césped para poner la casa · tocá una casa para guardarla y moverla' },
+  { id: 'plantar', icono: '🌱', nombre: 'Sembrar', ayuda: 'Elegí qué sembrar y tocá la tierra arada' },
+  { id: 'regar', icono: '💧', nombre: 'Regar', ayuda: 'Sin agua no crecen, y si te olvidás se secan' },
+  { id: 'cosechar', icono: '🧺', nombre: 'Cosechar', ayuda: 'Solo cuando la flor ya está abierta' },
+  { id: 'pala', icono: '🧹', nombre: 'Limpiar', ayuda: 'Deja la parcela limpia, esté seca o no' },
+  { id: 'mimar', icono: '🫶', nombre: 'Mimar', ayuda: 'Tocá un animal y hacele un mimo' },
+  { id: 'alimentar', icono: '🍽️', nombre: 'Alimentar', ayuda: 'Elegí qué darle y tocá al que tenga hambre' },
+  { id: 'arar', icono: '🪓', nombre: 'Arar', ayuda: 'Pasto a tierra de siembra, o al revés' },
+  { id: 'expandir', icono: '🧱', nombre: 'Terreno', ayuda: 'Tocá el borde verde para ganarle un pedazo al vacío' },
+  { id: 'farola', icono: '🏮', nombre: 'Farola', ayuda: 'Tocá el pasto para ponerla · tocala de nuevo para levantarla' },
+  { id: 'agua', icono: '🌊', nombre: 'Agua', ayuda: 'Volcá un balde en el pasto · tocá el agua para sumarle un nenúfar · la pala la seca' },
+  { id: 'juego', icono: '🛝', nombre: 'Juegos', ayuda: 'Poné el juego que elegiste en el pasto · tocalo de nuevo para levantarlo' },
+  { id: 'casa', icono: '🏠', nombre: 'Casa', ayuda: 'Elegí en qué pedazo de pasto va · tocala de nuevo para mudarla' },
 ];
 
 export function Toolbar() {
@@ -178,7 +178,7 @@ function TiraComida() {
   if (disponibles.length === 0) {
     return (
       <div className="tira vacia">
-        <span>No te queda comida.</span>
+        <span>Se te acabó la comida.</span>
         <button className="boton suave" onClick={() => setPanel('tienda')}>
           Ir a la tienda
         </button>
@@ -216,7 +216,7 @@ function TiraJuegos() {
   if (disponibles.length === 0) {
     return (
       <div className="tira vacia">
-        <span>No tenés juegos guardados. Se compran en Construir.</span>
+        <span>Todavía no tenés juegos. Se compran en Construir.</span>
         <button className="boton suave" onClick={() => setPanel('construir')}>
           Ir a Construir
         </button>
@@ -256,10 +256,10 @@ function TiraFarolas() {
       </span>
       <span>
         {cantidad === 0
-          ? 'No te quedan farolas.'
+          ? 'No te queda ninguna farola.'
           : cantidad === 1
-            ? 'Tenés 1 para poner.'
-            : `Tenés ${cantidad} para poner.`}
+            ? 'Tenés una esperando.'
+            : `Tenés ${cantidad} esperando.`}
       </span>
       <button
         className="boton suave"
@@ -282,7 +282,7 @@ function TiraCasas() {
   if (disponibles.length === 0) {
     return (
       <div className="tira vacia">
-        <span>No tenés casas guardadas. Hay en la Tienda, en Objetos.</span>
+        <span>Todavía no tenés ninguna casa. Hay en la Tienda, en Objetos.</span>
         <button className="boton suave" onClick={() => setPanel('tienda')}>
           Ir a la tienda
         </button>

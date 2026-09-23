@@ -31,7 +31,7 @@ export function OrdersPanel() {
       titulo="Pedidos"
       subtitulo={
         completados === 0
-          ? 'El pueblo necesita flores'
+          ? 'En el pueblo andan necesitando flores'
           : `${completados} ${completados === 1 ? 'entregado' : 'entregados'}`
       }
       onCerrar={() => setPanel(null)}
@@ -77,10 +77,11 @@ export function OrdersPanel() {
         Pedir otro
       </button>
       <p className="fila-nota">
-        Cambiarlo es gratis. Lo que ya cosechaste para este pedido no pasa al siguiente.
+        Cambiarlo no cuesta nada. Eso sí: lo que ya juntaste para este pedido no se lleva al
+        siguiente.
       </p>
 
-      <h3 className="seccion">Cómo ganar monedas</h3>
+      <h3 className="seccion">De dónde sale la plata</h3>
       <ul className="fuentes">
         <li>
           <b>Cosechar.</b> Cada flor abierta se vende al cosecharla. Las raras valen varias

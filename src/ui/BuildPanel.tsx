@@ -33,8 +33,8 @@ export function BuildPanel() {
           🧱
         </span>
         <span className="tarjeta-texto">
-          <strong>Ganar terreno</strong>
-          <span>Tocá una celda verde translúcida en el borde de una isla.</span>
+          <strong>Ganarle al vacío</strong>
+          <span>Tocá el borde verde de una isla y esa tierra pasa a ser tuya.</span>
         </span>
         <span className="precio">{costoCelda} 🪙</span>
       </button>
@@ -48,20 +48,20 @@ export function BuildPanel() {
         </span>
         <span className="tarjeta-texto">
           <strong>Arar y desarar</strong>
-          <span>Convierte césped en parcela. Tocá una parcela vacía para deshacer.</span>
+          <span>El pasto se vuelve tierra de siembra. Tocá una parcela vacía y vuelve atrás.</span>
         </span>
         <span className="precio">{BALANCE.costoArar} 🪙</span>
       </button>
 
       <p className="fila-nota">
-        La cerca no se coloca: se dibuja sola en el contorno de cada isla. Cada vez que ganás
-        terreno, la valla se reacomoda.
+        La cerca no se compra ni se pone: crece sola alrededor de cada isla y se acomoda cada
+        vez que ganás terreno.
       </p>
 
-      <h3 className="seccion">Juegos para chicos</h3>
+      <h3 className="seccion">Cosas para los chicos</h3>
       <p className="fila-nota">
-        Se ponen sobre el césped con la herramienta Juegos. Sacarlos no cuesta nada: vuelven a
-        tus guardados y los podés poner en otro lado.
+        Se ponen sobre el pasto con la herramienta Juegos. Cambiarlos de lugar no cuesta nada:
+        los levantás y los volvés a poner donde quieras.
       </p>
       <ul className="lista">
         {IDS_JUEGOS.map((id) => (
@@ -105,7 +105,8 @@ export function BuildPanel() {
 
       <h3 className="seccion">Fundar una isla</h3>
       <p className="fila-nota">
-        Aparece un islote nuevo cerca del jardín, pelado y chico. Crecerlo es cosa tuya.
+        Aparece un islote chiquito al lado del jardín, pelado como el primer día. De ahí en más,
+        es cosa tuya.
       </p>
       <button
         className="boton"

@@ -24,7 +24,7 @@ export function CharacterPanel() {
   const setPanel = useGame((s) => s.setPanel);
 
   return (
-    <Drawer titulo="Personaje" subtitulo="Así te ves en el jardín" onCerrar={() => setPanel(null)}>
+    <Drawer titulo="Personaje" subtitulo="El que anda dando vueltas por el jardín" onCerrar={() => setPanel(null)}>
       <div className="previsualizacion">
         <PixelIcon matrix={matrizAvatar(avatar, usePoseDeMuestra())} palette={paletaAvatar(avatar)} size={128} />
       </div>
@@ -110,8 +110,8 @@ export function CharacterPanel() {
       ) : null}
 
       <p className="fila-nota">
-        El personaje camina solo hasta donde trabajás: al sembrar, regar o acariciar a un animal,
-        se acerca por su cuenta.
+        No hace falta llevarlo de la mano: cuando sembrás, regás o acariciás a un animal, va
+        caminando solo hasta ahí. Si querés manejarlo vos, usá W A S D o las flechas.
       </p>
     </Drawer>
   );

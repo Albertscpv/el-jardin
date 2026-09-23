@@ -98,7 +98,7 @@ export function HUD() {
             )}
           </button>
         ))}
-        <button className="chip" onClick={() => setModo('practica')} title="Practicá tiro al arco">
+        <button className="chip" onClick={() => setModo('practica')} title="Un rato de tiro al arco">
           Práctica
         </button>
         <button

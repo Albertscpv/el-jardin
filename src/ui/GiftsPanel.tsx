@@ -36,7 +36,7 @@ export function GiftsPanel() {
     <Drawer
       titulo="Regalos"
       subtitulo={
-        total > 0 ? `${total} monedas regaladas hasta ahora` : 'Todavía no recibiste ninguno'
+        total > 0 ? `${total} monedas te regalamos hasta ahora` : 'Por ahora no hay nada para vos'
       }
       onCerrar={() => setPanel(null)}
     >
@@ -51,7 +51,7 @@ export function GiftsPanel() {
           </div>
           <p className="fila-detalle">
             {diarioListo
-              ? 'Uno por día. Se renueva a la medianoche.'
+              ? 'Uno por día, todos los días. Se renueva a la medianoche.'
               : `Ya lo cobraste hoy. El próximo, en ${formatearEspera(faltaParaManana(ahora))}.`}
           </p>
         </div>
@@ -104,18 +104,17 @@ export function GiftsPanel() {
         );
       })}
 
-      <h3 className="seccion">Cómo funcionan</h3>
+      <h3 className="seccion">La letra chica</h3>
       <p className="fila-nota">
-        Cada regalo se cobra una sola vez por jardín, y alcanza también a las partidas que ya
-        existían antes de que el regalo se inventara. Si jugás con cuenta, viaja con tu jardín:
-        no se vuelve a acreditar al entrar desde otro dispositivo.
+        Cada regalo se cobra una sola vez por jardín, incluso si tu jardín es más viejo que el
+        regalo. Si jugás con cuenta, viaja con él: no se vuelve a pagar al entrar desde otro
+        teléfono.
       </p>
 
-      <h3 className="seccion">Regalos de tus animales</h3>
+      <h3 className="seccion">Lo que dejan tus animales</h3>
       <p className="fila-nota">
-        Aparte de estos, un animal adoptado y contento te deja monedas cada tanto por su cuenta.
-        Esos no se listan acá: caen solos mientras jugás, y también mientras el juego está
-        cerrado.
+        Un animal adoptado y contento te deja monedas cada tanto, sin que le pidas nada. Esos
+        no se anotan acá: aparecen solos mientras jugás, y también mientras no estás.
       </p>
     </Drawer>
   );

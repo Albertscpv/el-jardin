@@ -287,7 +287,7 @@ export const ANIMAL_SPECIES: Record<AnimalSpeciesId, AnimalSpecies> = {
     comidaFavorita: 'pescado',
     velocidad: 18,
     vuela: false,
-    descripcion: 'Viene cuando quiere. Se queda cuando le conviene.',
+    descripcion: 'Viene cuando quiere y se queda cuando le conviene. Un gato, digamos.',
   },
   zorro: {
     id: 'zorro',
@@ -319,7 +319,7 @@ export const ANIMAL_SPECIES: Record<AnimalSpeciesId, AnimalSpecies> = {
     velocidad: 24,
     vuela: false,
     radioPaseo: 9,
-    descripcion: 'Tranquila y observadora. Si confia en vos, no se va mas.',
+    descripcion: 'Tranquila y observadora. Si te agarra confianza, no se va más.',
   },
   rana: {
     id: 'rana',
@@ -343,7 +343,7 @@ export const ANIMAL_SPECIES: Record<AnimalSpeciesId, AnimalSpecies> = {
     velocidad: 20,
     vuela: false,
     radioPaseo: 5,
-    descripcion: 'No sale del agua. Cuanto más grande el estanque, más se pasea.',
+    descripcion: 'No sale del agua ni loco. Cuanto más grande el estanque, más se pasea.',
   },
   caballo: {
     id: 'caballo',
@@ -353,7 +353,7 @@ export const ANIMAL_SPECIES: Record<AnimalSpeciesId, AnimalSpecies> = {
     velocidad: 30,
     vuela: false,
     radioPaseo: 9,
-    descripcion: 'El animal mas grande del jardin. Cuesta ganarselo y se nota cuando pasa.',
+    descripcion: 'El más grande del jardín. Cuesta ganárselo, y se nota cuando pasa al lado.',
   },
 };
 

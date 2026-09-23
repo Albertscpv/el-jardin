@@ -17,19 +17,19 @@ export function AnimalsPanel() {
   return (
     <Drawer
       titulo="Animales"
-      subtitulo={`${adoptados.length} en casa · ${visitantes.length} de visita`}
+      subtitulo={`${adoptados.length} en casa · ${visitantes.length} de paso`}
       onCerrar={() => setPanel(null)}
     >
       {animales.length > 0 && (
         <button className="boton ancho" onClick={alimentarTodos}>
-          🥕 Alimentar a todos con su comida favorita
+          🥕 Darle a cada uno lo que más le gusta
         </button>
       )}
 
       {animales.length === 0 && (
         <p className="vacio-largo">
-          Todavía no vino nadie. Los animales aparecen solos cuando hay flores abiertas: una
-          mariposa con la primera, y el resto a medida que el jardín crece.
+          Por ahora no vino nadie. Los animales se acercan solos cuando hay flores abiertas:
+          primero una mariposa, y después el resto, a medida que el jardín se pone lindo.
         </p>
       )}
 

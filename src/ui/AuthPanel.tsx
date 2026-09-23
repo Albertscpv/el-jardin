@@ -28,8 +28,8 @@ function SinConfigurar() {
   return (
     <>
       <p className="vacio-largo">
-        Este jardín está funcionando sin cuentas: todo se guarda en este navegador y no sale de
-        acá.
+        Por ahora este jardín anda sin cuentas: todo queda guardado en este navegador y no sale
+        de acá.
       </p>
       <p className="fila-nota">
         Para habilitar el registro hace falta conectar un proyecto de Supabase con las variables{' '}
@@ -56,7 +56,7 @@ function Sesion() {
           <div className="fila-titulo">
             <strong>{email ?? 'Sesión activa'}</strong>
           </div>
-          <p className="fila-detalle">Cada cambio del jardín se sincroniza solo.</p>
+          <p className="fila-detalle">Todo lo que hacés se guarda solo, sin que pienses en eso.</p>
         </div>
       </div>
 
@@ -64,8 +64,8 @@ function Sesion() {
 
       <h3 className="seccion">Cerrar sesión</h3>
       <p className="fila-nota">
-        Volvés a la partida guardada en este navegador. Tu jardín de la nube queda intacto y lo
-        recuperás al entrar de nuevo.
+        Volvés al jardín que tenés guardado en este navegador. El de la nube te espera igual:
+        lo recuperás cuando vuelvas a entrar.
       </p>
       <button className="boton peligro" style={{ marginTop: 10 }} disabled={ocupado} onClick={salir}>
         {ocupado ? 'Saliendo…' : 'Cerrar sesión'}
