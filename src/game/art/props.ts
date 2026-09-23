@@ -220,22 +220,48 @@ export const PALETA_NENUFAR: Palette = { a: '#4f9a46', b: '#356e30' };
  *   r detalle de color · n arena
  */
 
-/** Columpio: dos hamacas colgando de un caballete. */
+/**
+ * Los juegos vienen partidos en dos: lo que se queda quieto y lo que se
+ * mueve. El mundo arma una malla por parte y hace girar la segunda, que es
+ * lo que los hace parecer en uso en vez de adornos.
+ */
+
+/** Columpio: el caballete. */
 export const COLUMPIO: Matrix = [
   '................',
   '................',
   '..cccccccccccc..',
   '..c..........c..',
-  '..c.s.s..s.s.c..',
-  '..c.s.s..s.s.c..',
-  '..c.rrr..rrr.c..',
-  '..c.rrr..rrr.c..',
+  '..c..........c..',
+  '..c..........c..',
+  '..c..........c..',
+  '..c..........c..',
   '..c..........c..',
   '.Cc..........cC.',
   '.c............c.',
   '.c............c.',
   'Cc............cC',
   'C..............C',
+  '................',
+  '................',
+];
+
+/** Las dos hamacas, que cuelgan de la barra de arriba (fila 2). */
+export const COLUMPIO_HAMACAS: Matrix = [
+  '................',
+  '................',
+  '................',
+  '....s.s..s.s....',
+  '....s.s..s.s....',
+  '....s.s..s.s....',
+  '....s.s..s.s....',
+  '....rrr..rrr....',
+  '....rrr..rrr....',
+  '................',
+  '................',
+  '................',
+  '................',
+  '................',
   '................',
   '................',
 ];
@@ -267,28 +293,72 @@ export const TOBOGAN: Matrix = [
   '................',
 ];
 
+/**
+ * Lo que baja por la rampa: una pelota que alguien dejó ir. Se dibuja
+ * arriba de todo, donde empieza el recorrido.
+ */
+export const TOBOGAN_PELOTA: Matrix = [
+  '................',
+  '................',
+  '................',
+  '................',
+  '..........ppp...',
+  '.........ppppp..',
+  '.........ppppp..',
+  '.........ppppp..',
+  '..........ppp...',
+  '................',
+  '................',
+  '................',
+  '................',
+  '................',
+  '................',
+  '................',
+];
+
 export const PALETA_TOBOGAN: Palette = {
   c: '#4a8ad8',
   C: '#2f5f99',
   a: '#e8e4d8',
   r: '#f2b33a',
+  p: '#e0584a',
 };
 
-/** Subibaja: la tabla apoyada en su pivote. */
+/** Subibaja: el pivote. */
 export const SUBIBAJA: Matrix = [
   '................',
   '................',
   '................',
-  '.............rr.',
-  '..........rrrr..',
-  '.......rrrr.....',
-  '...rrrr.........',
-  '.rrr............',
+  '................',
+  '................',
+  '................',
+  '................',
+  '................',
   '........cc......',
   '.......cccc.....',
   '......cc..cc....',
   '.....cc....cc...',
   '....CC......CC..',
+  '................',
+  '................',
+  '................',
+];
+
+/** La tabla, que bascula sobre el pivote (columna 8, fila 8). */
+export const SUBIBAJA_TABLA: Matrix = [
+  '................',
+  '................',
+  '................',
+  '................',
+  '................',
+  '................',
+  '..rrrrrrrrrrrr..',
+  '..rrrrrrrrrrrr..',
+  '................',
+  '................',
+  '................',
+  '................',
+  '................',
   '................',
   '................',
   '................',
@@ -300,7 +370,7 @@ export const PALETA_SUBIBAJA: Palette = {
   r: '#e0785a',
 };
 
-/** Arenero: un cajon de madera lleno de arena, con su palita. */
+/** Arenero: el cajon con su arena. */
 export const ARENERO: Matrix = [
   '................',
   '................',
@@ -308,8 +378,8 @@ export const ARENERO: Matrix = [
   '................',
   '...cccccccccc...',
   '..cnnnnnnnnnnc..',
-  '..cnnnnnrnnnnc..',
-  '..cnnnnrrnnnnc..',
+  '..cnnnnnnnnnnc..',
+  '..cnnnnnnnnnnc..',
   '..cnnnnnnnnnnc..',
   '..cnnnnnnnnnnc..',
   '..cnnnnnnnnnnc..',
@@ -320,9 +390,30 @@ export const ARENERO: Matrix = [
   '................',
 ];
 
+/** La palita, clavada en la arena y asomando por arriba del cajón. */
+export const ARENERO_PALITA: Matrix = [
+  '................',
+  '.......mm.......',
+  '.......mm.......',
+  '.......mm.......',
+  '......rrrr......',
+  '......rrrr......',
+  '.......rr.......',
+  '................',
+  '................',
+  '................',
+  '................',
+  '................',
+  '................',
+  '................',
+  '................',
+  '................',
+];
+
 export const PALETA_ARENERO: Palette = {
   c: '#b8864a',
   C: '#8a6238',
   n: '#f0dca8',
   r: '#e0584a',
+  m: '#c9a06a',
 };

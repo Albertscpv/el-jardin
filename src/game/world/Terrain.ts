@@ -54,10 +54,42 @@ function texturaCascada(): THREE.Texture {
 // contraluz, y con marrones oscuros se leeria como un bloque negro.
 const TIERRA = ['#7d5836', '#6e4d2f', '#61432a', '#553a24'];
 
+/**
+ * Una parte suelta de un juego: se dibuja en su propia malla y se mueve.
+ * El pivote va en pixeles del sprite (columna y fila) porque es lo que se
+ * ve al dibujarlo; el mundo lo pasa a unidades.
+ *
+ * 'bascula' gira un poco de ida y vuelta (la hamaca, la tabla, la palita).
+ * 'desliza' recorre un camino y vuelve a empezar (la pelota del tobogan).
+ */
+interface ParteMovil {
+  matriz: readonly string[];
+  fondo?: number;
+  movimiento: 'bascula' | 'desliza';
+  /** bascula: punto sobre el que gira. */
+  pivote?: { col: number; fila: number };
+  eje?: 'x' | 'z';
+  /** bascula: cuanto gira, en radianes; desliza: no se usa. */
+  amplitud?: number;
+  /** Segundos que tarda el ciclo entero. */
+  periodo: number;
+  /** desliza: de donde a donde va, en pixeles del sprite. */
+  desde?: { col: number; fila: number };
+  hasta?: { col: number; fila: number };
+  /** Cuanto se adelanta hacia la camara, en pixeles: para que no quede tapada. */
+  frente?: number;
+}
+
 /** Objetos que salen de una matriz extruida. La farola se arma aparte, con cajas. */
 const MATRIZ_PROP: Record<
   Exclude<PropTipo, 'farola'>,
-  { matriz: readonly string[]; paleta: Record<string, string>; fondo: number; escala: number }
+  {
+    matriz: readonly string[];
+    paleta: Record<string, string>;
+    fondo: number;
+    escala: number;
+    partes?: ParteMovil[];
+  }
 > = {
   farol: { matriz: P.FAROL, paleta: P.PALETA_FAROL, fondo: 6, escala: 1.1 },
   maceta: { matriz: P.MACETA, paleta: P.PALETA_MACETA, fondo: 8, escala: 0.9 },
@@ -65,11 +97,75 @@ const MATRIZ_PROP: Record<
   // El nenufar es una hoja plana: se extruye apenas y flota sobre el agua.
   nenufar: { matriz: P.NENUFAR, paleta: P.PALETA_NENUFAR, fondo: 1, escala: 1 },
   // Los juegos son estructuras de caños: se extruyen poco y ocupan el tile.
-  columpio: { matriz: P.COLUMPIO, paleta: P.PALETA_COLUMPIO, fondo: 2, escala: 1.15 },
-  tobogan: { matriz: P.TOBOGAN, paleta: P.PALETA_TOBOGAN, fondo: 2, escala: 1.15 },
-  subibaja: { matriz: P.SUBIBAJA, paleta: P.PALETA_SUBIBAJA, fondo: 2, escala: 1.1 },
+  columpio: {
+    matriz: P.COLUMPIO,
+    paleta: P.PALETA_COLUMPIO,
+    fondo: 2,
+    escala: 1.6,
+    // Las hamacas cuelgan de la barra de arriba y van y vienen.
+    partes: [
+      {
+        matriz: P.COLUMPIO_HAMACAS,
+        movimiento: 'bascula',
+        pivote: { col: 8, fila: 2 },
+        eje: 'x',
+        amplitud: 0.34,
+        periodo: 2.6,
+      },
+    ],
+  },
+  tobogan: {
+    matriz: P.TOBOGAN,
+    paleta: P.PALETA_TOBOGAN,
+    fondo: 2,
+    escala: 1.6,
+    partes: [
+      {
+        matriz: P.TOBOGAN_PELOTA,
+        movimiento: 'desliza',
+        // De arriba de la rampa hasta el borde de abajo, siguiendo el tobogán.
+        desde: { col: 11, fila: 6 },
+        hasta: { col: 8, fila: 13 },
+        periodo: 3.4,
+      },
+    ],
+  },
+  subibaja: {
+    matriz: P.SUBIBAJA,
+    paleta: P.PALETA_SUBIBAJA,
+    fondo: 2,
+    escala: 1.5,
+    partes: [
+      {
+        matriz: P.SUBIBAJA_TABLA,
+        movimiento: 'bascula',
+        pivote: { col: 8, fila: 7 },
+        eje: 'z',
+        amplitud: 0.4,
+        periodo: 3,
+      },
+    ],
+  },
   // El arenero si es un cajon: se extruye hasta parecer una caja de verdad.
-  arenero: { matriz: P.ARENERO, paleta: P.PALETA_ARENERO, fondo: 9, escala: 1.1 },
+  arenero: {
+    matriz: P.ARENERO,
+    paleta: P.PALETA_ARENERO,
+    fondo: 9,
+    escala: 1.4,
+    partes: [
+      {
+        matriz: P.ARENERO_PALITA,
+        fondo: 2,
+        movimiento: 'bascula',
+        // Apoyada en el borde de arriba del cajón, adelantada para que se vea.
+        pivote: { col: 8, fila: 6 },
+        eje: 'z',
+        amplitud: 0.24,
+        periodo: 2.2,
+        frente: 3,
+      },
+    ],
+  },
 };
 
 /**
@@ -111,6 +207,15 @@ export class Terrain {
   private aguas: Array<{ malla: THREE.Mesh; base: Float32Array }> = [];
   /** Caidas de agua por el borde de la isla, con su textura que se desplaza. */
   private cascadas: THREE.Texture[] = [];
+  /** Partes de los juegos que se mueven solas, con su desfase. */
+  private moviles: Array<{
+    malla: THREE.Mesh;
+    parte: ParteMovil;
+    /** Entre 0 y 1: para que dos juegos iguales no se muevan al unisono. */
+    fase: number;
+    base: THREE.Vector3;
+    escala: number;
+  }> = [];
   private humedas = new Map<CeldaId, boolean>();
   private tintes = new Map<CeldaId, number>();
   private geoParcela = new THREE.BoxGeometry(1, ALTURA_BANCAL + 0.55, 1);
@@ -337,6 +442,56 @@ export class Terrain {
   }
 
   /**
+   * Una parte suelta de un juego, en su propia malla para poder moverla.
+   * El sprite se dibuja con el pivote en el origen, asi que girar la malla
+   * gira la pieza donde corresponde: la hamaca cuelga de la barra, la tabla
+   * bascula sobre su apoyo.
+   */
+  private construirParteMovil(
+    tipo: string,
+    parte: ParteMovil,
+    paleta: Record<string, string>,
+    escala: number,
+    x: number,
+    z: number,
+  ): void {
+    const geo = voxelGeometry(`${tipo}:movil`, parte.matriz, paleta, {
+      cell: 1 / 16,
+      depth: parte.fondo ?? 2,
+      anchor: 'center-bottom',
+      sombreado: 0.6,
+    });
+
+    // Del sistema del sprite (columna, fila) al de la malla, en unidades.
+    const filas = parte.matriz.length;
+    const aUnidades = (p: { col: number; fila: number }) => ({
+      x: (p.col + 0.5 - parte.matriz[0].length / 2) / 16,
+      y: (filas - p.fila - 0.5) / 16,
+    });
+
+    const ancla = parte.movimiento === 'bascula' ? parte.pivote! : parte.desde!;
+    const u = aUnidades(ancla);
+    geo.translate(-u.x, -u.y, 0);
+
+    const malla = new THREE.Mesh(geo, materialVoxel());
+    malla.position.set(x + u.x * escala, u.y * escala, z + ((parte.frente ?? 0) / 16) * escala);
+    malla.scale.setScalar(escala);
+    malla.castShadow = true;
+    malla.receiveShadow = true;
+    this.grupo.add(malla);
+
+    // Cada juego arranca en un momento distinto del ciclo: dos columpios
+    // moviendose igual se ven como una animacion, no como un jardin.
+    this.moviles.push({
+      malla,
+      parte,
+      fase: (Math.abs(Math.sin(x * 12.9898 + z * 78.233)) * 1000) % 1,
+      base: malla.position.clone(),
+      escala,
+    });
+  }
+
+  /**
    * Cascadas: donde una celda de agua da al vacio, cae una cortina de agua
    * que se pierde debajo de la isla. No hay fisica: es una textura que baja
    * sin parar, que a esta escala se lee igual que agua cayendo.
@@ -398,6 +553,10 @@ export class Terrain {
       malla.castShadow = true;
       malla.receiveShadow = true;
       this.grupo.add(malla);
+
+      for (const parte of def.partes ?? []) {
+        this.construirParteMovil(prop.tipo, parte, def.paleta, def.escala, x, z);
+      }
 
       if (prop.tipo === 'farol') this.faroles.push(new THREE.Vector3(x, 1.25, z));
     }
@@ -461,6 +620,32 @@ export class Terrain {
       atributo.needsUpdate = true;
     }
 
+    // Los juegos en uso: la hamaca va y viene, la tabla bascula, la pelota baja.
+    for (const { malla, parte, fase, base, escala } of this.moviles) {
+      const k = ((this.tiempo / parte.periodo + fase) % 1) * Math.PI * 2;
+
+      if (parte.movimiento === 'bascula') {
+        const angulo = Math.sin(k) * (parte.amplitud ?? 0.3);
+        if (parte.eje === 'z') malla.rotation.z = angulo;
+        else malla.rotation.x = angulo;
+        continue;
+      }
+
+      // Desliza: baja por la rampa y vuelve arriba. La vuelta es un salto,
+      // asi que se la esconde achicandola al final del recorrido.
+      const avance = (this.tiempo / parte.periodo + fase) % 1;
+      const d = parte.desde!;
+      const h = parte.hasta!;
+      const filas = parte.matriz.length;
+      const dx = ((h.col - d.col) / 16) * escala;
+      const dy = (-(h.fila - d.fila) / 16) * escala;
+      void filas;
+      const t01 = Math.min(1, avance / 0.55);
+      malla.position.set(base.x + dx * t01, base.y + dy * t01, base.z);
+      const visible = avance < 0.55;
+      malla.scale.setScalar(visible ? escala : 0.0001);
+    }
+
     // El agua que cae: la textura baja sin fin.
     for (const textura of this.cascadas) {
       textura.offset.y = (textura.offset.y - dt * 0.9) % 1;
@@ -484,6 +669,7 @@ export class Terrain {
     this.aguas = [];
     for (const textura of this.cascadas) textura.dispose();
     this.cascadas = [];
+    this.moviles = [];
     this.humedas.clear();
     this.tintes.clear();
   }
