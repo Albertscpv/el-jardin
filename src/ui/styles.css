@@ -559,6 +559,21 @@ input {
   display: none;
 }
 
+.item-emoji {
+  font-size: 20px;
+  line-height: 1.1;
+}
+
+.item-nombre {
+  font-size: 10.5px;
+  color: var(--tenue);
+}
+
+.item.activo .item-nombre {
+  color: var(--miel);
+  font-weight: 600;
+}
+
 .tira-nota {
   align-self: center;
   padding-left: 4px;

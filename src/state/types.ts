@@ -358,3 +358,6 @@ export interface Toast {
 }
 
 export type PestanaTienda = 'semillas' | 'comida' | 'objetos';
+
+/** Lo que deja la herramienta Agua al tocar: agua, tierra otra vez, o un nenúfar. */
+export type ModoAgua = 'agua' | 'tierra' | 'nenufar';

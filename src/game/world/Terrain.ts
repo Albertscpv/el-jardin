@@ -386,8 +386,14 @@ export class Terrain {
         sombreado: 0.6,
       });
       const malla = new THREE.Mesh(geo, materialVoxel());
-      // Un nenufar flota: se apoya en la superficie, no en el fondo.
-      malla.position.set(x, esAgua(isla, prop.col, prop.row) ? NIVEL_AGUA : 0, z);
+      malla.position.set(x, 0, z);
+
+      if (prop.tipo === 'nenufar') {
+        // Una hoja flota acostada. El resto de los props se dibujan de frente
+        // y se extruyen hacia atras; este hay que voltearlo sobre el agua.
+        malla.rotation.x = -Math.PI / 2;
+        malla.position.y = NIVEL_AGUA + 0.02;
+      }
       malla.scale.setScalar(def.escala);
       malla.castShadow = true;
       malla.receiveShadow = true;

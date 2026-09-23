@@ -34,7 +34,7 @@ const HERRAMIENTAS: Herramienta[] = [
   { id: 'arar', icono: '🪓', nombre: 'Arar', ayuda: 'Pasto a tierra de siembra, o al revés' },
   { id: 'expandir', icono: '🧱', nombre: 'Terreno', ayuda: 'Tocá el borde verde para ganarle un pedazo al vacío' },
   { id: 'farola', icono: '🏮', nombre: 'Farola', ayuda: 'Tocá el pasto para ponerla · tocala de nuevo para levantarla' },
-  { id: 'agua', icono: '🌊', nombre: 'Agua', ayuda: 'Volcá un balde en el pasto · tocá el agua para sumarle un nenúfar · la pala la seca' },
+  { id: 'agua', icono: '🌊', nombre: 'Agua', ayuda: 'Elegí qué dejar en cada lugar: agua, tierra otra vez o un nenúfar' },
   { id: 'juego', icono: '🛝', nombre: 'Juegos', ayuda: 'Poné el juego que elegiste en el pasto · tocalo de nuevo para levantarlo' },
   { id: 'casa', icono: '🏠', nombre: 'Casa', ayuda: 'Elegí en qué pedazo de pasto va · tocala de nuevo para mudarla' },
 ];
@@ -123,6 +123,7 @@ export function Toolbar() {
           {herramienta === 'farola' && <TiraFarolas />}
           {herramienta === 'casa' && <TiraCasas />}
           {herramienta === 'juego' && <TiraJuegos />}
+          {herramienta === 'agua' && <TiraAgua />}
         </>
       )}
     </div>
@@ -202,6 +203,37 @@ function TiraComida() {
           </button>
         );
       })}
+    </div>
+  );
+}
+
+const OPCIONES_AGUA = [
+  { id: 'agua' as const, icono: '💧', nombre: 'Agua', nota: 'Un balde por lugar' },
+  { id: 'tierra' as const, icono: '🟩', nombre: 'Tierra', nota: 'Tapa el agua y vuelve el pasto' },
+  { id: 'nenufar' as const, icono: '🪷', nombre: 'Nenúfar', nota: 'Flota sobre el agua' },
+];
+
+function TiraAgua() {
+  const modo = useGame((s) => s.modoAgua);
+  const setModoAgua = useGame((s) => s.setModoAgua);
+  const actual = OPCIONES_AGUA.find((o) => o.id === modo) ?? OPCIONES_AGUA[0];
+
+  return (
+    <div className="tira">
+      {OPCIONES_AGUA.map((o) => (
+        <button
+          key={o.id}
+          className={modo === o.id ? 'item activo' : 'item'}
+          onClick={() => setModoAgua(o.id)}
+          title={o.nota}
+        >
+          <span className="item-emoji" aria-hidden>
+            {o.icono}
+          </span>
+          <span className="item-nombre">{o.nombre}</span>
+        </button>
+      ))}
+      <span className="tira-nota">{actual.nota}</span>
     </div>
   );
 }

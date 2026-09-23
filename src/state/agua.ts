@@ -1,11 +1,12 @@
 /**
  * Agua: se vierte y se derrama sola.
  *
- * No hay simulacion de fluidos. Al verter, el agua se reparte de a poco
- * hacia las celdas vecinas libres, como un charco que se abre, y ahi queda.
- * Eso da la sensacion de agua sin costar un solo calculo por frame ni un
- * campo nuevo en el guardado: las celdas mojadas son `isla.agua`, que ya
- * existia desde el principio.
+ * No hay simulacion de fluidos: cada balde moja una celda y ahi queda. El
+ * charco lo dibuja el jugador, celda por celda, que es lo que deja armar
+ * la forma que uno quiere. Las celdas mojadas son `isla.agua`, que existia
+ * desde el principio, asi que esto no agranda el guardado.
+ *
+ * Rellenar es lo contrario: donde habia agua vuelve a haber tierra.
  *
  * Lo que se ve caer por el borde de la isla es una cascada dibujada donde
  * el agua toca el vacio (ver world/Cascadas.ts); tampoco es estado.
@@ -20,8 +21,8 @@ import { esAgua, esParcela, tieneSuelo } from './islas';
 import { propEn } from './objetos';
 import type { GameState, IslaState } from './types';
 
-/** Celdas que moja un balde, contando la que se toca. */
-export const CELDAS_POR_BALDE = 5;
+/** Celdas que moja un balde. Una: el charco se dibuja a mano. */
+export const CELDAS_POR_BALDE = 1;
 
 export type ResultadoAgua =
   | 'vertida'
@@ -45,11 +46,7 @@ export function mojable(estado: GameState, isla: IslaState, col: number, row: nu
   return !casaEnCelda(estado, isla.id, col, row);
 }
 
-/**
- * Vierte un balde: moja la celda tocada y se derrama hacia las vecinas
- * libres, en circulos, hasta gastar el balde. Si al lado hay parcelas,
- * casas o flores, el agua las rodea en vez de taparlas.
- */
+/** Vierte un balde en la celda tocada. Solo va sobre cesped libre. */
 export function verterAgua(
   estado: GameState,
   islaId: string,
@@ -63,30 +60,7 @@ export function verterAgua(
   if (esParcela(isla, col, row)) return { estado, resultado: 'parcela', mojadas: 0 };
   if (!mojable(estado, isla, col, row)) return { estado, resultado: 'ocupada', mojadas: 0 };
 
-  const nuevas: string[] = [];
-  const vistas = new Set<string>([celdaLocal(col, row)]);
-  let frente = [{ col, row }];
-  nuevas.push(celdaLocal(col, row));
-
-  // El derrame avanza por anillos: primero las vecinas, despues las de mas alla.
-  while (nuevas.length < CELDAS_POR_BALDE && frente.length > 0) {
-    const siguiente: Array<{ col: number; row: number }> = [];
-    for (const celda of frente) {
-      for (const [dc, dr] of VECINAS) {
-        const c = celda.col + dc;
-        const r = celda.row + dr;
-        const clave = celdaLocal(c, r);
-        if (vistas.has(clave)) continue;
-        vistas.add(clave);
-        if (!mojable(estado, isla, c, r)) continue;
-        siguiente.push({ col: c, row: r });
-        nuevas.push(clave);
-        if (nuevas.length >= CELDAS_POR_BALDE) break;
-      }
-      if (nuevas.length >= CELDAS_POR_BALDE) break;
-    }
-    frente = siguiente;
-  }
+  const nuevas = [celdaLocal(col, row)];
 
   return {
     estado: {
@@ -98,7 +72,10 @@ export function verterAgua(
   };
 }
 
-/** Saca el agua de una celda, y el nenufar que hubiera encima. */
+/**
+ * Rellena con tierra: donde habia agua vuelve a haber cesped, y se va el
+ * nenufar que estuviera flotando encima.
+ */
 export function secarCelda(
   estado: GameState,
   islaId: string,

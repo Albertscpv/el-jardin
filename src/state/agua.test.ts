@@ -85,16 +85,17 @@ describe('verter agua', () => {
     }
   });
 
-  it('un charco chico no se pasa del lugar disponible', () => {
-    const base = crearEstadoInicial();
-    const chica = {
-      ...base,
-      cultivos: {},
-      islas: [{ ...base.islas[0], suelo: [celdaLocal(0, 0), celdaLocal(0, 1)], parcelas: [], agua: [], props: [] }],
-    };
-    const { estado, mojadas } = verterAgua(chica, isla(chica).id, 0, 0);
-    expect(mojadas).toBe(2);
-    expect(celdasDeAgua(estado)).toBe(2);
+  it('el charco se dibuja a mano: cada balde moja solo donde tocás', () => {
+    const e = jardinLlano();
+    const uno = verterAgua(e, isla(e).id, 5, 5).estado;
+    // Al lado no se mojó nada.
+    for (const [c, r] of [[4, 5], [6, 5], [5, 4], [5, 6]]) {
+      expect(esAgua(isla(uno), c, r)).toBe(false);
+    }
+
+    const dos = verterAgua(uno, isla(e).id, 5, 6).estado;
+    expect(celdasDeAgua(dos)).toBe(2);
+    expect(esAgua(isla(dos), 5, 6)).toBe(true);
   });
 });
 

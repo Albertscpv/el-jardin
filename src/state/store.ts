@@ -88,6 +88,7 @@ import type {
   PlantState,
   PropTipo,
   PestanaTienda,
+  ModoAgua,
   TipoCasa,
   Toast,
   ToolId,
@@ -133,6 +134,8 @@ interface Store {
   casaSeleccionada: TipoCasa | null;
   /** El juego que pone la herramienta Juegos. */
   juegoSeleccionado: JuegoId;
+  /** Qué deja la herramienta Agua: agua, tierra otra vez o un nenúfar. */
+  modoAgua: ModoAgua;
   panel: PanelId;
   animalAbierto: string | null;
   adoptando: string | null;
@@ -156,6 +159,7 @@ interface Store {
   setComida: (id: FoodId) => void;
   setCasa: (tipo: TipoCasa) => void;
   setJuego: (id: JuegoId) => void;
+  setModoAgua: (m: ModoAgua) => void;
   comprarJuego: (id: JuegoId) => void;
   comprarCasa: (tipo: TipoCasa) => void;
   /** Tocar el cuerpo de una casa: con la herramienta Casa la guarda; si no, la describe. */
@@ -266,6 +270,7 @@ export const useGame = create<Store>()((set, get) => {
     comidaSeleccionada: 'nectar',
     casaSeleccionada: null,
     juegoSeleccionado: 'columpio',
+    modoAgua: 'agua',
     panel: null,
     animalAbierto: null,
     adoptando: null,
@@ -400,6 +405,7 @@ export const useGame = create<Store>()((set, get) => {
     setComida: (comidaSeleccionada) => set({ comidaSeleccionada, herramienta: 'alimentar' }),
     setCasa: (casaSeleccionada) => set({ casaSeleccionada, herramienta: 'casa' }),
     setJuego: (juegoSeleccionado) => set({ juegoSeleccionado, herramienta: 'juego' }),
+    setModoAgua: (modoAgua) => set({ modoAgua, herramienta: 'agua' }),
 
     comprarJuego(id) {
       const tras = comprarJuegoPuro(get().estado, id);
@@ -512,22 +518,29 @@ export const useGame = create<Store>()((set, get) => {
         }
 
         case 'agua': {
-          // Sobre el agua la herramienta pone y saca nenufares; sobre el
-          // cesped, vierte un balde que se derrama solo.
-          if (esAgua(isla, col, row)) {
-            const { estado: tras, resultado } = alternarNenufar(get().estado, islaId, col, row);
-            if (tras !== get().estado) mutar(() => tras);
-            return avisar(
-              resultado === 'puesto' ? 'Nenúfar puesto 🪷' : 'Nenúfar sacado',
-              'info',
-            );
+          const modo = get().modoAgua;
+
+          // Bloque de tierra: donde había agua vuelve a haber pasto.
+          if (modo === 'tierra') {
+            const { estado: tras, secada } = secarCelda(get().estado, islaId, col, row);
+            if (!secada) return avisar('Ahí no hay agua para tapar', 'aviso');
+            mutar(() => tras);
+            return avisar('Tierra de nuevo en su lugar 🟩', 'exito');
           }
+
+          if (modo === 'nenufar') {
+            const { estado: tras, resultado } = alternarNenufar(get().estado, islaId, col, row);
+            if (resultado === 'sin-agua') return avisar('El nenúfar flota: va sobre el agua', 'aviso');
+            mutar(() => tras);
+            return avisar(resultado === 'puesto' ? 'Nenúfar flotando 🪷' : 'Nenúfar afuera', 'info');
+          }
+
           if (casaAca) return avisar(unaDe(AHI_HAY_CASA), 'aviso');
-          const { estado: tras, resultado, mojadas } = verterAgua(get().estado, islaId, col, row);
+          const { estado: tras, resultado } = verterAgua(get().estado, islaId, col, row);
           if (tras !== get().estado) mutar(() => tras);
           if (resultado !== 'vertida') return avisar(MENSAJE_AGUA[resultado], 'aviso');
           EventBus.emit('efecto:regar', { celda: id });
-          return avisar(`El agua se derramó por ${mojadas} pedacitos 💧`, 'exito');
+          return avisar('Un balde de agua 💧', 'exito');
         }
 
         case 'juego': {
