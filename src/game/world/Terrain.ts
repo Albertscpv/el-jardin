@@ -64,6 +64,12 @@ const MATRIZ_PROP: Record<
   regadera: { matriz: P.REGADERA, paleta: P.PALETA_REGADERA, fondo: 7, escala: 0.8 },
   // El nenufar es una hoja plana: se extruye apenas y flota sobre el agua.
   nenufar: { matriz: P.NENUFAR, paleta: P.PALETA_NENUFAR, fondo: 1, escala: 1 },
+  // Los juegos son estructuras de caños: se extruyen poco y ocupan el tile.
+  columpio: { matriz: P.COLUMPIO, paleta: P.PALETA_COLUMPIO, fondo: 2, escala: 1.15 },
+  tobogan: { matriz: P.TOBOGAN, paleta: P.PALETA_TOBOGAN, fondo: 2, escala: 1.15 },
+  subibaja: { matriz: P.SUBIBAJA, paleta: P.PALETA_SUBIBAJA, fondo: 2, escala: 1.1 },
+  // El arenero si es un cajon: se extruye hasta parecer una caja de verdad.
+  arenero: { matriz: P.ARENERO, paleta: P.PALETA_ARENERO, fondo: 9, escala: 1.1 },
 };
 
 /**

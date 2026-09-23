@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { FOODS } from '../state/content';
 import { BALANCE, costoProximaCelda } from '../state/config';
 import { CASA_ICONO, FAROLA_ICONO, PALETA_CASA_ICONO, PALETA_FAROLA_ICONO } from '../game/art/props';
+import { ICONO_JUEGO } from './icons';
+import { IDS_JUEGOS, JUEGOS } from '../state/juegos';
 import { CASAS, TIPOS_CASA } from '../state/casas';
 import { totalCeldas } from '../state/islas';
 import { useGame } from '../state/store';
@@ -33,6 +35,7 @@ const HERRAMIENTAS: Herramienta[] = [
   { id: 'expandir', icono: '🧱', nombre: 'Terreno', ayuda: 'Tocá una celda verde del borde para ganarla' },
   { id: 'farola', icono: '🏮', nombre: 'Farola', ayuda: 'Tocá el césped para poner una · tocá una farola para guardarla' },
   { id: 'agua', icono: '🌊', nombre: 'Agua', ayuda: 'Tocá el césped para volcar un balde · tocá el agua para poner un nenúfar · la pala la seca' },
+  { id: 'juego', icono: '🛝', nombre: 'Juegos', ayuda: 'Tocá el césped para poner el juego elegido · tocá un juego para guardarlo' },
   { id: 'casa', icono: '🏠', nombre: 'Casa', ayuda: 'Tocá el césped para poner la casa · tocá una casa para guardarla y moverla' },
 ];
 
@@ -119,6 +122,7 @@ export function Toolbar() {
           {herramienta === 'alimentar' && <TiraComida />}
           {herramienta === 'farola' && <TiraFarolas />}
           {herramienta === 'casa' && <TiraCasas />}
+          {herramienta === 'juego' && <TiraJuegos />}
         </>
       )}
     </div>
@@ -198,6 +202,43 @@ function TiraComida() {
           </button>
         );
       })}
+    </div>
+  );
+}
+
+function TiraJuegos() {
+  const objetos = useGame((s) => s.estado.objetos);
+  const elegido = useGame((s) => s.juegoSeleccionado);
+  const setJuego = useGame((s) => s.setJuego);
+  const setPanel = useGame((s) => s.setPanel);
+
+  const disponibles = IDS_JUEGOS.filter((id) => (objetos?.[id] ?? 0) > 0);
+  if (disponibles.length === 0) {
+    return (
+      <div className="tira vacia">
+        <span>No tenés juegos guardados. Se compran en Construir.</span>
+        <button className="boton suave" onClick={() => setPanel('construir')}>
+          Ir a Construir
+        </button>
+      </div>
+    );
+  }
+
+  const activo = disponibles.includes(elegido) ? elegido : disponibles[0];
+  return (
+    <div className="tira">
+      {disponibles.map((id) => (
+        <button
+          key={id}
+          className={activo === id ? 'item activo' : 'item'}
+          onClick={() => setJuego(id)}
+          title={JUEGOS[id].nombre}
+        >
+          <PixelIcon matrix={ICONO_JUEGO[id].matriz} palette={ICONO_JUEGO[id].paleta} size={30} />
+          <span className="item-cantidad">{objetos?.[id] ?? 0}</span>
+        </button>
+      ))}
+      <span className="tira-nota">{JUEGOS[activo].nombre}</span>
     </div>
   );
 }

@@ -1,8 +1,11 @@
 import { EventBus } from '../game/EventBus';
 import { BALANCE, costoProximaCelda } from '../state/config';
+import { IDS_JUEGOS, JUEGOS, type JuegoId } from '../state/juegos';
 import { totalCeldas } from '../state/islas';
 import { useGame } from '../state/store';
 import { Drawer } from './Drawer';
+import { ICONO_JUEGO } from './icons';
+import { PixelIcon } from './PixelIcon';
 
 export function BuildPanel() {
   const islas = useGame((s) => s.estado.islas);
@@ -55,6 +58,17 @@ export function BuildPanel() {
         terreno, la valla se reacomoda.
       </p>
 
+      <h3 className="seccion">Juegos para chicos</h3>
+      <p className="fila-nota">
+        Se ponen sobre el césped con la herramienta Juegos. Sacarlos no cuesta nada: vuelven a
+        tus guardados y los podés poner en otro lado.
+      </p>
+      <ul className="lista">
+        {IDS_JUEGOS.map((id) => (
+          <FilaJuego key={id} id={id} />
+        ))}
+      </ul>
+
       <h3 className="seccion">Tus islas</h3>
       <ul className="lista">
         {islas.map((isla) => (
@@ -102,5 +116,49 @@ export function BuildPanel() {
         Fundar isla · {BALANCE.costoIsla} 🪙
       </button>
     </Drawer>
+  );
+}
+
+function FilaJuego({ id }: { id: JuegoId }) {
+  const monedas = useGame((s) => s.estado.monedas);
+  const tengo = useGame((s) => s.estado.objetos?.[id] ?? 0);
+  const comprar = useGame((s) => s.comprarJuego);
+  const setJuego = useGame((s) => s.setJuego);
+  const setPanel = useGame((s) => s.setPanel);
+  const juego = JUEGOS[id];
+
+  return (
+    <li className="fila">
+      <PixelIcon matrix={ICONO_JUEGO[id].matriz} palette={ICONO_JUEGO[id].paleta} size={44} />
+
+      <div className="fila-texto">
+        <div className="fila-titulo">
+          <strong>{juego.nombre}</strong>
+        </div>
+        <p className="fila-detalle">
+          {juego.descripcion}
+          {tengo > 0 && ` · tenés ${tengo} para poner`}
+        </p>
+        {tengo > 0 && (
+          <p className="fila-nota">
+            <button
+              className="enlace en-linea"
+              onClick={() => {
+                setJuego(id);
+                setPanel(null);
+              }}
+            >
+              Ponerlo ahora
+            </button>
+          </p>
+        )}
+      </div>
+
+      <div className="fila-acciones">
+        <button className="boton" disabled={monedas < juego.precio} onClick={() => comprar(id)}>
+          {juego.precio} 🪙
+        </button>
+      </div>
+    </li>
   );
 }

@@ -208,3 +208,121 @@ export const NENUFAR: Matrix = [
 ];
 
 export const PALETA_NENUFAR: Palette = { a: '#4f9a46', b: '#356e30' };
+
+/* ------------------------------------------------------------------ */
+/* Juegos para chicos                                                  */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Los juegos se dibujan de costado, como el farol, y se extruyen poco:
+ * son estructuras de caños, no bloques. Letras comunes a todos:
+ *   c/C caño y su sombra · a asiento o tabla · s cuerda o soga
+ *   r detalle de color · n arena
+ */
+
+/** Columpio: dos hamacas colgando de un caballete. */
+export const COLUMPIO: Matrix = [
+  '................',
+  '................',
+  '..cccccccccccc..',
+  '..c..........c..',
+  '..c.s.s..s.s.c..',
+  '..c.s.s..s.s.c..',
+  '..c.rrr..rrr.c..',
+  '..c.rrr..rrr.c..',
+  '..c..........c..',
+  '.Cc..........cC.',
+  '.c............c.',
+  '.c............c.',
+  'Cc............cC',
+  'C..............C',
+  '................',
+  '................',
+];
+
+export const PALETA_COLUMPIO: Palette = {
+  c: '#c85a4a',
+  C: '#8f3a2e',
+  s: '#3f342c',
+  r: '#f2b33a',
+};
+
+/** Tobogan: escalera de un lado, rampa que baja del otro. */
+export const TOBOGAN: Matrix = [
+  '................',
+  '................',
+  '.....ccccc......',
+  '.....c...c......',
+  '.....caaac......',
+  '.....c...c......',
+  '.....caaac.r....',
+  '.....c...crr....',
+  '.....caaarr.....',
+  '.....c..rr......',
+  '.....caarr......',
+  '.....c.rr.......',
+  '.....cCrr.......',
+  '....CC..rr......',
+  '.........rr.....',
+  '................',
+];
+
+export const PALETA_TOBOGAN: Palette = {
+  c: '#4a8ad8',
+  C: '#2f5f99',
+  a: '#e8e4d8',
+  r: '#f2b33a',
+};
+
+/** Subibaja: la tabla apoyada en su pivote. */
+export const SUBIBAJA: Matrix = [
+  '................',
+  '................',
+  '................',
+  '.............rr.',
+  '..........rrrr..',
+  '.......rrrr.....',
+  '...rrrr.........',
+  '.rrr............',
+  '........cc......',
+  '.......cccc.....',
+  '......cc..cc....',
+  '.....cc....cc...',
+  '....CC......CC..',
+  '................',
+  '................',
+  '................',
+];
+
+export const PALETA_SUBIBAJA: Palette = {
+  c: '#6aa83a',
+  C: '#3f6e22',
+  r: '#e0785a',
+};
+
+/** Arenero: un cajon de madera lleno de arena, con su palita. */
+export const ARENERO: Matrix = [
+  '................',
+  '................',
+  '................',
+  '................',
+  '...cccccccccc...',
+  '..cnnnnnnnnnnc..',
+  '..cnnnnnrnnnnc..',
+  '..cnnnnrrnnnnc..',
+  '..cnnnnnnnnnnc..',
+  '..cnnnnnnnnnnc..',
+  '..cnnnnnnnnnnc..',
+  '..CCCCCCCCCCCC..',
+  '..C..........C..',
+  '................',
+  '................',
+  '................',
+];
+
+export const PALETA_ARENERO: Palette = {
+  c: '#b8864a',
+  C: '#8a6238',
+  n: '#f0dca8',
+  r: '#e0584a',
+};

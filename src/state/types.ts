@@ -98,7 +98,16 @@ export type CeldaLocal = string;
 /** Clave global de una celda: "islaId/col,row". */
 export type CeldaId = string;
 
-export type PropTipo = 'farol' | 'farola' | 'maceta' | 'regadera' | 'nenufar';
+export type PropTipo =
+  | 'farol'
+  | 'farola'
+  | 'maceta'
+  | 'regadera'
+  | 'nenufar'
+  | 'columpio'
+  | 'tobogan'
+  | 'subibaja'
+  | 'arenero';
 
 export interface PropColocado {
   tipo: PropTipo;
@@ -337,7 +346,8 @@ export type ToolId =
   | 'arar'
   | 'farola'
   | 'casa'
-  | 'agua';
+  | 'agua'
+  | 'juego';
 
 export interface Toast {
   id: number;

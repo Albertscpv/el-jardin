@@ -43,7 +43,8 @@ import {
   verterAgua,
   type ResultadoAgua,
 } from './agua';
-import { comprarFarolas, propEn, usarFarola, type ResultadoFarola } from './objetos';
+import { comprarFarolas, propEn, usarFarola, usarObjeto, type ResultadoFarola } from './objetos';
+import { JUEGOS, comprarJuego as comprarJuegoPuro, esJuego, type JuegoId } from './juegos';
 import {
   CASAS,
   TIPOS_CASA,
@@ -122,6 +123,8 @@ interface Store {
   comidaSeleccionada: FoodId | null;
   /** La casa que pone la herramienta Casa. */
   casaSeleccionada: TipoCasa | null;
+  /** El juego que pone la herramienta Juegos. */
+  juegoSeleccionado: JuegoId;
   panel: PanelId;
   animalAbierto: string | null;
   adoptando: string | null;
@@ -144,6 +147,8 @@ interface Store {
   setSemilla: (id: string) => void;
   setComida: (id: FoodId) => void;
   setCasa: (tipo: TipoCasa) => void;
+  setJuego: (id: JuegoId) => void;
+  comprarJuego: (id: JuegoId) => void;
   comprarCasa: (tipo: TipoCasa) => void;
   /** Tocar el cuerpo de una casa: con la herramienta Casa la guarda; si no, la describe. */
   tocarCasa: (casaId: string) => void;
@@ -252,6 +257,7 @@ export const useGame = create<Store>()((set, get) => {
     semillaSeleccionada: 'margarita-blanca',
     comidaSeleccionada: 'nectar',
     casaSeleccionada: null,
+    juegoSeleccionado: 'columpio',
     panel: null,
     animalAbierto: null,
     adoptando: null,
@@ -385,6 +391,15 @@ export const useGame = create<Store>()((set, get) => {
     setSemilla: (semillaSeleccionada) => set({ semillaSeleccionada, herramienta: 'plantar' }),
     setComida: (comidaSeleccionada) => set({ comidaSeleccionada, herramienta: 'alimentar' }),
     setCasa: (casaSeleccionada) => set({ casaSeleccionada, herramienta: 'casa' }),
+    setJuego: (juegoSeleccionado) => set({ juegoSeleccionado, herramienta: 'juego' }),
+
+    comprarJuego(id) {
+      const tras = comprarJuegoPuro(get().estado, id);
+      if (!tras) return get().avisar('No te alcanzan las monedas', 'aviso');
+      mutar(() => tras);
+      set({ juegoSeleccionado: id });
+      get().avisar(`${JUEGOS[id].nombre} comprado. Ponelo con la herramienta Juegos 🛝`, 'exito');
+    },
 
     comprarCasa(tipo) {
       const tras = comprarCasaPura(get().estado, tipo);
@@ -505,6 +520,21 @@ export const useGame = create<Store>()((set, get) => {
           if (resultado !== 'vertida') return avisar(MENSAJE_AGUA[resultado], 'aviso');
           EventBus.emit('efecto:regar', { celda: id });
           return avisar(`Agua: se mojaron ${mojadas} celdas 💧`, 'exito');
+        }
+
+        case 'juego': {
+          if (casaAca) return avisar('Ahí está tu casa', 'aviso');
+          const objeto = propEn(isla, col, row);
+          // Tocar un juego lo guarda, sea cual sea el elegido en la barra.
+          const tipo = objeto && esJuego(objeto.tipo) ? objeto.tipo : get().juegoSeleccionado;
+          const { estado: tras, resultado } = usarObjeto(get().estado, tipo, islaId, col, row);
+          if (tras !== get().estado) mutar(() => tras);
+          if (resultado === 'colocada') return avisar(`${JUEGOS[tipo].nombre} puesto 🛝`, 'exito');
+          if (resultado === 'guardada') {
+            set({ juegoSeleccionado: tipo });
+            return avisar(`${JUEGOS[tipo].nombre} guardado`, 'info');
+          }
+          return avisar(MENSAJE_JUEGO(resultado, tipo), 'aviso');
         }
 
         case 'farola': {
@@ -1073,6 +1103,9 @@ function describirCelda(
   objeto?: PropTipo,
 ): string {
   if (objeto === 'farola') return 'Una farola. De noche alumbra lo que tiene alrededor';
+  if (objeto && esJuego(objeto)) {
+    return `${JUEGOS[objeto].nombre}: ${JUEGOS[objeto].descripcion} Con la herramienta Juegos se guarda`;
+  }
   if (objeto === 'farol') return 'Un farol de jardín. De noche se enciende solo';
   if (objeto) return 'Un adorno del jardín';
   if (!planta) {
@@ -1127,6 +1160,23 @@ const MENSAJE_CASA: Record<ResultadoCasa, string> = {
 };
 
 /** Lo que responde la herramienta Farola en cada caso. */
+/** Lo que responde la herramienta Juegos cuando no se puede poner ahí. */
+function MENSAJE_JUEGO(resultado: ResultadoFarola, tipo: JuegoId): string {
+  const nombre = JUEGOS[tipo].nombre.toLowerCase();
+  switch (resultado) {
+    case 'sin-farolas':
+      return `No te quedan. El ${nombre} se compra en Construir`;
+    case 'agua':
+      return 'En el agua no se puede poner un juego';
+    case 'parcela':
+      return `El ${nombre} va en el césped: en una parcela taparía la siembra`;
+    case 'ocupada':
+      return 'Ahí ya hay algo puesto';
+    default:
+      return 'Ahí no hay tierra';
+  }
+}
+
 const MENSAJE_FAROLA: Record<ResultadoFarola, string> = {
   colocada: 'Farola puesta 🏮',
   guardada: 'Farola guardada. Podés ponerla en otro lado',

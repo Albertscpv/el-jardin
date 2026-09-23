@@ -9,6 +9,8 @@ import {
   getFlowerVariant,
 } from '../state/content';
 import type { FoodId } from '../state/types';
+import type { JuegoId } from '../state/juegos';
+import * as P from '../game/art/props';
 
 export interface Icono {
   matrix: Matrix;
@@ -31,3 +33,11 @@ export function iconoAnimal(variantId: string): Icono {
 export function iconoComida(foodId: FoodId): Icono {
   return { matrix: FOOD_MATRIX[foodId], palette: FOODS[foodId].palette };
 }
+
+/** Los juegos usan su propio dibujo como icono, en la barra y en Construir. */
+export const ICONO_JUEGO: Record<JuegoId, { matriz: Matrix; paleta: Palette }> = {
+  columpio: { matriz: P.COLUMPIO, paleta: P.PALETA_COLUMPIO },
+  tobogan: { matriz: P.TOBOGAN, paleta: P.PALETA_TOBOGAN },
+  subibaja: { matriz: P.SUBIBAJA, paleta: P.PALETA_SUBIBAJA },
+  arenero: { matriz: P.ARENERO, paleta: P.PALETA_ARENERO },
+};
