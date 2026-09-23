@@ -14,6 +14,7 @@ import {
   ROPAS,
   SOMBREROS,
 } from '../state/content';
+import { EventBus } from '../game/EventBus';
 import { useGame } from '../state/store';
 import { Drawer } from './Drawer';
 import { PixelIcon } from './PixelIcon';
@@ -28,6 +29,17 @@ export function CharacterPanel() {
       <div className="previsualizacion">
         <PixelIcon matrix={matrizAvatar(avatar, usePoseDeMuestra())} palette={paletaAvatar(avatar)} size={128} />
       </div>
+
+      <button
+        className="boton suave ancho"
+        onClick={() => {
+          EventBus.emit('camara:mirar', { x: avatar.x, z: avatar.z });
+          EventBus.emit('avatar:senalar', {});
+          setPanel(null);
+        }}
+      >
+        👋 ¿Dónde anda? Buscalo en el jardín
+      </button>
 
       <label className="etiqueta" htmlFor="nombre-avatar">
         Nombre

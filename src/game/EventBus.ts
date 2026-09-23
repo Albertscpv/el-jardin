@@ -27,6 +27,8 @@ export interface GameEvents {
   'mundo:resincronizar': Record<string, never>;
   /** El aspecto del personaje cambió y hay que regenerar su textura. */
   'avatar:cambio': Record<string, never>;
+  /** Marcar al personaje un rato, para encontrarlo en el jardin. */
+  'avatar:senalar': Record<string, never>;
 
   /* Práctica de tiro */
   'practica:modo': { activa: boolean };

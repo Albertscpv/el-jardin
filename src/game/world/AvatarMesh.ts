@@ -3,6 +3,7 @@ import { matrizAvatar, paletaAvatar } from '../../state/content';
 import type { AvatarState } from '../../state/types';
 import { texturaDeMatriz } from '../art/spriteTexture';
 import { ALTO_PERSONAJE, ANCHO_PERSONAJE, type Pose } from '../art/personaje';
+import type { Matrix } from '../art/matrices';
 import { controles } from '../input/Controls';
 
 const geometriaPlano = new THREE.PlaneGeometry(1, 1);
@@ -23,6 +24,25 @@ export type Reaccion = 'festejo' | 'trabajo';
 const VELOCIDAD = 3.4;
 /** Magnitud minima del joystick para que cuente como intencion de moverse. */
 const ZONA_MUERTA = 0.12;
+
+/** Cuanto dura la flecha que lo señala. */
+const SENAL = 4;
+
+/** Flechita que apunta al personaje cuando lo buscas. */
+const FLECHA: Matrix = [
+  'bbbbbbbbbb',
+  'baaaaaaaab',
+  'baaaaaaaab',
+  '.baaaaaab.',
+  '..baaaab..',
+  '...baab...',
+  '....bb....',
+  '..........',
+  '..........',
+  '..........',
+];
+
+const PALETA_FLECHA = { a: '#f2b33a', b: '#8a5a12' };
 
 /** Puede pisarse esta posicion del mundo. */
 export type PruebaDeSuelo = (x: number, z: number) => boolean;
@@ -52,6 +72,9 @@ export class AvatarMesh {
   /** Gesto en curso, o esperando a que el personaje llegue a destino. */
   private gesto: { tipo: Reaccion; hasta: number } | null = null;
   private gestoPendiente: { tipo: Reaccion; vence: number } | null = null;
+  /** Hasta cuando se muestra la flecha que lo señala. */
+  private senalHasta = 0;
+  private flecha: THREE.Mesh;
 
   /** Direccion horizontal hacia la que apunta, para disparar desde aqui. */
   readonly mirada = new THREE.Vector3(0, 0, -1);
@@ -70,6 +93,24 @@ export class AvatarMesh {
     this.cuerpo = new THREE.Mesh(geometriaPlano, this.material);
     this.cuerpo.castShadow = true;
     this.grupo.add(this.cuerpo);
+
+    this.flecha = new THREE.Mesh(
+      new THREE.PlaneGeometry(0.5, 0.5),
+      new THREE.MeshBasicMaterial({
+        map: texturaDeMatriz('avatar:flecha', FLECHA, PALETA_FLECHA),
+        transparent: true,
+        alphaTest: 0.5,
+        // Se ve aunque el personaje este atras de la casa: para eso esta.
+        depthTest: false,
+      }),
+    );
+    this.flecha.position.y = 1.12;
+    // El grupo se achica en X para respetar la proporcion del sprite: la
+    // flecha lo compensa para no salir aplastada.
+    this.flecha.scale.x = 1 / PROPORCION;
+    this.flecha.renderOrder = 11;
+    this.flecha.visible = false;
+    this.grupo.add(this.flecha);
 
     this.grupo.position.set(avatar.x, 0, avatar.z);
     this.grupo.scale.set(ALTO * PROPORCION, ALTO, ALTO * PROPORCION);
@@ -119,6 +160,11 @@ export class AvatarMesh {
   ubicar(x: number, z: number): void {
     this.grupo.position.set(x, 0, z);
     this.destino.set(x, 0, z);
+  }
+
+  /** Muestra la flecha un rato: "acá estoy". */
+  senalar(): void {
+    this.senalHasta = this.tiempo + SENAL;
   }
 
   irA(x: number, z: number): void {
@@ -258,6 +304,13 @@ export class AvatarMesh {
 
   private animar(): void {
     this.mostrar(this.elegirPose());
+
+    const senalando = this.tiempo < this.senalHasta;
+    this.flecha.visible = senalando;
+    if (senalando) {
+      // Sube y baja, que es lo que hace que el ojo la encuentre.
+      this.flecha.position.y = 1.12 + Math.abs(Math.sin(this.tiempo * 4)) * 0.12;
+    }
 
     if (this.gesto?.tipo === 'festejo' && !this.caminando) {
       // Dos saltitos de alegria.

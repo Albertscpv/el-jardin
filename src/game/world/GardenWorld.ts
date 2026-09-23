@@ -102,6 +102,8 @@ export class GardenWorld {
     if (PERSONAJE_ACTIVO) {
       this.avatar = new AvatarMesh(estado.avatar);
       this.engine.escena.add(this.avatar.grupo);
+      // Al entrar se señala solo: en un jardín grande, si no, no se lo encuentra.
+      this.avatar.senalar();
     }
 
     /* Marco que sigue a la celda bajo el cursor. */
@@ -488,6 +490,7 @@ export class GardenWorld {
       EventBus.on('efecto:cosechar', () => this.avatar?.reaccionar('festejo')),
       EventBus.on('efecto:adoptar', () => this.avatar?.reaccionar('festejo')),
       EventBus.on('efecto:mimar', () => this.avatar?.reaccionar('festejo')),
+      EventBus.on('avatar:senalar', () => this.avatar?.senalar()),
       EventBus.on('avatar:cambio', () =>
         this.avatar?.aplicarAspecto(useGame.getState().estado.avatar),
       ),
