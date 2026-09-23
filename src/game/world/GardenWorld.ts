@@ -269,7 +269,12 @@ export class GardenWorld {
       ...this.terreno.suelo,
     ];
     const golpes = this.raycaster.intersectObjects(objetivos, false);
-    const golpe = golpes[0];
+    // Las macetas ganan aunque estén detrás de una pared: son chicas, y
+    // desde muchos ángulos la casa se las tapa. Si el rayo cruza una, es
+    // a ella a la que le apuntaban.
+    const golpe =
+      golpes.find((gg) => typeof gg.object.userData.celda === 'string' && esMaceta(gg.object.userData.celda)) ??
+      golpes[0];
     if (!golpe) return null;
 
     // Una parcela arada sabe quién es; para el césped se deduce del punto.
