@@ -11,7 +11,7 @@ import {
 } from '../../state/islas';
 import { stageOf } from '../../state/sim';
 import { useGame } from '../../state/store';
-import type { GameState, IslaState } from '../../state/types';
+import type { AnimalSpeciesId, GameState, IslaState } from '../../state/types';
 import {
   texturaAnimal,
   texturaComida,
@@ -32,6 +32,7 @@ import { Sky } from './Sky';
 import { ALTURA_BANCAL, Terrain } from './Terrain';
 import { CapaCasas, ESCALA_FLOR_MACETA } from './Casas';
 import { celdasOcupadasPorCasas, esMaceta } from '../../state/casas';
+import { celdaAcuaticaCercana } from '../../state/agua';
 import type { CasaColocada } from '../../state/types';
 
 /** Cada cuanto se persiste la posicion de los animales. */
@@ -372,7 +373,7 @@ export class GardenWorld {
           animal,
           texturaAnimal(animal.variante),
           texturaComida(ANIMAL_SPECIES[animal.especie].comidaFavorita),
-          (x, z, radio) => this.destinoLibre(x, z, radio),
+          this.buscadorDeDestino(animal.especie),
           texturasPoses(animal.variante),
         );
         this.engine.escena.add(nueva.grupo);
@@ -432,6 +433,21 @@ export class GardenWorld {
   /* ---------------------------------------------------------------- */
   /* Efectos                                                           */
   /* ---------------------------------------------------------------- */
+
+  /**
+   * A donde puede ir a pasear cada especie: los peces no salen del agua,
+   * las ranas van del agua a la orilla, y el resto pisa tierra firme.
+   */
+  private buscadorDeDestino(especie: AnimalSpeciesId) {
+    const habitat = ANIMAL_SPECIES[especie].habitat;
+    if (!habitat) return (x: number, z: number, radio: number) => this.destinoLibre(x, z, radio);
+
+    return (x: number, z: number, radio: number) => {
+      const islas = useGame.getState().estado.islas;
+      // Sin agua (la secaron con el pez adentro) se queda donde esta.
+      return celdaAcuaticaCercana(islas, x, z, radio, Math.random, habitat === 'orilla') ?? { x, z };
+    };
+  }
 
   /** Un destino de paseo que no quede adentro de una casa. */
   private destinoLibre(x: number, z: number, radio: number): { x: number; z: number } {

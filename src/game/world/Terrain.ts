@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { celdaAMundo, celdaId, celdaLocal, parseCeldaLocal, VECINAS } from '../../state/config';
+import { bordesDeAgua } from '../../state/agua';
 import { bordesDeIsla, celdaEnMundo, esAgua, esParcela, ruidoCelda } from '../../state/islas';
 import type { CeldaId, IslaState, PropTipo } from '../../state/types';
 import * as P from '../art/props';
@@ -11,6 +12,44 @@ const COLOR_TIERRA_SECA = '#8a6238';
 const COLOR_TIERRA_MOJADA = '#5e4228';
 
 const VERDES = ['#5fa14a', '#5b9b46', '#64a84f', '#588f42', '#69ae53'];
+
+/** Altura de la superficie del agua. */
+export const NIVEL_AGUA = -0.18;
+/** Cuanto cae el agua por el borde antes de perderse de vista. */
+const ALTO_CASCADA = 3.2;
+
+/**
+ * Textura de la cascada: rayas verticales de agua sobre transparente. Se
+ * repite hacia abajo, y moverle el offset alcanza para que parezca caer.
+ */
+function texturaCascada(): THREE.Texture {
+  const canvas = document.createElement('canvas');
+  canvas.width = 16;
+  canvas.height = 32;
+  const ctx = canvas.getContext('2d')!;
+  ctx.clearRect(0, 0, 16, 32);
+
+  const azules = ['#bfe4f7', '#8fc8ec', '#63a8d8', '#4a8ec4'];
+  for (let x = 0; x < 16; x += 2) {
+    ctx.fillStyle = azules[(x / 2) % azules.length];
+    ctx.fillRect(x, 0, 2, 32);
+  }
+  // Espuma salteada: sin esto la cortina se ve plana.
+  ctx.fillStyle = '#eaf8ff';
+  for (const [ex, ey] of [[2, 3], [10, 7], [6, 14], [13, 19], [4, 24], [9, 29]]) {
+    ctx.fillRect(ex, ey, 2, 2);
+  }
+
+  const textura = new THREE.CanvasTexture(canvas);
+  textura.magFilter = THREE.NearestFilter;
+  textura.minFilter = THREE.NearestFilter;
+  textura.generateMipmaps = false;
+  textura.wrapS = THREE.RepeatWrapping;
+  textura.wrapT = THREE.RepeatWrapping;
+  textura.repeat.set(1, 3);
+  textura.colorSpace = THREE.SRGBColorSpace;
+  return textura;
+}
 // Las capas de abajo se aclaran a proposito: la panza de la isla queda
 // contraluz, y con marrones oscuros se leeria como un bloque negro.
 const TIERRA = ['#7d5836', '#6e4d2f', '#61432a', '#553a24'];
@@ -23,6 +62,8 @@ const MATRIZ_PROP: Record<
   farol: { matriz: P.FAROL, paleta: P.PALETA_FAROL, fondo: 6, escala: 1.1 },
   maceta: { matriz: P.MACETA, paleta: P.PALETA_MACETA, fondo: 8, escala: 0.9 },
   regadera: { matriz: P.REGADERA, paleta: P.PALETA_REGADERA, fondo: 7, escala: 0.8 },
+  // El nenufar es una hoja plana: se extruye apenas y flota sobre el agua.
+  nenufar: { matriz: P.NENUFAR, paleta: P.PALETA_NENUFAR, fondo: 1, escala: 1 },
 };
 
 /**
@@ -62,6 +103,8 @@ export class Terrain {
   private colorNoche = new THREE.Color(P.COLOR_VIDRIO_NOCHE);
 
   private aguas: Array<{ malla: THREE.Mesh; base: Float32Array }> = [];
+  /** Caidas de agua por el borde de la isla, con su textura que se desplaza. */
+  private cascadas: THREE.Texture[] = [];
   private humedas = new Map<CeldaId, boolean>();
   private tintes = new Map<CeldaId, number>();
   private geoParcela = new THREE.BoxGeometry(1, ALTURA_BANCAL + 0.55, 1);
@@ -87,6 +130,7 @@ export class Terrain {
     for (const isla of islas) {
       this.construirIsla(isla, cajas, cajasDecoracion);
       this.construirCerca(isla, cajasCerca);
+      this.construirCascadas(isla);
       this.construirProps(isla);
     }
 
@@ -193,7 +237,7 @@ export class Terrain {
       geo,
       new THREE.MeshLambertMaterial({ color: '#3d84b8', transparent: true, opacity: 0.86 }),
     );
-    malla.position.set(x0 + 0.5, -0.18, z0 + 0.5);
+    malla.position.set(x0 + 0.5, NIVEL_AGUA, z0 + 0.5);
     malla.receiveShadow = true;
     this.grupo.add(malla);
     this.aguas.push({ malla, base });
@@ -258,6 +302,8 @@ export class Terrain {
       // Si del otro lado hay tierra de otra isla, las dos quedaron unidas:
       // ese lado es un paso, no un borde.
       if (celdaEnMundo(this.islas, x + dc, z + dr)) continue;
+      // Por donde cae el agua no va valla: se veria la cascada atravesandola.
+      if (esAgua(isla, col, row)) continue;
       const bx = x + dc * 0.5;
       const bz = z + dr * 0.5;
 
@@ -284,6 +330,40 @@ export class Terrain {
     }
   }
 
+  /**
+   * Cascadas: donde una celda de agua da al vacio, cae una cortina de agua
+   * que se pierde debajo de la isla. No hay fisica: es una textura que baja
+   * sin parar, que a esta escala se lee igual que agua cayendo.
+   */
+  private construirCascadas(isla: IslaState): void {
+    for (const { col, row, dc, dr } of bordesDeAgua(isla)) {
+      const { x, z } = celdaAMundo(isla, col, row);
+      // Si del otro lado hay tierra de otra isla, el agua no cae: sigue.
+      if (celdaEnMundo(this.islas, x + dc, z + dr)) continue;
+
+      const textura = texturaCascada();
+      const material = new THREE.MeshBasicMaterial({
+        map: textura,
+        transparent: true,
+        opacity: 0.85,
+        side: THREE.DoubleSide,
+        depthWrite: false,
+      });
+
+      const geo = new THREE.PlaneGeometry(1, ALTO_CASCADA);
+      const malla = new THREE.Mesh(geo, material);
+      // Un pelo por fuera del canto: pegada a la isla parpadea contra la tierra.
+      malla.position.set(
+        x + dc * 0.54,
+        NIVEL_AGUA - ALTO_CASCADA / 2 + 0.05,
+        z + dr * 0.54,
+      );
+      if (dc !== 0) malla.rotation.y = Math.PI / 2;
+      this.grupo.add(malla);
+      this.cascadas.push(textura);
+    }
+  }
+
   private construirProps(isla: IslaState): void {
     for (const prop of isla.props) {
       if (prop.tipo === 'farola') {
@@ -300,7 +380,8 @@ export class Terrain {
         sombreado: 0.6,
       });
       const malla = new THREE.Mesh(geo, materialVoxel());
-      malla.position.set(x, 0, z);
+      // Un nenufar flota: se apoya en la superficie, no en el fondo.
+      malla.position.set(x, esAgua(isla, prop.col, prop.row) ? NIVEL_AGUA : 0, z);
       malla.scale.setScalar(def.escala);
       malla.castShadow = true;
       malla.receiveShadow = true;
@@ -367,6 +448,11 @@ export class Terrain {
       }
       atributo.needsUpdate = true;
     }
+
+    // El agua que cae: la textura baja sin fin.
+    for (const textura of this.cascadas) {
+      textura.offset.y = (textura.offset.y - dt * 0.9) % 1;
+    }
   }
 
   private vaciar(): void {
@@ -384,6 +470,8 @@ export class Terrain {
     this.faroles.length = 0;
     this.tocables.length = 0;
     this.aguas = [];
+    for (const textura of this.cascadas) textura.dispose();
+    this.cascadas = [];
     this.humedas.clear();
     this.tintes.clear();
   }

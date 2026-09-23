@@ -186,3 +186,25 @@ export const PALETA_CASA_ICONO: Palette = {
   d: '#6b4326',
   z: '#d6cbb8',
 };
+
+/** Nenufar: una hoja redonda con su hendidura, vista desde arriba. */
+export const NENUFAR: Matrix = [
+  '................',
+  '................',
+  '.....aaaaaa.....',
+  '...aaaaaaaaaa...',
+  '..aaaaaaaaaaaa..',
+  '..aaaabaaaaaaa..',
+  '.aaaaabaaaaaaaa.',
+  '.aaaaabaaaaaaaa.',
+  '.aaaaaabaaaaaaa.',
+  '..aaaaaaaaaaaa..',
+  '..aaaaaaaaaaaa..',
+  '...aaaaaaaaaa...',
+  '.....aaaaaa.....',
+  '................',
+  '................',
+  '................',
+];
+
+export const PALETA_NENUFAR: Palette = { a: '#4f9a46', b: '#356e30' };

@@ -112,7 +112,7 @@ grant execute on function public.marcar_regalo_cobrado(bigint) to authenticated;
 --            rosa-roja, rosa-rosada, rosa-blanca, rosa-durazno,
 --            girasol-clasico, girasol-rojizo, margarita-blanca,
 --            margarita-rosada, lavanda-clasica, lavanda-azul
--- Comida:    nectar, alpiste, zanahoria, bayas, pescado, heno, manzana
+-- Comida:    nectar, alpiste, zanahoria, bayas, pescado, heno, manzana, grillos, migas
 -- Animales (especie -> variantes):
 --            mariposa -> mariposa-monarca, mariposa-azul, mariposa-blanca
 --            pajaro   -> pajaro-azul, pajaro-rojo, pajaro-amarillo
@@ -122,6 +122,8 @@ grant execute on function public.marcar_regalo_cobrado(bigint) to authenticated;
 --            poni     -> poni-canela, poni-pinto, poni-gris
 --            yegua    -> yegua-alazana, yegua-baya, yegua-blanca
 --            caballo  -> caballo-negro, caballo-zaino, caballo-tordillo
+--            rana     -> rana-verde, rana-dorada, rana-turquesa
+--            pez      -> pez-naranja, pez-blanco, pez-azul
 --
 -- Ver los regalos y si ya se entregaron:
 --

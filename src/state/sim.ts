@@ -6,6 +6,7 @@
  * estuvo cerrado: `advance(estado, ahora)`.
  */
 
+import { celdaDeAguaAleatoria } from './agua';
 import { BALANCE, SAVE_VERSION } from './config';
 import {
   ANIMAL_SPECIES,
@@ -200,10 +201,16 @@ export function advance(previo: GameState, ahora: number, rng = Math.random): Ad
 /* Visitantes                                                          */
 /* ------------------------------------------------------------------ */
 
-/** Especies que podrian visitar el jardin con la cantidad actual de flores. */
-export function especiesDisponibles(flores: number): AnimalSpeciesId[] {
+/**
+ * Especies que podrian visitar el jardin ahora. Las flores traen bichos de
+ * tierra; el agua trae ranas y peces, asi que un estanque tambien es una
+ * forma de que llegue alguien nuevo.
+ */
+export function especiesDisponibles(flores: number, agua = 0): AnimalSpeciesId[] {
   return (Object.keys(ANIMAL_SPECIES) as AnimalSpeciesId[]).filter(
-    (id) => flores >= ANIMAL_SPECIES[id].floresParaVisitar,
+    (id) =>
+      flores >= ANIMAL_SPECIES[id].floresParaVisitar &&
+      agua >= (ANIMAL_SPECIES[id].aguaParaVisitar ?? 0),
   );
 }
 
@@ -219,8 +226,10 @@ export function crearVisitante(
 ): AnimalState {
   const variantes = variantsOfSpecies(especie);
   const variante = variantes[Math.floor(rng() * variantes.length)];
-  // Aparecen sobre tierra firme, en cualquiera de las islas.
-  const { x, z } = celdaAleatoria(estado.islas, rng);
+  // Los de agua aparecen en el estanque; el resto, sobre tierra firme.
+  const habitat = ANIMAL_SPECIES[especie].habitat;
+  const { x, z } =
+    (habitat ? celdaDeAguaAleatoria(estado.islas, rng) : null) ?? celdaAleatoria(estado.islas, rng);
 
   return {
     uid: `${especie}-${Date.now().toString(36)}-${Math.floor(rng() * 1e6).toString(36)}`,

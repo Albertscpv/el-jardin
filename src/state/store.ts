@@ -36,6 +36,13 @@ import {
   rechazarPedido,
 } from './economia';
 import { alimentarTodos as alimentarTodosPuro } from './alimentar';
+import {
+  alternarNenufar,
+  celdasDeAgua,
+  secarCelda,
+  verterAgua,
+  type ResultadoAgua,
+} from './agua';
 import { comprarFarolas, propEn, usarFarola, type ResultadoFarola } from './objetos';
 import {
   CASAS,
@@ -296,7 +303,7 @@ export const useGame = create<Store>()((set, get) => {
       // Los visitantes llegan solos si el jardín da motivos para venir.
       const flores = contarFlores(estado);
       let animales = estado.animales;
-      const disponibles = especiesDisponibles(flores);
+      const disponibles = especiesDisponibles(flores, celdasDeAgua(estado));
 
       if (disponibles.length > 0 && animales.length < aforo(flores) && Math.random() < 0.05) {
         // Las especies exigentes aparecen menos seguido.
@@ -481,6 +488,25 @@ export const useGame = create<Store>()((set, get) => {
           return avisar(MENSAJE_CASA[resultado], resultado === 'puesta' ? 'exito' : 'aviso');
         }
 
+        case 'agua': {
+          // Sobre el agua la herramienta pone y saca nenufares; sobre el
+          // cesped, vierte un balde que se derrama solo.
+          if (esAgua(isla, col, row)) {
+            const { estado: tras, resultado } = alternarNenufar(get().estado, islaId, col, row);
+            if (tras !== get().estado) mutar(() => tras);
+            return avisar(
+              resultado === 'puesto' ? 'Nenúfar puesto 🪷' : 'Nenúfar sacado',
+              'info',
+            );
+          }
+          if (casaAca) return avisar('Ahí está tu casa', 'aviso');
+          const { estado: tras, resultado, mojadas } = verterAgua(get().estado, islaId, col, row);
+          if (tras !== get().estado) mutar(() => tras);
+          if (resultado !== 'vertida') return avisar(MENSAJE_AGUA[resultado], 'aviso');
+          EventBus.emit('efecto:regar', { celda: id });
+          return avisar(`Agua: se mojaron ${mojadas} celdas 💧`, 'exito');
+        }
+
         case 'farola': {
           if (casaAca) return avisar('Ahí está tu casa', 'aviso');
           const { estado: tras, resultado } = usarFarola(get().estado, islaId, col, row);
@@ -614,6 +640,12 @@ export const useGame = create<Store>()((set, get) => {
         }
 
         case 'pala': {
+          if (!maceta && esAgua(isla, col, row)) {
+            const { estado: tras, secada } = secarCelda(get().estado, islaId, col, row);
+            if (!secada) return avisar('Ahí no hay nada que quitar', 'aviso');
+            mutar(() => tras);
+            return avisar('Celda secada', 'info');
+          }
           if (!planta) return avisar('Ahí no hay nada que quitar', 'aviso');
           mutar((e) => {
             const cultivos = { ...e.cultivos };
@@ -1069,6 +1101,16 @@ function describirCelda(
 
   return `${variante.nombre}, ${nombreEtapa} · ${sed}`;
 }
+
+/** Lo que responde la herramienta Agua cuando no se puede verter. */
+const MENSAJE_AGUA: Record<ResultadoAgua, string> = {
+  vertida: '',
+  'ya-hay-agua': 'Ahí ya hay agua',
+  parcela: 'Ahí hay una parcela arada: el agua va sobre el césped',
+  ocupada: 'Ahí hay algo puesto',
+  fuera: 'Ahí no hay tierra',
+  'sin-lugar': 'No hay lugar para el agua',
+};
 
 /** Las herramientas que tienen sentido sobre una maceta. */
 const HERRAMIENTAS_MACETA = new Set(['mirar', 'plantar', 'regar', 'cosechar', 'pala']);

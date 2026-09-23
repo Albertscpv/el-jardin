@@ -275,6 +275,46 @@ export const BIRD: Matrix = [
   '................',
 ];
 
+/** Rana de frente, sentada. a/b cuerpo, c panza, d/e ojos. */
+export const FROG: Matrix = [
+  '................',
+  '................',
+  '...ff......ff...',
+  '..feef....feef..',
+  '..feef....feef..',
+  '..faaffffffaaf..',
+  '.faaaaaaaaaaaaf.',
+  '.faaaaaaaaaaaaf.',
+  '.fabaaaaaaaabaf.',
+  '.faabccccccbaaf.',
+  '..fabccccccbaf..',
+  '...ffabbbbaff...',
+  '..ff..ffff..ff..',
+  '.fbbf......fbbf.',
+  '..ff........ff..',
+  '................',
+];
+
+/** Pez de perfil, mirando a la izquierda como el resto del bestiario. */
+export const PEZ: Matrix = [
+  '................',
+  '................',
+  '................',
+  '.........bb.....',
+  '....aaa..bbb....',
+  '...aaaaaabbbb...',
+  '..aaaaaaaaabbb..',
+  '.aeaaaaaaaaabbbb',
+  '.aeaaaaaaaaabbbb',
+  '..abaaaaaaabbb..',
+  '...aaaaaabbbb...',
+  '....aaa..bbb....',
+  '.........bb.....',
+  '................',
+  '................',
+  '................',
+];
+
 export const BUTTERFLY: Matrix = [
   '................',
   '...aa..ee..aa...',
@@ -743,6 +783,46 @@ export const PONY: Matrix = PONI.quieto;
 /* ------------------------------------------------------------------ */
 
 /** Fardo de heno atado con dos cuerdas. */
+/** Grillos: lo que come la rana. */
+export const GRILLOS: Matrix = [
+  '................',
+  '................',
+  '.....d....d.....',
+  '....d......d....',
+  '...aaaa..aaaa...',
+  '..abaaaaabaaaa..',
+  '..aaaaa..aaaaa..',
+  '...dd.d...dd.d..',
+  '................',
+  '....d....d......',
+  '...aaaa..aaaa...',
+  '..abaaaaabaaaa..',
+  '..aaaaa..aaaaa..',
+  '...dd.d...dd.d..',
+  '................',
+  '................',
+];
+
+/** Migas de pan para los peces. */
+export const MIGAS: Matrix = [
+  '................',
+  '................',
+  '................',
+  '......aa........',
+  '.....abba.......',
+  '......aa...aa...',
+  '..........abba..',
+  '...aa......aa...',
+  '..abba..........',
+  '...aa.....aa....',
+  '.........abba...',
+  '....aa....aa....',
+  '...abba.........',
+  '....aa..........',
+  '................',
+  '................',
+];
+
 export const HAY: Matrix = [
   '................',
   '................',

@@ -32,6 +32,7 @@ const HERRAMIENTAS: Herramienta[] = [
   { id: 'arar', icono: '🪓', nombre: 'Arar', ayuda: 'Convierte césped en parcela, y al revés' },
   { id: 'expandir', icono: '🧱', nombre: 'Terreno', ayuda: 'Tocá una celda verde del borde para ganarla' },
   { id: 'farola', icono: '🏮', nombre: 'Farola', ayuda: 'Tocá el césped para poner una · tocá una farola para guardarla' },
+  { id: 'agua', icono: '🌊', nombre: 'Agua', ayuda: 'Tocá el césped para volcar un balde · tocá el agua para poner un nenúfar · la pala la seca' },
   { id: 'casa', icono: '🏠', nombre: 'Casa', ayuda: 'Tocá el césped para poner la casa · tocá una casa para guardarla y moverla' },
 ];
 

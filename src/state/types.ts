@@ -13,7 +13,9 @@ export type AnimalSpeciesId =
   | 'zorro'
   | 'poni'
   | 'yegua'
-  | 'caballo';
+  | 'caballo'
+  | 'rana'
+  | 'pez';
 export type FoodId =
   | 'nectar'
   | 'alpiste'
@@ -21,7 +23,9 @@ export type FoodId =
   | 'pescado'
   | 'bayas'
   | 'heno'
-  | 'manzana';
+  | 'manzana'
+  | 'grillos'
+  | 'migas';
 export type Rarity = 'comun' | 'poco-comun' | 'rara';
 
 export interface FlowerSpecies {
@@ -48,6 +52,13 @@ export interface AnimalSpecies {
   nombre: string;
   /** Flores en floracion necesarias para que empiece a visitar el jardin. */
   floresParaVisitar: number;
+  /** Celdas de agua que necesita el jardin para que aparezca. Por omision, ninguna. */
+  aguaParaVisitar?: number;
+  /**
+   * Donde vive. 'agua' no sale nunca del estanque y se dibuja hundido;
+   * 'orilla' pasea por el agua y por la tierra de al lado. Por omision, tierra.
+   */
+  habitat?: 'agua' | 'orilla';
   comidaFavorita: FoodId;
   /** px por segundo en el mundo logico. */
   velocidad: number;
@@ -87,7 +98,7 @@ export type CeldaLocal = string;
 /** Clave global de una celda: "islaId/col,row". */
 export type CeldaId = string;
 
-export type PropTipo = 'farol' | 'farola' | 'maceta' | 'regadera';
+export type PropTipo = 'farol' | 'farola' | 'maceta' | 'regadera' | 'nenufar';
 
 export interface PropColocado {
   tipo: PropTipo;
@@ -325,7 +336,8 @@ export type ToolId =
   | 'expandir'
   | 'arar'
   | 'farola'
-  | 'casa';
+  | 'casa'
+  | 'agua';
 
 export interface Toast {
   id: number;

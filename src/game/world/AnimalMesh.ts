@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { ANIMAL_MATRIX, ANIMAL_SPECIES } from '../../state/content';
 import type { AnimalState } from '../../state/types';
 import type { TexturasPoses } from '../art/gameTextures';
+import { NIVEL_AGUA } from './Terrain';
 
 /** Radio de paseo alrededor del punto donde aparecio, si la especie no dice otro. */
 const RADIO_PASEO = 4.5;
@@ -52,6 +53,8 @@ export class AnimalMesh {
 
   private estado: AnimalState;
   private vuela: boolean;
+  /** 'agua' nada hundido; 'orilla' anda por el borde del estanque. */
+  private habitat: 'agua' | 'orilla' | undefined;
   private velocidad: number;
   private radioPaseo: number;
 
@@ -98,6 +101,7 @@ export class AnimalMesh {
 
     const especie = ANIMAL_SPECIES[estado.especie];
     this.vuela = especie.vuela;
+    this.habitat = especie.habitat;
     this.velocidad = especie.velocidad / 16; // el balance esta en px/s a 16 px por unidad
     this.radioPaseo = especie.radioPaseo ?? RADIO_PASEO;
     const dibujo = ANIMAL_MATRIX[estado.especie];
@@ -112,7 +116,8 @@ export class AnimalMesh {
     });
 
     this.cuerpo = new THREE.Mesh(geometriaPara(ancho, alto), this.material);
-    this.cuerpo.castShadow = true;
+    // Un pez bajo el agua no proyecta sombra sobre el cesped.
+    this.cuerpo.castShadow = this.habitat !== 'agua';
     this.cuerpo.userData.animal = estado.uid;
     this.grupo.add(this.cuerpo);
 
@@ -135,7 +140,8 @@ export class AnimalMesh {
     this.querencia.set(estado.x, 0, estado.z);
     // Los animales son los protagonistas: se los agranda respecto del tile.
     // El mismo factor para todos; el tamano relativo lo pone el dibujo.
-    this.grupo.scale.setScalar(1.2);
+    // El pez es la excepcion: nada en una celda y grande parece una ballena.
+    this.grupo.scale.setScalar(this.habitat === 'agua' ? 0.6 : 1.2);
     this.elegirDestino(true);
     this.actualizar(estado);
   }
@@ -149,7 +155,10 @@ export class AnimalMesh {
   }
 
   private alturaBase(): number {
-    return this.vuela ? VUELO_MIN : 0;
+    if (this.vuela) return VUELO_MIN;
+    // El estanque es poco hondo: el pez va justo bajo la superficie, apoyado
+    // en el fondo de barro, y se lo ve a traves del agua.
+    return this.habitat === 'agua' ? NIVEL_AGUA - 0.22 : 0;
   }
 
   /* ---------------------------------------------------------------- */
@@ -193,7 +202,7 @@ export class AnimalMesh {
     const punto = this.buscarDestino(this.querencia.x, this.querencia.z, this.radioPaseo);
     this.destino.set(
       punto.x,
-      this.vuela ? VUELO_MIN + Math.random() * (VUELO_MAX - VUELO_MIN) : 0,
+      this.vuela ? VUELO_MIN + Math.random() * (VUELO_MAX - VUELO_MIN) : this.alturaBase(),
       punto.z,
     );
     this.pastando = false;

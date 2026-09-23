@@ -321,6 +321,30 @@ export const ANIMAL_SPECIES: Record<AnimalSpeciesId, AnimalSpecies> = {
     radioPaseo: 9,
     descripcion: 'Tranquila y observadora. Si confia en vos, no se va mas.',
   },
+  rana: {
+    id: 'rana',
+    nombre: 'Rana',
+    floresParaVisitar: 2,
+    aguaParaVisitar: 4,
+    habitat: 'orilla',
+    comidaFavorita: 'grillos',
+    velocidad: 16,
+    vuela: false,
+    radioPaseo: 4,
+    descripcion: 'Vive entre los nenúfares. De noche se la escucha desde lejos.',
+  },
+  pez: {
+    id: 'pez',
+    nombre: 'Pez',
+    floresParaVisitar: 1,
+    aguaParaVisitar: 6,
+    habitat: 'agua',
+    comidaFavorita: 'migas',
+    velocidad: 20,
+    vuela: false,
+    radioPaseo: 5,
+    descripcion: 'No sale del agua. Cuanto más grande el estanque, más se pasea.',
+  },
   caballo: {
     id: 'caballo',
     nombre: 'Caballo',
@@ -342,6 +366,8 @@ export const ANIMAL_MATRIX: Record<AnimalSpeciesId, Matrix> = {
   poni: M.PONY,
   yegua: M.HORSE,
   caballo: M.HORSE,
+  rana: M.FROG,
+  pez: M.PEZ,
 };
 
 /**
@@ -416,6 +442,46 @@ export const ANIMAL_VARIANTS: AnimalVariant[] = [
     especie: 'conejo',
     nombre: 'Gris',
     palette: { a: '#9aa0ad', b: '#6e7481', c: '#e2e6ee', d: '#f2a0a8', ...OJO },
+  },
+
+  // --- Ranas -----------------------------------------------------------
+  {
+    id: 'rana-verde',
+    especie: 'rana',
+    nombre: 'Verde',
+    palette: { a: '#6aa83a', b: '#477a26', c: '#cfe08a', f: '#2f5a1e', d: '#ffffff', e: '#2a2320' },
+  },
+  {
+    id: 'rana-dorada',
+    especie: 'rana',
+    nombre: 'Dorada',
+    palette: { a: '#d8b03a', b: '#a8801e', c: '#f4e2a0', f: '#6a5216', d: '#ffffff', e: '#2a2320' },
+  },
+  {
+    id: 'rana-turquesa',
+    especie: 'rana',
+    nombre: 'Turquesa',
+    palette: { a: '#3aa8a0', b: '#227a74', c: '#a8e0dc', f: '#155a56', d: '#ffffff', e: '#2a2320' },
+  },
+
+  // --- Peces -----------------------------------------------------------
+  {
+    id: 'pez-naranja',
+    especie: 'pez',
+    nombre: 'Naranja',
+    palette: { a: '#f08a3a', b: '#f7b86a', ...OJO },
+  },
+  {
+    id: 'pez-blanco',
+    especie: 'pez',
+    nombre: 'Blanco y rojo',
+    palette: { a: '#f6f2ea', b: '#e0584a', ...OJO },
+  },
+  {
+    id: 'pez-azul',
+    especie: 'pez',
+    nombre: 'Azul',
+    palette: { a: '#4a8ad8', b: '#8ac0f0', ...OJO },
   },
 
   // --- Gatos -----------------------------------------------------------
@@ -572,6 +638,8 @@ export const FOOD_MATRIX: Record<FoodId, Matrix> = {
   bayas: M.BERRIES,
   heno: M.HAY,
   manzana: M.APPLE,
+  grillos: M.GRILLOS,
+  migas: M.MIGAS,
 };
 
 export const FOODS: Record<FoodId, FoodItem> = {
@@ -617,6 +685,20 @@ export const FOODS: Record<FoodId, FoodItem> = {
     precio: 14,
     saciedad: 70,
     palette: { a: '#e0c274', b: '#b8954a', d: '#8a6a3a' },
+  },
+  grillos: {
+    id: 'grillos',
+    nombre: 'Grillos',
+    precio: 4,
+    saciedad: 34,
+    palette: { a: '#8a6a3a', b: '#5a4426', d: '#2f2a20' },
+  },
+  migas: {
+    id: 'migas',
+    nombre: 'Migas',
+    precio: 3,
+    saciedad: 30,
+    palette: { a: '#e8c87a', b: '#c99c4a', d: '#8a6a3a' },
   },
   manzana: {
     id: 'manzana',
