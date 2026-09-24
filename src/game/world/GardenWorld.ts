@@ -21,6 +21,7 @@ import {
 } from '../art/gameTextures';
 import { EventBus } from '../EventBus';
 import { controles } from '../input/Controls';
+import { sonar } from '../audio/sonidos';
 import { AnimalMesh } from './AnimalMesh';
 import { AvatarMesh } from './AvatarMesh';
 import { Effects } from './Effects';
@@ -33,6 +34,7 @@ import { ALTURA_BANCAL, Terrain } from './Terrain';
 import { CapaCasas, ESCALA_FLOR_MACETA } from './Casas';
 import { celdasOcupadasPorCasas, esMaceta } from '../../state/casas';
 import { celdaAcuaticaCercana } from '../../state/agua';
+import { climaActual } from '../../state/clima';
 import type { CasaColocada } from '../../state/types';
 
 /** Cada cuanto se persiste la posicion de los animales. */
@@ -76,6 +78,8 @@ export class GardenWorld {
   private herramientaVista: string | null = null;
   private tiempo = 0;
   private acumuladorPosiciones = 0;
+  /** Cuanto falta para la proxima tanda de gotas. */
+  private proximaGota = 0;
 
   constructor(contenedor: HTMLElement) {
     this.contenedor = contenedor;
@@ -456,6 +460,38 @@ export class GardenWorld {
     };
   }
 
+/**
+   * Si el cielo está lloviendo, caen gotas sobre el jardín. Es lo mismo que
+   * riega las plantas en la simulación: acá solo se ve.
+   */
+  private lloverSiCorresponde(dt: number): void {
+    const { lluvia } = climaActual();
+    if (lluvia <= 0) return;
+
+    this.proximaGota -= dt;
+    if (this.proximaGota > 0) return;
+    this.proximaGota = 0.1;
+
+    const islas = useGame.getState().estado.islas;
+    const isla = islas[Math.floor(Math.random() * islas.length)];
+    if (!isla || isla.suelo.length === 0) return;
+
+    const local = isla.suelo[Math.floor(Math.random() * isla.suelo.length)];
+    const [col, row] = local.split(',').map(Number);
+    this.efectos.emitir({
+      x: isla.ox + col + 0.5,
+      y: 2.2,
+      z: isla.oz + row + 0.5,
+      cantidad: Math.ceil(2 + lluvia * 4),
+      colores: ['#bfe4f7', '#8fc8ec'],
+      velocidad: 0.2,
+      empuje: 0,
+      gravedad: 9,
+      vida: 0.5,
+      escala: 0.05,
+    });
+  }
+
   /** Un destino de paseo que no quede adentro de una casa. */
   private destinoLibre(x: number, z: number, radio: number): { x: number; z: number } {
     const estado = useGame.getState().estado;
@@ -496,6 +532,16 @@ export class GardenWorld {
       EventBus.on('efecto:adoptar', () => this.avatar?.reaccionar('festejo')),
       EventBus.on('efecto:mimar', () => this.avatar?.reaccionar('festejo')),
       EventBus.on('avatar:senalar', () => this.avatar?.senalar()),
+
+      // El sonido va con el efecto, no con la acción: lo que se ve, se oye.
+      EventBus.on('efecto:plantar', () => sonar('plantar', 0.08)),
+      EventBus.on('efecto:regar', () => sonar('regar', 0.12)),
+      EventBus.on('efecto:regarTodo', () => sonar('regarTodo', 0.3)),
+      EventBus.on('efecto:cosechar', () => sonar('cosechar', 0.08)),
+      EventBus.on('efecto:comer', () => sonar('comer', 0.1)),
+      EventBus.on('efecto:mimar', () => sonar('mimar', 0.15)),
+      EventBus.on('efecto:adoptar', () => sonar('adoptar', 0.4)),
+      EventBus.on('efecto:expandir', () => sonar('poner', 0.1)),
       EventBus.on('avatar:cambio', () =>
         this.avatar?.aplicarAspecto(useGame.getState().estado.avatar),
       ),
@@ -625,6 +671,7 @@ export class GardenWorld {
       }
     }
 
+    this.lloverSiCorresponde(dt);
     this.efectos.update(dt, this.luces.noche, this.tiempo);
 
     this.cielo.actualizar(

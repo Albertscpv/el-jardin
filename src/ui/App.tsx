@@ -1,5 +1,6 @@
 import { AnimatePresence } from 'framer-motion';
 import { useEffect } from 'react';
+import { audio } from '../game/audio/sonidos';
 import { PERSONAJE_ACTIVO } from '../state/config';
 import { useAuth } from '../state/auth';
 import { escribirLocal } from '../state/persistence/local';
@@ -26,10 +27,31 @@ import { TouchControls } from './TouchControls';
 /** Cada cuánto avanza la simulación mientras la pestaña está visible. */
 const TICK_MS = 1000;
 
+/**
+ * El navegador no deja sonar nada hasta que la persona toca algo, asi que
+ * el audio se prepara con el primer gesto y despues se desengancha.
+ */
+function useAudioAlPrimerToque() {
+  useEffect(() => {
+    const despertar = () => audio.despertar();
+    for (const evento of ['pointerdown', 'keydown']) {
+      window.addEventListener(evento, despertar, { once: true });
+    }
+    return () => {
+      for (const evento of ['pointerdown', 'keydown']) {
+        window.removeEventListener(evento, despertar);
+      }
+    };
+  }, []);
+}
+
 export function App() {
   const cargando = useGame((s) => s.cargando);
   const panel = useGame((s) => s.panel);
   const modo = useGame((s) => s.modo);
+
+  // Va antes de cualquier return: los hooks no se saltean.
+  useAudioAlPrimerToque();
 
   useEffect(() => {
     // La sesión primero: define de dónde sale la partida que se carga.

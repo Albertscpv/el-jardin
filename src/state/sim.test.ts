@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { BALANCE } from './config';
-import { advance, crearEstadoInicial, stageOf } from './sim';
+import { ENTORNO_NEUTRO, advance, crearEstadoInicial, stageOf } from './sim';
 import type { GameState, PlantState } from './types';
 
 const HORA = 3600_000;
@@ -41,7 +41,8 @@ describe('marchitez', () => {
   it('sin agua deja de crecer mucho antes de marchitarse', () => {
     // Arranca bajo para que el crecimiento no llegue al tope y se pueda medir.
     const { estado, id } = conUnaPlanta(0.1);
-    const tras = advance(estado, estado.ultimoTick + 2 * HORA).estado;
+    // Sin estación ni lluvia: acá se mide el riego, no el calendario.
+    const tras = advance(estado, estado.ultimoTick + 2 * HORA, Math.random, ENTORNO_NEUTRO).estado;
     const planta = tras.cultivos[id];
 
     expect(planta.humedad).toBe(0);

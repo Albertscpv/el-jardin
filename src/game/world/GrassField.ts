@@ -4,7 +4,7 @@ import { esAgua, esParcela, ruidoCelda } from '../../state/islas';
 import type { IslaState } from '../../state/types';
 import { cajasGeometry, type Caja } from '../art/voxel';
 
-const VERDES = ['#4c8a3c', '#5fa14a', '#69ae53', '#3e7331', '#74b95a'];
+import { perfilDe } from '../../state/estaciones';
 
 /**
  * Tallos de pasto repartidos por el cesped de todas las islas.
@@ -51,6 +51,8 @@ export class GrassField {
       (hijo as THREE.Mesh).geometry.dispose();
     }
 
+    // El pasto se tiñe con la estación del día en que se arma el mundo.
+    const { verdes } = perfilDe();
     const cajas: Caja[] = [];
 
     for (const isla of islas) {
@@ -78,7 +80,7 @@ export class GrassField {
             ancho: grosor,
             alto: 0.2 + ((d * 3) % 1) * 0.32,
             fondo: grosor,
-            color: VERDES[Math.floor(d * VERDES.length)],
+            color: verdes[Math.floor(d * verdes.length)],
           });
         }
       }

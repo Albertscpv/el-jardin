@@ -1,4 +1,7 @@
-import { useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { audio } from '../game/audio/sonidos';
+import { climaActual } from '../state/clima';
+import { perfilDe } from '../state/estaciones';
 import { useAuth } from '../state/auth';
 import { regaloDiarioDisponible } from '../state/economia';
 import { totalCeldas } from '../state/islas';
@@ -101,6 +104,8 @@ export function HUD() {
         <button className="chip" onClick={() => setModo('practica')} title="Un rato de tiro al arco">
           Práctica
         </button>
+        <ChipTiempo />
+        <BotonSonido />
         <button
           className={panel === 'ayuda' ? 'chip activo' : 'chip'}
           onClick={() => setPanel('ayuda')}
@@ -165,4 +170,54 @@ function etiquetaDeCuenta(
     ayuda: 'Tu jardín se guarda solo en este navegador',
     invita: false,
   };
+}
+
+/** Silenciar y volver a encender. La preferencia vive en este navegador. */
+function BotonSonido() {
+  const [silencio, setSilencio] = useState(audio.silencio);
+
+  return (
+    <button
+      className="chip"
+      aria-pressed={silencio}
+      title={silencio ? 'Volver a escuchar el jardín' : 'Silenciar el jardín'}
+      onClick={() => {
+        audio.despertar();
+        const nuevo = !silencio;
+        audio.setSilencio(nuevo);
+        setSilencio(nuevo);
+        if (!nuevo) audio.sonar('cosechar');
+      }}
+    >
+      {silencio ? '🔇' : '🔊'}
+    </button>
+  );
+}
+
+/**
+ * Qué época es y qué cielo hay. Los dos salen del reloj, así que se
+ * refrescan solos cada tanto sin tocar la partida.
+ */
+function ChipTiempo() {
+  const avisar = useGame((s) => s.avisar);
+  const [ahora, setAhora] = useState(() => Date.now());
+
+  useEffect(() => {
+    const id = window.setInterval(() => setAhora(Date.now()), 30_000);
+    return () => window.clearInterval(id);
+  }, []);
+
+  const estacion = perfilDe(ahora);
+  const clima = climaActual(ahora);
+
+  return (
+    <button
+      className="chip"
+      title={`${estacion.nombre} · ${clima.nombre}`}
+      onClick={() => avisar(`${estacion.nombre}: ${estacion.frase}`, 'info')}
+    >
+      {estacion.icono}
+      {clima.cielo !== 'despejado' && <span className="chip-clima">{clima.icono}</span>}
+    </button>
+  );
 }

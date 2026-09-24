@@ -298,6 +298,11 @@ input {
   background: rgba(255, 255, 255, 0.12);
 }
 
+/* El cielo del momento, al lado de la estación. */
+.chip-clima {
+  margin-left: 3px;
+}
+
 /* Punto de aviso: hay algo esperando adentro. */
 .chip-punto {
   display: inline-block;

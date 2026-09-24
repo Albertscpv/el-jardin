@@ -69,6 +69,7 @@ import {
 } from './casas';
 import { aplicarRegalos } from './regalos';
 import { abrirJardinRosa, contarTulipan } from './secretos';
+import { sonar } from '../game/audio/sonidos';
 import {
   advance,
   aforo,
@@ -449,6 +450,7 @@ export const useGame = create<Store>()((set, get) => {
     cerrarAdopcion: () => set({ adoptando: null }),
 
     avisar(texto, tono = 'info', extra = {}) {
+      if (tono === 'aviso') sonar('aviso', 0.4);
       const id = siguienteToast++;
       const toast: Toast = { id, texto, tono, ...(extra.abrirTienda ? { abrirTienda: extra.abrirTienda } : {}) };
       set((s) => ({ toasts: [...s.toasts.slice(-4), toast] }));
@@ -515,6 +517,7 @@ export const useGame = create<Store>()((set, get) => {
           const nuevaId = `casa-${Date.now().toString(36)}-${Math.floor(Math.random() * 1e6).toString(36)}`;
           const { estado: tras, resultado } = ponerCasa(estado, tipo, islaId, col, row, nuevaId);
           if (tras !== estado) mutar(() => tras);
+          if (resultado === 'puesta') sonar('poner');
           return avisar(MENSAJE_CASA[resultado], resultado === 'puesta' ? 'exito' : 'aviso');
         }
 
@@ -541,6 +544,7 @@ export const useGame = create<Store>()((set, get) => {
           if (tras !== get().estado) mutar(() => tras);
           if (resultado !== 'vertida') return avisar(MENSAJE_AGUA[resultado], 'aviso');
           EventBus.emit('efecto:regar', { celda: id });
+          sonar('balde');
           return avisar('Un balde de agua 💧', 'exito');
         }
 
@@ -551,7 +555,10 @@ export const useGame = create<Store>()((set, get) => {
           const tipo = objeto && esJuego(objeto.tipo) ? objeto.tipo : get().juegoSeleccionado;
           const { estado: tras, resultado } = usarObjeto(get().estado, tipo, islaId, col, row);
           if (tras !== get().estado) mutar(() => tras);
-          if (resultado === 'colocada') return avisar(`${JUEGOS[tipo].nombre} listo para usar 🛝`, 'exito');
+          if (resultado === 'colocada') {
+            sonar('poner');
+            return avisar(`${JUEGOS[tipo].nombre} listo para usar 🛝`, 'exito');
+          }
           if (resultado === 'guardada') {
             set({ juegoSeleccionado: tipo });
             return avisar(`${JUEGOS[tipo].nombre} levantado. Va donde vos digas`, 'info');
@@ -563,6 +570,7 @@ export const useGame = create<Store>()((set, get) => {
           if (casaAca) return avisar(unaDe(AHI_HAY_CASA), 'aviso');
           const { estado: tras, resultado } = usarFarola(get().estado, islaId, col, row);
           if (tras !== get().estado) mutar(() => tras);
+          if (resultado === 'colocada') sonar('poner');
           return avisar(MENSAJE_FAROLA[resultado], resultado === 'colocada' ? 'exito' : 'info');
         }
 
@@ -680,6 +688,7 @@ export const useGame = create<Store>()((set, get) => {
             mutar(() => secreto.estado);
             EventBus.emit('mundo:resincronizar', {});
             EventBus.emit('camara:mirar', { x: secreto.isla.ox + 4.5, z: secreto.isla.oz + 4.5 });
+            sonar('secreto');
             avisar('Cien tulipanes. Algo se abrió en el horizonte 🌷', 'exito', { duracion: 9000 });
             avisar(`${secreto.isla.nombre} te estaba esperando`, 'info', { duracion: 9000 });
           }
@@ -790,6 +799,7 @@ export const useGame = create<Store>()((set, get) => {
         semillas: { ...e.semillas, [variantId]: (e.semillas[variantId] ?? 0) + cantidad },
       }));
       set({ semillaSeleccionada: variantId });
+      sonar('moneda');
       get().avisar(`+${cantidad} ${variante.nombre} para el bolsillo`, 'exito');
     },
 
@@ -814,6 +824,7 @@ export const useGame = create<Store>()((set, get) => {
         comida: { ...e.comida, [foodId]: (e.comida[foodId] ?? 0) + cantidad },
       }));
       set({ comidaSeleccionada: foodId });
+      sonar('moneda');
       get().avisar(`+${cantidad} ${comida.nombre}`, 'exito');
     },
 

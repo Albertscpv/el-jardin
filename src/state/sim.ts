@@ -7,6 +7,8 @@
  */
 
 import { celdaDeAguaAleatoria } from './agua';
+import { climaActual } from './clima';
+import { perfilDe } from './estaciones';
 import { BALANCE, SAVE_VERSION } from './config';
 import {
   ANIMAL_SPECIES,
@@ -86,12 +88,47 @@ export interface AdvanceResult {
  * Avanza el estado hasta `ahora`. Es puro: devuelve un estado nuevo.
  * Se llama tanto en cada tick del juego como al cargar la partida.
  */
-export function advance(previo: GameState, ahora: number, rng = Math.random): AdvanceResult {
+/**
+ * Lo que el mundo de afuera le hace al jardin: la estacion y el clima.
+ * Sale del reloj, no del guardado, pero se pasa aparte para poder fijarlo
+ * en las pruebas y no depender del dia en que se corren.
+ */
+export interface Entorno {
+  /** Multiplica lo que crecen las plantas. */
+  crecimiento: number;
+  /** Multiplica lo rapido que se seca la tierra. */
+  sequia: number;
+  /** 0 sin lluvia, 1 aguacero. */
+  lluvia: number;
+}
+
+export function entornoDe(ahora: number): Entorno {
+  const estacion = perfilDe(ahora);
+  return {
+    crecimiento: estacion.crecimiento,
+    sequia: estacion.sequia,
+    lluvia: climaActual(ahora).lluvia,
+  };
+}
+
+/** Un jardin sin estaciones ni clima: lo que usaban las pruebas de siempre. */
+export const ENTORNO_NEUTRO: Entorno = { crecimiento: 1, sequia: 1, lluvia: 0 };
+
+export function advance(
+  previo: GameState,
+  ahora: number,
+  rng = Math.random,
+  entorno: Entorno = entornoDe(ahora),
+): AdvanceResult {
   const brutos = (ahora - previo.ultimoTick) / 1000;
   if (brutos <= 0) return { estado: previo, eventos: [] };
 
   const dt = Math.min(brutos, BALANCE.maxSegundosOffline);
   const eventos: string[] = [];
+
+  const { lluvia } = entorno;
+  // La lluvia moja mientras dura su bloque, no las ocho horas de ausencia.
+  const segundosDeLluvia = lluvia > 0 ? Math.min(dt, 4 * 60) : 0;
 
   /* --- Plantas ---------------------------------------------------- */
   let florecieron = 0;
@@ -103,13 +140,20 @@ export function advance(previo: GameState, ahora: number, rng = Math.random): Ad
     const variante = getFlowerVariant(planta.variantId);
     const segundosTotales = FLOWER_SPECIES[variante.especie].minutosCrecimiento * 60;
 
-    const humedad = clamp01(planta.humedad - dt / BALANCE.segundosDeHumedad);
+    const humedad = clamp01(
+      planta.humedad -
+        (dt * entorno.sequia) / BALANCE.segundosDeHumedad +
+        // Llover es regar sin que nadie riegue.
+        (segundosDeLluvia * lluvia * 1.4) / BALANCE.segundosDeHumedad,
+    );
 
     // Solo crece mientras tenga agua; el tiempo seco cuenta hacia la marchitez.
     const segundosHumedos = Math.min(dt, planta.humedad * BALANCE.segundosDeHumedad);
     const segundosSecos = dt - segundosHumedos;
 
-    const growth = clamp01(planta.growth + segundosHumedos / segundosTotales);
+    const growth = clamp01(
+      planta.growth + (segundosHumedos * entorno.crecimiento) / segundosTotales,
+    );
     const marchitez = clamp01(
       planta.marchitez +
         segundosSecos / BALANCE.segundosHastaMarchitar -

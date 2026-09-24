@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { celdaAMundo, celdaId, celdaLocal, parseCeldaLocal, VECINAS } from '../../state/config';
 import { bordesDeAgua } from '../../state/agua';
+import { perfilDe } from '../../state/estaciones';
 import { bordesDeIsla, celdaEnMundo, esAgua, esParcela, ruidoCelda } from '../../state/islas';
 import type { CeldaId, IslaState, PropTipo } from '../../state/types';
 import * as P from '../art/props';
@@ -11,7 +12,8 @@ export const ALTURA_BANCAL = 0.22;
 const COLOR_TIERRA_SECA = '#8a6238';
 const COLOR_TIERRA_MOJADA = '#5e4228';
 
-const VERDES = ['#5fa14a', '#5b9b46', '#64a84f', '#588f42', '#69ae53'];
+/** Los verdes del cesped y de las hojas salen de la estacion del dia. */
+const paleta = () => perfilDe();
 
 /** Altura de la superficie del agua. */
 export const NIVEL_AGUA = -0.18;
@@ -285,7 +287,10 @@ export class Terrain {
         // isla se ve la linea verde sobre el marron, como corresponde.
         cajas.push({
           x: x0, y: -0.1, z: z0, ancho: 1, alto: 0.1, fondo: 1,
-          color: VERDES[Math.floor(ruido * VERDES.length)],
+          color: (() => {
+            const verdes = paleta().verdes;
+            return verdes[Math.floor(ruido * verdes.length)];
+          })(),
         });
         this.sembrarDecoracion(isla, col, row, x, z, ruido, decoracion);
       }
@@ -379,7 +384,7 @@ export class Terrain {
           y: ((d * 7) % 1) * 0.4,
           z: z - 0.32 + ((d * 3) % 1) * 0.5,
           ancho: s, alto: s, fondo: s,
-          color: ['#3e7331', '#4c8a3c', '#356128'][Math.floor(d * 3)],
+          color: paleta().hojas[Math.floor(d * 3)],
         });
       }
       if (r2 > 0.5) {
