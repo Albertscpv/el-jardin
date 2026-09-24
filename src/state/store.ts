@@ -68,6 +68,7 @@ import {
   type ResultadoCasa,
 } from './casas';
 import { aplicarRegalos } from './regalos';
+import { abrirJardinRosa, contarTulipan } from './secretos';
 import {
   advance,
   aforo,
@@ -671,6 +672,17 @@ export const useGame = create<Store>()((set, get) => {
           });
 
           EventBus.emit('efecto:cosechar', { celda: id, color: variante.palette['2'] ?? '#ffd447' });
+
+          // Nadie lo anuncia: a los cien tulipanes aparece el jardín rosa.
+          mutar((e) => contarTulipan(e, variante.especie));
+          const secreto = abrirJardinRosa(get().estado, Date.now());
+          if (secreto) {
+            mutar(() => secreto.estado);
+            EventBus.emit('mundo:resincronizar', {});
+            EventBus.emit('camara:mirar', { x: secreto.isla.ox + 4.5, z: secreto.isla.oz + 4.5 });
+            avisar('Cien tulipanes. Algo se abrió en el horizonte 🌷', 'exito', { duracion: 9000 });
+            avisar(`${secreto.isla.nombre} te estaba esperando`, 'info', { duracion: 9000 });
+          }
 
           const pedido = anotarCosecha(get().estado, variante.especie);
           if (pedido.avanzo) mutar(() => pedido.estado);

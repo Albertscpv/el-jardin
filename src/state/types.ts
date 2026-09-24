@@ -304,6 +304,10 @@ export interface GameState {
   records?: Records;
   /** Easter egg descubierto: habilita al vecino y las bombas de agua. */
   rivalDespierto?: boolean;
+  /** Tulipanes cosechados, de cualquier color: lleva al jardín secreto. */
+  tulipanesCosechados?: number;
+  /** El jardín de los cien tulipanes ya apareció. Pasa una sola vez. */
+  jardinRosa?: boolean;
   /**
    * Ids de los regalos de balance ya entregados a esta partida. Es lo que
    * hace que un regalo se cobre una sola vez sin tocar la version del
