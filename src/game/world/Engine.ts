@@ -335,6 +335,31 @@ export class Engine {
     this.colocarCamara();
   }
 
+  /**
+   * Una foto del jardin tal como se ve, en PNG.
+   *
+   * El mundo se dibuja en un buffer chiquito y la pantalla lo estira: si se
+   * guardara ese buffer, la foto saldria de 400 px. Asi que se renderiza y
+   * se agranda a mano con vecino mas cercano, que es justo lo que mantiene
+   * el pixel art nitido en vez de convertirlo en una acuarela.
+   */
+  fotografiar(escala = 4): string {
+    // Hay que leer el canvas en el mismo tick en que se dibuja: despues el
+    // navegador ya se llevo el contenido del buffer.
+    this.renderer.render(this.escena, this.camara);
+    const fuente = this.renderer.domElement;
+
+    const lienzo = document.createElement('canvas');
+    lienzo.width = fuente.width * escala;
+    lienzo.height = fuente.height * escala;
+
+    const ctx = lienzo.getContext('2d');
+    if (!ctx) return fuente.toDataURL('image/png');
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(fuente, 0, 0, lienzo.width, lienzo.height);
+    return lienzo.toDataURL('image/png');
+  }
+
   /** Encuadra todo el territorio: el botón de centrar y la carga inicial. */
   centrar(limites: LimitesMundo): void {
     const cx = (limites.minX + limites.maxX) / 2;

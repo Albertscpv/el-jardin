@@ -147,6 +147,10 @@ interface Store {
   modo: Modo;
   municion: Municion;
 
+  /** Modo foto: el jardín sin nada encima, para sacarle una postal. */
+  modoFoto: boolean;
+  setModoFoto: (v: boolean) => void;
+
   /* --- ciclo de vida --- */
   inicializar: () => Promise<void>;
   /** Recarga la partida cuando cambia quién tiene la sesión. */
@@ -279,6 +283,7 @@ export const useGame = create<Store>()((set, get) => {
     toasts: [],
 
     modo: 'jardin',
+    modoFoto: false,
     municion: 'flecha',
 
     /* ---------------------------------------------------------------- */
@@ -1015,6 +1020,8 @@ export const useGame = create<Store>()((set, get) => {
     /* ---------------------------------------------------------------- */
     /* Practica de tiro                                                  */
     /* ---------------------------------------------------------------- */
+
+    setModoFoto: (modoFoto) => set({ modoFoto, panel: null, animalAbierto: null }),
 
     setModo(modo) {
       // Entrar a practicar cierra los paneles: se necesita la pantalla libre.

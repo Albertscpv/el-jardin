@@ -492,6 +492,34 @@ export class GardenWorld {
     });
   }
 
+  /**
+   * Saca la foto y la baja como archivo. El nombre lleva la fecha: el que
+   * saca varias no termina con "descarga (3)".
+   */
+  private guardarFoto(): void {
+    const { avisar } = useGame.getState();
+    try {
+      const datos = this.engine.fotografiar();
+      const hoy = new Date();
+      const sello = [
+        hoy.getFullYear(),
+        String(hoy.getMonth() + 1).padStart(2, '0'),
+        String(hoy.getDate()).padStart(2, '0'),
+        String(hoy.getHours()).padStart(2, '0') + String(hoy.getMinutes()).padStart(2, '0'),
+      ].join('-');
+
+      const enlace = document.createElement('a');
+      enlace.href = datos;
+      enlace.download = `el-jardin-de-pan-${sello}.png`;
+      enlace.click();
+
+      sonar('cosechar');
+      avisar('Foto guardada en tus descargas 📷', 'exito');
+    } catch {
+      avisar('No se pudo guardar la foto en este navegador', 'aviso');
+    }
+  }
+
   /** Un destino de paseo que no quede adentro de una casa. */
   private destinoLibre(x: number, z: number, radio: number): { x: number; z: number } {
     const estado = useGame.getState().estado;
@@ -532,6 +560,7 @@ export class GardenWorld {
       EventBus.on('efecto:adoptar', () => this.avatar?.reaccionar('festejo')),
       EventBus.on('efecto:mimar', () => this.avatar?.reaccionar('festejo')),
       EventBus.on('avatar:senalar', () => this.avatar?.senalar()),
+      EventBus.on('foto:sacar', () => this.guardarFoto()),
 
       // El sonido va con el efecto, no con la acción: lo que se ve, se oye.
       EventBus.on('efecto:plantar', () => sonar('plantar', 0.08)),

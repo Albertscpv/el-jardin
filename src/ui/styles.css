@@ -1809,3 +1809,44 @@ code {
   width: 100%;
   margin-bottom: 12px;
 }
+
+/* ------------------------------------------------------------------ */
+/* Modo foto                                                           */
+/* ------------------------------------------------------------------ */
+
+/* En modo foto no hay nada que tocar salvo la barra: el cursor lo dice. */
+.modo-foto .escenario canvas {
+  cursor: grab;
+}
+
+.barra-foto {
+  position: absolute;
+  left: 50%;
+  bottom: 18px;
+  transform: translateX(-50%);
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 14px;
+  max-width: calc(100% - 28px);
+}
+
+.barra-foto-pista {
+  font-size: 13px;
+  color: var(--tenue);
+}
+
+.barra-foto-botones {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+@media (max-width: 720px) {
+  .barra-foto {
+    flex-direction: column;
+    gap: 8px;
+    text-align: center;
+  }
+}

@@ -29,6 +29,8 @@ export interface GameEvents {
   'avatar:cambio': Record<string, never>;
   /** Marcar al personaje un rato, para encontrarlo en el jardin. */
   'avatar:senalar': Record<string, never>;
+  /** Guardar una foto del jardin, sin interfaz encima. */
+  'foto:sacar': Record<string, never>;
 
   /* Práctica de tiro */
   'practica:modo': { activa: boolean };

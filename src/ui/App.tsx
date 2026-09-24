@@ -17,6 +17,7 @@ import { GiftsPanel } from './GiftsPanel';
 import { HelpPanel } from './HelpPanel';
 import { HUD } from './HUD';
 import { OrdersPanel } from './OrdersPanel';
+import { PhotoBar } from './PhotoBar';
 import { RangeScreen } from './RangeScreen';
 import { ShopPanel } from './ShopPanel';
 import { Toasts } from './Toasts';
@@ -49,6 +50,7 @@ export function App() {
   const cargando = useGame((s) => s.cargando);
   const panel = useGame((s) => s.panel);
   const modo = useGame((s) => s.modo);
+  const modoFoto = useGame((s) => s.modoFoto);
 
   // Va antes de cualquier return: los hooks no se saltean.
   useAudioAlPrimerToque();
@@ -108,6 +110,17 @@ export function App() {
   // deja que el CSS reserve ese espacio solo cuando el joystick existe, en
   // vez de dejar un hueco muerto con el personaje apagado.
   const conJoystick = PERSONAJE_ACTIVO && esTactil();
+
+  // Modo foto: el mundo sigue vivo, pero se va todo lo que le tapa la cara.
+  if (modoFoto) {
+    return (
+      <div className="app modo-foto">
+        <GameCanvas />
+        <PhotoBar />
+        <Toasts />
+      </div>
+    );
+  }
 
   return (
     <div className={conJoystick ? 'app con-joystick' : 'app'}>

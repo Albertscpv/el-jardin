@@ -28,6 +28,7 @@ export function HUD() {
   const panel = useGame((s) => s.panel);
   const setPanel = useGame((s) => s.setPanel);
   const setModo = useGame((s) => s.setModo);
+  const setModoFoto = useGame((s) => s.setModoFoto);
   const despertarRival = useGame((s) => s.despertarRival);
   // Se recalcula en cada tick del juego, asi el punto aparece solo al pasar
   // la medianoche sin tener que recargar.
@@ -103,6 +104,13 @@ export function HUD() {
         ))}
         <button className="chip" onClick={() => setModo('practica')} title="Un rato de tiro al arco">
           Práctica
+        </button>
+        <button
+          className="chip"
+          onClick={() => setModoFoto(true)}
+          title="Sacarle una foto al jardín, sin interfaz"
+        >
+          📷
         </button>
         <ChipTiempo />
         <BotonSonido />
