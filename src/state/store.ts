@@ -53,6 +53,8 @@ import {
 } from './agua';
 import { comprarFarolas, propEn, usarFarola, usarObjeto, type ResultadoFarola } from './objetos';
 import { JUEGOS, comprarJuego as comprarJuegoPuro, esJuego, type JuegoId } from './juegos';
+import { ARBOLES, comprarArbol as comprarArbolPuro, esArbol } from './arboles';
+import type { TipoArbol } from '../game/art/arboles';
 import {
   CASAS,
   TIPOS_CASA,
@@ -148,6 +150,8 @@ interface Store {
   casaSeleccionada: TipoCasa | null;
   /** El juego que pone la herramienta Juegos. */
   juegoSeleccionado: JuegoId;
+  /** El árbol que planta la herramienta Árbol. */
+  arbolSeleccionado: TipoArbol;
   /** Qué deja la herramienta Agua: agua, tierra otra vez o un nenúfar. */
   modoAgua: ModoAgua;
   panel: PanelId;
@@ -177,6 +181,8 @@ interface Store {
   setComida: (id: FoodId) => void;
   setCasa: (tipo: TipoCasa) => void;
   setJuego: (id: JuegoId) => void;
+  setArbol: (id: TipoArbol) => void;
+  comprarArbol: (id: TipoArbol) => void;
   setModoAgua: (m: ModoAgua) => void;
   comprarJuego: (id: JuegoId) => void;
   comprarCasa: (tipo: TipoCasa) => void;
@@ -288,6 +294,7 @@ export const useGame = create<Store>()((set, get) => {
     comidaSeleccionada: 'nectar',
     casaSeleccionada: null,
     juegoSeleccionado: 'columpio',
+    arbolSeleccionado: 'roble',
     modoAgua: 'agua',
     panel: null,
     animalAbierto: null,
@@ -445,6 +452,15 @@ export const useGame = create<Store>()((set, get) => {
     setComida: (comidaSeleccionada) => set({ comidaSeleccionada, herramienta: 'alimentar' }),
     setCasa: (casaSeleccionada) => set({ casaSeleccionada, herramienta: 'casa' }),
     setJuego: (juegoSeleccionado) => set({ juegoSeleccionado, herramienta: 'juego' }),
+    setArbol: (arbolSeleccionado) => set({ arbolSeleccionado, herramienta: 'arbol' }),
+
+    comprarArbol(id) {
+      const tras = comprarArbolPuro(get().estado, id);
+      if (!tras) return get().avisar(unaDe(SIN_MONEDAS), 'aviso');
+      mutar(() => tras);
+      set({ arbolSeleccionado: id });
+      get().avisar(`${ARBOLES[id].nombre} tuyo. Plantalo con la herramienta Árbol 🌳`, 'exito');
+    },
     setModoAgua: (modoAgua) => set({ modoAgua, herramienta: 'agua' }),
 
     comprarJuego(id) {
@@ -593,6 +609,28 @@ export const useGame = create<Store>()((set, get) => {
           EventBus.emit('efecto:regar', { celda: id });
           sonar('balde');
           return avisar('Un balde de agua 💧', 'exito');
+        }
+
+        case 'arbol': {
+          if (casaAca) return avisar(unaDe(AHI_HAY_CASA), 'aviso');
+          const puesto = propEn(isla, col, row);
+          // Tocar un árbol lo saca, sea cual sea el elegido en la barra.
+          const tipo = puesto && esArbol(puesto.tipo) ? puesto.tipo : get().arbolSeleccionado;
+          const { estado: tras, resultado } = usarObjeto(get().estado, tipo, islaId, col, row);
+          if (tras !== get().estado) mutar(() => tras);
+
+          if (resultado === 'colocada') {
+            sonar('poner');
+            return avisar(`${ARBOLES[tipo].nombre} plantado 🌳`, 'exito');
+          }
+          if (resultado === 'guardada') {
+            set({ arbolSeleccionado: tipo });
+            return avisar(`${ARBOLES[tipo].nombre} sacado. Lo podés plantar en otro lado`, 'info');
+          }
+          if (resultado === 'sin-farolas') {
+            return avisar(`No te queda ninguno. El ${ARBOLES[tipo].nombre.toLowerCase()} se compra en Construir`, 'aviso');
+          }
+          return avisar(MENSAJE_JUEGO(resultado, 'columpio'), 'aviso');
         }
 
         case 'juego': {

@@ -1,6 +1,8 @@
 import { EventBus } from '../game/EventBus';
 import { BALANCE, costoProximaCelda } from '../state/config';
 import { IDS_JUEGOS, JUEGOS, type JuegoId } from '../state/juegos';
+import { ARBOLES, IDS_ARBOLES } from '../state/arboles';
+import type { TipoArbol } from '../game/art/arboles';
 import { totalCeldas } from '../state/islas';
 import { useGame } from '../state/store';
 import { Drawer } from './Drawer';
@@ -57,6 +59,17 @@ export function BuildPanel() {
         La cerca no se compra ni se pone: crece sola alrededor de cada isla y se acomoda cada
         vez que ganás terreno.
       </p>
+
+      <h3 className="seccion">Árboles</h3>
+      <p className="fila-nota">
+        Se plantan sobre el pasto con la herramienta Árbol. Cambian con la época del año: en otoño
+        se ponen dorados y en invierno se quedan sin hojas, salvo el pino.
+      </p>
+      <ul className="lista">
+        {IDS_ARBOLES.map((id) => (
+          <FilaArbol key={id} id={id} />
+        ))}
+      </ul>
 
       <h3 className="seccion">Cosas para los chicos</h3>
       <p className="fila-nota">
@@ -158,6 +171,52 @@ function FilaJuego({ id }: { id: JuegoId }) {
       <div className="fila-acciones">
         <button className="boton" disabled={monedas < juego.precio} onClick={() => comprar(id)}>
           {juego.precio} 🪙
+        </button>
+      </div>
+    </li>
+  );
+}
+
+function FilaArbol({ id }: { id: TipoArbol }) {
+  const monedas = useGame((s) => s.estado.monedas);
+  const tengo = useGame((s) => s.estado.objetos?.[id] ?? 0);
+  const comprar = useGame((s) => s.comprarArbol);
+  const setArbol = useGame((s) => s.setArbol);
+  const setPanel = useGame((s) => s.setPanel);
+  const arbol = ARBOLES[id];
+
+  return (
+    <li className="fila">
+      <span className="tarjeta-icono" aria-hidden>
+        {id === 'pino' ? '🌲' : id === 'cerezo' ? '🌸' : id === 'sauce' ? '🌿' : '🌳'}
+      </span>
+
+      <div className="fila-texto">
+        <div className="fila-titulo">
+          <strong>{arbol.nombre}</strong>
+        </div>
+        <p className="fila-detalle">
+          {arbol.descripcion}
+          {tengo > 0 && ` · tenés ${tengo} para plantar`}
+        </p>
+        {tengo > 0 && (
+          <p className="fila-nota">
+            <button
+              className="enlace en-linea"
+              onClick={() => {
+                setArbol(id);
+                setPanel(null);
+              }}
+            >
+              Plantarlo ahora
+            </button>
+          </p>
+        )}
+      </div>
+
+      <div className="fila-acciones">
+        <button className="boton" disabled={monedas < arbol.precio} onClick={() => comprar(id)}>
+          {arbol.precio} 🪙
         </button>
       </div>
     </li>

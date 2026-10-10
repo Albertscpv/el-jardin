@@ -3,6 +3,9 @@ import { celdaAMundo, celdaId, celdaLocal, parseCeldaLocal, VECINAS } from '../.
 import { bordesDeAgua } from '../../state/agua';
 import { perfilDe } from '../../state/estaciones';
 import { esCamino } from '../../state/caminos';
+import { esArbol } from '../../state/arboles';
+import { cajasArbol, type TipoArbol } from '../art/arboles';
+import { estacionDe } from '../../state/estaciones';
 import { bordesDeIsla, celdaEnMundo, esAgua, esParcela, ruidoCelda } from '../../state/islas';
 import type { CeldaId, IslaState, PropTipo } from '../../state/types';
 import * as P from '../art/props';
@@ -88,7 +91,8 @@ interface ParteMovil {
 
 /** Objetos que salen de una matriz extruida. La farola se arma aparte, con cajas. */
 const MATRIZ_PROP: Record<
-  Exclude<PropTipo, 'farola'>,
+  // La farola y los arboles se arman con cajas, no con un sprite extruido.
+  Exclude<PropTipo, 'farola' | TipoArbol>,
   {
     matriz: readonly string[];
     paleta: Record<string, string>;
@@ -546,6 +550,10 @@ export class Terrain {
         this.construirFarola(isla, prop.col, prop.row);
         continue;
       }
+      if (esArbol(prop.tipo)) {
+        this.construirArbol(isla, prop.tipo, prop.col, prop.row);
+        continue;
+      }
       const def = MATRIZ_PROP[prop.tipo];
       const { x, z } = celdaAMundo(isla, prop.col, prop.row);
 
@@ -575,6 +583,27 @@ export class Terrain {
 
       if (prop.tipo === 'farol') this.faroles.push(new THREE.Vector3(x, 1.25, z));
     }
+  }
+
+  /**
+   * Un arbol. Se arma con cajas, no con un sprite extruido: de frente y
+   * estirado hacia atras parecia un cartel. La semilla sale de la celda,
+   * asi que el mismo arbol se ve igual en cada reconstruccion, y dos
+   * arboles vecinos no salen calcados.
+   */
+  private construirArbol(isla: IslaState, tipo: PropTipo, col: number, row: number): void {
+    if (!esArbol(tipo)) return;
+    const { x, z } = celdaAMundo(isla, col, row);
+    const semilla = Math.abs(Math.imul(col + 1, 0x9e3779b1) ^ Math.imul(row + 1, 0x85ebca6b)) % 99991;
+
+    const geometria = cajasGeometry(cajasArbol(tipo, estacionDe(), semilla), 0.75);
+    const malla = new THREE.Mesh(geometria, materialVoxel());
+    malla.position.set(x, 0, z);
+    malla.castShadow = true;
+    malla.receiveShadow = true;
+    malla.userData.celda = celdaId(isla.id, col, row);
+    this.grupo.add(malla);
+    this.tocables.push(malla);
   }
 
   private construirFarola(isla: IslaState, col: number, row: number): void {
