@@ -11,6 +11,9 @@ export const CICLO_DIA = 8 * 60_000;
  */
 const MAX_FAROLES = 8;
 
+/** Hasta donde llega la luz de un farol, en tiles. */
+const ALCANCE_FAROL = 11;
+
 interface Momento {
   t: number;
   /** Color y fuerza del sol (o de la luna). */
@@ -35,8 +38,8 @@ const MOMENTOS: Momento[] = [
   { t: 0.40, sol: '#ffffff', solInt: 1.75, cielo: '#dbefff', suelo: '#9cb47c', hemiInt: 0.55, cieloAlto: '#3f86c4', fondo: '#a8d8ea', elevacion: 42, noche: 0 },
   { t: 0.58, sol: '#ffb163', solInt: 1.4, cielo: '#ffd2a0', suelo: '#8fa370', hemiInt: 0.5, cieloAlto: '#5a7fb0', fondo: '#f0b878', elevacion: 20, noche: 0 },
   { t: 0.68, sol: '#ff7a4a', solInt: 0.8, cielo: '#e8a07a', suelo: '#7a8a60', hemiInt: 0.4, cieloAlto: '#3a4a78', fondo: '#e0785a', elevacion: 6, noche: 0.4 },
-  { t: 0.78, sol: '#8fa8e8', solInt: 0.4, cielo: '#22305c', suelo: '#3a4a3c', hemiInt: 0.3, cieloAlto: '#0e1430', fondo: '#2a3a5c', elevacion: 38, noche: 1 },
-  { t: 0.94, sol: '#8fa8e8', solInt: 0.4, cielo: '#22305c', suelo: '#3a4a3c', hemiInt: 0.3, cieloAlto: '#0e1430', fondo: '#2a3a5c', elevacion: 26, noche: 1 },
+  { t: 0.78, sol: '#8fa8e8', solInt: 0.4, cielo: '#22305c', suelo: '#44553f', hemiInt: 0.36, cieloAlto: '#0e1430', fondo: '#2a3a5c', elevacion: 38, noche: 1 },
+  { t: 0.94, sol: '#8fa8e8', solInt: 0.4, cielo: '#22305c', suelo: '#44553f', hemiInt: 0.36, cieloAlto: '#0e1430', fondo: '#2a3a5c', elevacion: 26, noche: 1 },
   { t: 1.00, sol: '#ffb877', solInt: 0.95, cielo: '#ffd9b0', suelo: '#8a9a6a', hemiInt: 0.42, cieloAlto: '#3f5a80', fondo: '#f0a878', elevacion: 7, noche: 0.35 },
 ];
 
@@ -118,7 +121,9 @@ export class Lighting {
    */
   setFaroles(posiciones: THREE.Vector3[], fuerzas: number[] = []): void {
     while (this.faroles.length < Math.min(posiciones.length, MAX_FAROLES)) {
-      const luz = new THREE.PointLight('#ffc978', 0, 7, 2);
+      // Alcance largo y caida suave: con la caida fisica (decay 2) el charco
+      // de luz moria a dos tiles y la farola alumbraba su propio poste.
+      const luz = new THREE.PointLight('#ffc978', 0, ALCANCE_FAROL, 1.5);
       this.escena.add(luz);
       this.faroles.push(luz);
     }
@@ -193,7 +198,7 @@ export class Lighting {
 
     this.faseDia = t;
     this.noche = THREE.MathUtils.lerp(a.noche, b.noche, k);
-    for (const luz of this.faroles) luz.intensity = this.noche * 9 * (luz.userData.fuerza ?? 1);
+    for (const luz of this.faroles) luz.intensity = this.noche * 10 * (luz.userData.fuerza ?? 1);
   }
 
   private mezcla(hexA: string, hexB: string, k: number): THREE.Color {
