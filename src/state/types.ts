@@ -132,6 +132,8 @@ export interface IslaState {
   parcelas: CeldaLocal[];
   /** Celdas de agua. Decorativas: no se pueden arar ni pisar. */
   agua: CeldaLocal[];
+  /** Losas de piedra sobre el césped. Opcional: una partida vieja no tiene. */
+  camino?: CeldaLocal[];
   props: PropColocado[];
 }
 
@@ -308,6 +310,16 @@ export interface GameState {
   tulipanesCosechados?: number;
   /** El jardín de los cien tulipanes ya apareció. Pasa una sola vez. */
   jardinRosa?: boolean;
+  /** Variedades de flor cosechadas al menos una vez: el álbum. */
+  variedadesVistas?: string[];
+  /** Flores doradas encontradas al cosechar. */
+  floresDoradas?: number;
+  /** El gato negro de medianoche ya vino alguna vez. */
+  gatoDeMedianoche?: boolean;
+  /** El pez grande del estanque ya apareció. */
+  pezEnorme?: boolean;
+  /** Amistades entre animales, como "uidA|uidB" con los uid ordenados. */
+  amistades?: string[];
   /**
    * Ids de los regalos de balance ya entregados a esta partida. Es lo que
    * hace que un regalo se cobre una sola vez sin tocar la version del
@@ -351,7 +363,8 @@ export type ToolId =
   | 'farola'
   | 'casa'
   | 'agua'
-  | 'juego';
+  | 'juego'
+  | 'camino';
 
 export interface Toast {
   id: number;

@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { celdaAMundo, celdaId, celdaLocal, parseCeldaLocal, VECINAS } from '../../state/config';
 import { bordesDeAgua } from '../../state/agua';
 import { perfilDe } from '../../state/estaciones';
+import { esCamino } from '../../state/caminos';
 import { bordesDeIsla, celdaEnMundo, esAgua, esParcela, ruidoCelda } from '../../state/islas';
 import type { CeldaId, IslaState, PropTipo } from '../../state/types';
 import * as P from '../art/props';
@@ -14,6 +15,9 @@ const COLOR_TIERRA_MOJADA = '#5e4228';
 
 /** Los verdes del cesped y de las hojas salen de la estacion del dia. */
 const paleta = () => perfilDe();
+
+/** Piedras del camino: grises con distinto desgaste, para que no se repitan. */
+const PIEDRAS = ['#9aa0a6', '#8d939a', '#a6adb3', '#868d94', '#b0b6bb'];
 
 /** Altura de la superficie del agua. */
 export const NIVEL_AGUA = -0.18;
@@ -282,6 +286,12 @@ export class Terrain {
         cajas.push({ x: x0, y: -0.9, z: z0, ancho: 1, alto: 0.5, fondo: 1, color: '#4a3a26' });
         this.crearAgua(x0, z0);
         continue;
+      } else if (esCamino(isla, col, row)) {
+        // Una losa apoyada sobre el cesped: apenas mas alta, sin adornos encima.
+        cajas.push({
+          x: x0 + 0.04, y: -0.1, z: z0 + 0.04, ancho: 0.92, alto: 0.12, fondo: 0.92,
+          color: PIEDRAS[Math.floor(ruido * PIEDRAS.length)],
+        });
       } else {
         // Tapa de cesped fina sobre cuerpo de tierra: al mirar el canto de la
         // isla se ve la linea verde sobre el marron, como corresponde.

@@ -71,3 +71,49 @@ export function abrirJardinRosa(
     isla,
   };
 }
+
+/* ------------------------------------------------------------------ */
+/* Los otros secretos                                                   */
+/* ------------------------------------------------------------------ */
+
+/** Una de cada tantas flores sale dorada. */
+const UNA_DE_CADA = 120;
+/** Lo que paga de más una flor dorada. */
+export const BONO_FLOR_DORADA = 150;
+
+/**
+ * Si la flor que se acaba de cosechar salió dorada. No depende de la
+ * especie ni del color: es pura suerte, y por eso vale.
+ */
+export function salioDorada(rng = Math.random): boolean {
+  return rng() < 1 / UNA_DE_CADA;
+}
+
+export function anotarFlorDorada(estado: GameState): GameState {
+  return {
+    ...estado,
+    monedas: estado.monedas + BONO_FLOR_DORADA,
+    floresDoradas: (estado.floresDoradas ?? 0) + 1,
+  };
+}
+
+/** Celdas de agua que necesita el estanque para que aparezca el grandote. */
+export const AGUA_PARA_EL_PEZ = 40;
+
+/** Hora en que el gato negro se deja ver. */
+const HORA_DEL_GATO = 0;
+
+/**
+ * Si es medianoche y el jardín tiene flores abiertas, el gato negro se
+ * acerca. Viene una sola vez por jardín: lo que lo hace gracioso es que
+ * pase cuando nadie lo espera, no que se repita.
+ */
+export function esHoraDelGatoNegro(estado: GameState, ahora: number, flores: number): boolean {
+  if (estado.gatoDeMedianoche || flores < 1) return false;
+  return new Date(ahora).getHours() === HORA_DEL_GATO;
+}
+
+/** Si el estanque ya da para que aparezca el pez grande. */
+export function hayLugarParaElPezEnorme(estado: GameState, celdasDeAgua: number): boolean {
+  return !estado.pezEnorme && celdasDeAgua >= AGUA_PARA_EL_PEZ;
+}

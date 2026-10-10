@@ -35,6 +35,7 @@ import { CapaCasas, ESCALA_FLOR_MACETA } from './Casas';
 import { celdasOcupadasPorCasas, esMaceta } from '../../state/casas';
 import { celdaAcuaticaCercana } from '../../state/agua';
 import { climaActual } from '../../state/clima';
+import { amigosDe } from '../../state/amistades';
 import type { CasaColocada } from '../../state/types';
 
 /** Cada cuanto se persiste la posicion de los animales. */
@@ -384,7 +385,7 @@ export class GardenWorld {
           animal,
           texturaAnimal(animal.variante),
           texturaComida(ANIMAL_SPECIES[animal.especie].comidaFavorita),
-          this.buscadorDeDestino(animal.especie),
+          this.buscadorDeDestino(animal.especie, animal.uid),
           texturasPoses(animal.variante),
         );
         this.engine.escena.add(nueva.grupo);
@@ -449,9 +450,16 @@ export class GardenWorld {
    * A donde puede ir a pasear cada especie: los peces no salen del agua,
    * las ranas van del agua a la orilla, y el resto pisa tierra firme.
    */
-  private buscadorDeDestino(especie: AnimalSpeciesId) {
+  private buscadorDeDestino(especie: AnimalSpeciesId, uid: string) {
     const habitat = ANIMAL_SPECIES[especie].habitat;
-    if (!habitat) return (x: number, z: number, radio: number) => this.destinoLibre(x, z, radio);
+    if (!habitat) {
+      return (x: number, z: number, radio: number) => {
+        // Un amigo cerca tira más que cualquier rincón: de a ratos se van
+        // a buscar, que es lo que hace que se los vea juntos.
+        const cerca = this.lugarJuntoAUnAmigo(uid);
+        return cerca ?? this.destinoLibre(x, z, radio);
+      };
+    }
 
     return (x: number, z: number, radio: number) => {
       const islas = useGame.getState().estado.islas;
@@ -518,6 +526,26 @@ export class GardenWorld {
     } catch {
       avisar('No se pudo guardar la foto en este navegador', 'aviso');
     }
+  }
+
+  /**
+   * Un lugar al lado de un amigo, de vez en cuando. Null si no tiene
+   * amigos, si están lejísimos, o si esta vez le toca pasear solo.
+   */
+  private lugarJuntoAUnAmigo(uid: string): { x: number; z: number } | null {
+    // Una de cada tres salidas: si fuera siempre, quedarían pegados.
+    if (Math.random() > 0.34) return null;
+
+    const estado = useGame.getState().estado;
+    const amigos = amigosDe(estado, uid);
+    if (amigos.length === 0) return null;
+
+    const elegido = estado.animales.find((a) => a.uid === amigos[Math.floor(Math.random() * amigos.length)]);
+    if (!elegido) return null;
+
+    // Al lado, no encima.
+    const angulo = Math.random() * Math.PI * 2;
+    return this.destinoLibre(elegido.x + Math.cos(angulo) * 1.2, elegido.z + Math.sin(angulo) * 1.2, 1.5);
   }
 
   /** Un destino de paseo que no quede adentro de una casa. */

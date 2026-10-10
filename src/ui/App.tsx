@@ -6,6 +6,7 @@ import { useAuth } from '../state/auth';
 import { escribirLocal } from '../state/persistence/local';
 import { useGame } from '../state/store';
 import { AdoptModal } from './AdoptModal';
+import { AlbumPanel } from './AlbumPanel';
 import { AnimalSheet } from './AnimalSheet';
 import { AnimalsPanel } from './AnimalsPanel';
 import { AuthPanel } from './AuthPanel';
@@ -142,6 +143,7 @@ export function App() {
         {panel === 'cuenta' && <AuthPanel key="cuenta" />}
         {panel === 'regalos' && <GiftsPanel key="regalos" />}
         {panel === 'pedidos' && <OrdersPanel key="pedidos" />}
+        {panel === 'album' && <AlbumPanel key="album" />}
         {panel === 'ayuda' && <HelpPanel key="ayuda" />}
       </AnimatePresence>
 

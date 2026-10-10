@@ -68,7 +68,18 @@ import {
   type ResultadoCasa,
 } from './casas';
 import { aplicarRegalos } from './regalos';
-import { abrirJardinRosa, contarTulipan } from './secretos';
+import {
+  abrirJardinRosa,
+  anotarFlorDorada,
+  BONO_FLOR_DORADA,
+  contarTulipan,
+  esHoraDelGatoNegro,
+  hayLugarParaElPezEnorme,
+  salioDorada,
+} from './secretos';
+import { anotarVariedad } from './album';
+import { alternarCamino, type ResultadoCamino } from './caminos';
+import { cultivarAmistades, olvidarAmistades } from './amistades';
 import { sonar } from '../game/audio/sonidos';
 import {
   advance,
@@ -114,6 +125,7 @@ export const RECORDS_VACIOS: Records = {
 
 export type PanelId =
   | 'tienda'
+  | 'album'
   | 'animales'
   | 'construir'
   | 'personaje'
@@ -348,7 +360,28 @@ export const useGame = create<Store>()((set, get) => {
         get().avisar(`Se apareció ${unArticulo(elegida)} por el jardín`, 'info');
       }
 
-      set({ estado: { ...estado, animales } });
+      // Dos adoptados que andan juntos terminan siendo amigos.
+      const conAmigos = cultivarAmistades({ ...estado, animales }, 4);
+      for (const [a, b] of conAmigos.nuevas) {
+        get().avisar(`${nombreDe(a)} y ${nombreDe(b)} se hicieron amigos 💚`, 'exito');
+      }
+      let siguiente = conAmigos.estado;
+
+      // El gato negro de medianoche. Una sola vez, y sin avisar antes.
+      if (esHoraDelGatoNegro(siguiente, Date.now(), flores) && Math.random() < 0.08) {
+        const gato = { ...crearVisitante('gato', siguiente), variante: 'gato-negro' };
+        siguiente = { ...siguiente, animales: [...siguiente.animales, gato], gatoDeMedianoche: true };
+        get().avisar('Un gato negro cruzó el jardín a medianoche 🐈‍⬛', 'info', { duracion: 8000 });
+      }
+
+      // Un estanque grande termina teniendo su pez grande.
+      if (hayLugarParaElPezEnorme(siguiente, celdasDeAgua(siguiente)) && Math.random() < 0.05) {
+        const pez = { ...crearVisitante('pez', siguiente), variante: 'pez-enorme' };
+        siguiente = { ...siguiente, animales: [...siguiente.animales, pez], pezEnorme: true };
+        get().avisar('Algo grande se movió en el fondo del estanque 🐟', 'info', { duracion: 8000 });
+      }
+
+      set({ estado: siguiente });
       eventos.forEach((e) => get().avisar(e, 'info'));
 
       if (eventos.length > 0 || animales !== estado.animales) get().guardar();
@@ -526,6 +559,15 @@ export const useGame = create<Store>()((set, get) => {
           return avisar(MENSAJE_CASA[resultado], resultado === 'puesta' ? 'exito' : 'aviso');
         }
 
+        case 'camino': {
+          const { estado: tras, resultado } = alternarCamino(get().estado, islaId, col, row);
+          if (tras !== get().estado) {
+            mutar(() => tras);
+            sonar('poner', 0.08);
+          }
+          return avisar(MENSAJE_CAMINO[resultado], resultado === 'puesto' || resultado === 'sacado' ? 'info' : 'aviso');
+        }
+
         case 'agua': {
           const modo = get().modoAgua;
 
@@ -685,6 +727,20 @@ export const useGame = create<Store>()((set, get) => {
           });
 
           EventBus.emit('efecto:cosechar', { celda: id, color: variante.palette['2'] ?? '#ffd447' });
+
+          // El álbum se llena solo, con la primera de cada variedad.
+          const nuevaEnAlbum = !(get().estado.variedadesVistas ?? []).includes(variante.id);
+          mutar((e) => anotarVariedad(e, variante.id));
+          if (nuevaEnAlbum) {
+            avisar(`${variante.nombre}: primera vez en tu álbum 📖`, 'info');
+          }
+
+          // Una de cada ciento veinte sale dorada. No se anuncia en ningún lado.
+          if (salioDorada()) {
+            mutar(anotarFlorDorada);
+            sonar('secreto');
+            avisar(`¡Una flor dorada! +${BONO_FLOR_DORADA} 🪙`, 'exito', { duracion: 7000 });
+          }
 
           // Nadie lo anuncia: a los cien tulipanes aparece el jardín rosa.
           mutar((e) => contarTulipan(e, variante.especie));
@@ -986,6 +1042,7 @@ export const useGame = create<Store>()((set, get) => {
     },
 
     liberar(uid) {
+      mutar((e) => olvidarAmistades(e, uid));
       const animal = get().estado.animales.find((a) => a.uid === uid);
       mutar((e) => ({ ...e, animales: e.animales.filter((a) => a.uid !== uid) }));
       set({ animalAbierto: null });
@@ -1187,6 +1244,16 @@ function describirCelda(
 
   return `${variante.nombre}, ${nombreEtapa} · ${sed}`;
 }
+
+/** Lo que responde la herramienta Camino. */
+const MENSAJE_CAMINO: Record<ResultadoCamino, string> = {
+  puesto: 'Una losa más en el camino',
+  sacado: 'Losa levantada',
+  parcela: 'Ahí hay siembra: el camino va por el pasto',
+  agua: 'Sobre el agua no se puede pisar',
+  ocupada: 'Ese lugar ya está ocupado',
+  fuera: 'Ahí no hay tierra',
+};
 
 /** Lo que responde la herramienta Agua cuando no se puede verter. */
 const MENSAJE_AGUA: Record<ResultadoAgua, string> = {

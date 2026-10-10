@@ -1,10 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import { crearEstadoInicial, stageOf } from './sim';
 import {
+  AGUA_PARA_EL_PEZ,
+  BONO_FLOR_DORADA,
   TULIPANES_PARA_EL_SECRETO,
   abrirJardinRosa,
+  anotarFlorDorada,
   contarTulipan,
+  esHoraDelGatoNegro,
+  hayLugarParaElPezEnorme,
   jardinRosaListo,
+  salioDorada,
 } from './secretos';
 import type { GameState } from './types';
 
@@ -78,5 +84,36 @@ describe('el jardín de los cien tulipanes', () => {
     for (const [id, planta] of Object.entries(base.cultivos)) {
       expect(estado.cultivos[id]).toEqual(planta);
     }
+  });
+});
+
+describe('los otros secretos', () => {
+  it('la flor dorada es rara, y paga de más', () => {
+    expect(salioDorada(() => 0.0001)).toBe(true);
+    expect(salioDorada(() => 0.5)).toBe(false);
+
+    const e = { ...crearEstadoInicial(), monedas: 100 };
+    const tras = anotarFlorDorada(e);
+    expect(tras.monedas).toBe(100 + BONO_FLOR_DORADA);
+    expect(tras.floresDoradas).toBe(1);
+  });
+
+  it('el gato negro solo cruza a medianoche, con flores, y una sola vez', () => {
+    const e = crearEstadoInicial();
+    const medianoche = new Date(2026, 0, 2, 0, 20).getTime();
+    const mediodia = new Date(2026, 0, 2, 12, 20).getTime();
+
+    expect(esHoraDelGatoNegro(e, medianoche, 3)).toBe(true);
+    expect(esHoraDelGatoNegro(e, mediodia, 3)).toBe(false);
+    // Sin flores no viene, y si ya vino tampoco.
+    expect(esHoraDelGatoNegro(e, medianoche, 0)).toBe(false);
+    expect(esHoraDelGatoNegro({ ...e, gatoDeMedianoche: true }, medianoche, 3)).toBe(false);
+  });
+
+  it('el pez grande necesita un estanque grande, y aparece una sola vez', () => {
+    const e = crearEstadoInicial();
+    expect(hayLugarParaElPezEnorme(e, AGUA_PARA_EL_PEZ - 1)).toBe(false);
+    expect(hayLugarParaElPezEnorme(e, AGUA_PARA_EL_PEZ)).toBe(true);
+    expect(hayLugarParaElPezEnorme({ ...e, pezEnorme: true }, 999)).toBe(false);
   });
 });

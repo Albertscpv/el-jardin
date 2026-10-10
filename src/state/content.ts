@@ -484,6 +484,13 @@ export const ANIMAL_VARIANTS: AnimalVariant[] = [
     palette: { a: '#4a8ad8', b: '#8ac0f0', ...OJO },
   },
 
+  {
+    id: 'pez-enorme',
+    especie: 'pez',
+    nombre: 'El Grandote',
+    palette: { a: '#4a6a7a', b: '#8aa8b8', ...OJO },
+  },
+
   // --- Gatos -----------------------------------------------------------
   {
     id: 'gato-naranja',

@@ -15,6 +15,7 @@ const NAV: Array<{ id: Exclude<PanelId, null>; etiqueta: string }> = [
   { id: 'personaje', etiqueta: 'Personaje' },
   { id: 'pedidos', etiqueta: 'Pedidos' },
   { id: 'regalos', etiqueta: 'Regalos' },
+  { id: 'album', etiqueta: 'Álbum' },
 ];
 
 export function HUD() {

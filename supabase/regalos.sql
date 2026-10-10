@@ -123,7 +123,7 @@ grant execute on function public.marcar_regalo_cobrado(bigint) to authenticated;
 --            yegua    -> yegua-alazana, yegua-baya, yegua-blanca
 --            caballo  -> caballo-negro, caballo-zaino, caballo-tordillo
 --            rana     -> rana-verde, rana-dorada, rana-turquesa
---            pez      -> pez-naranja, pez-blanco, pez-azul
+--            pez      -> pez-naranja, pez-blanco, pez-azul, pez-enorme
 --
 -- Ver los regalos y si ya se entregaron:
 --

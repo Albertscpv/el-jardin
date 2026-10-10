@@ -34,6 +34,7 @@ const HERRAMIENTAS: Herramienta[] = [
   { id: 'arar', icono: '🪓', nombre: 'Arar', ayuda: 'Pasto a tierra de siembra, o al revés' },
   { id: 'expandir', icono: '🧱', nombre: 'Terreno', ayuda: 'Tocá el borde verde para ganarle un pedazo al vacío' },
   { id: 'farola', icono: '🏮', nombre: 'Farola', ayuda: 'Tocá el pasto para ponerla · tocala de nuevo para levantarla' },
+  { id: 'camino', icono: '🪨', nombre: 'Camino', ayuda: 'Tocá el pasto para poner una losa · tocala de nuevo para sacarla' },
   { id: 'agua', icono: '🌊', nombre: 'Agua', ayuda: 'Elegí qué dejar en cada lugar: agua, tierra otra vez o un nenúfar' },
   { id: 'juego', icono: '🛝', nombre: 'Juegos', ayuda: 'Poné el juego que elegiste en el pasto · tocalo de nuevo para levantarlo' },
   { id: 'casa', icono: '🏠', nombre: 'Casa', ayuda: 'Elegí en qué pedazo de pasto va · tocala de nuevo para mudarla' },

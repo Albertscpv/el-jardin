@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { celdaAMundo, parseCeldaLocal } from '../../state/config';
 import { esAgua, esParcela, ruidoCelda } from '../../state/islas';
+import { esCamino } from '../../state/caminos';
 import type { IslaState } from '../../state/types';
 import { cajasGeometry, type Caja } from '../art/voxel';
 
@@ -61,6 +62,7 @@ export class GrassField {
       for (const local of isla.suelo) {
         const { col, row } = parseCeldaLocal(local);
         if (esParcela(isla, col, row) || esAgua(isla, col, row)) continue;
+        if (esCamino(isla, col, row)) continue;
         if (ocupadas.has(local) || tapadas.has(`${isla.id}/${local}`)) continue;
 
         const ruido = ruidoCelda(`${isla.id}:pasto`, col, row);

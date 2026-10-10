@@ -1,6 +1,7 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { ANIMAL_SPECIES, FOODS, getAnimalVariant } from '../state/content';
 import { nombreDe, useGame } from '../state/store';
+import { amigosDe } from '../state/amistades';
 import { Barra } from './Bars';
 import { iconoAnimal } from './icons';
 import { PixelIcon } from './PixelIcon';
@@ -46,6 +47,7 @@ export function AnimalSheet() {
                 {ANIMAL_SPECIES[animal.especie].nombre} ·{' '}
                 {getAnimalVariant(animal.variante).nombre}
               </p>
+              <Amigos uid={animal.uid} />
             </div>
           </div>
 
@@ -79,4 +81,24 @@ export function AnimalSheet() {
       )}
     </AnimatePresence>
   );
+}
+
+/**
+ * Con quién anda este animal. Las amistades nacen solas, de pasar tiempo
+ * cerca: por eso acá solo se cuentan, no hay nada que apretar.
+ */
+function Amigos({ uid }: { uid: string }) {
+  const estado = useGame((s) => s.estado);
+  const amigos = amigosDe(estado, uid)
+    .map((otro) => estado.animales.find((a) => a.uid === otro))
+    .filter((a): a is NonNullable<typeof a> => Boolean(a))
+    .map(nombreDe);
+
+  if (amigos.length === 0) return null;
+  const lista =
+    amigos.length === 1
+      ? amigos[0]
+      : `${amigos.slice(0, -1).join(', ')} y ${amigos[amigos.length - 1]}`;
+
+  return <p className="fila-nota">Anda con {lista} 💚</p>;
 }
