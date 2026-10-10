@@ -9,7 +9,13 @@ export const CICLO_DIA = 8 * 60_000;
  * asi que son pocas y se reparten entre las farolas mas cercanas a lo que
  * se esta mirando. El vidrio de cada farola brilla aparte, sin luz.
  */
-const MAX_FAROLES = 8;
+const MAX_FAROLES = 14;
+
+/**
+ * Debajo de esta fuerza, una luz es de adorno: las de una casa, pegadas a
+ * la pared. Las farolas van primero en el reparto, pase lo que pase.
+ */
+const FUERZA_DE_FAROL = 0.9;
 
 /** Hasta donde llega la luz de un farol, en tiles. */
 const ALCANCE_FAROL = 11;
@@ -142,10 +148,17 @@ export class Lighting {
     if (this.ultimoReparto.distanceToSquared(foco) < 1) return;
     this.ultimoReparto.copy(foco);
 
-    const cercanas = this.posicionesFaroles
-      .map((pos, i) => ({ pos, fuerza: this.fuerzas[i] }))
-      .sort((a, b) => a.pos.distanceToSquared(foco) - b.pos.distanceToSquared(foco))
-      .slice(0, this.faroles.length);
+    const candidatas = this.posicionesFaroles.map((pos, i) => ({ pos, fuerza: this.fuerzas[i] }));
+    const porDistancia = (a: { pos: THREE.Vector3 }, b: { pos: THREE.Vector3 }) =>
+      a.pos.distanceToSquared(foco) - b.pos.distanceToSquared(foco);
+
+    // Las farolas primero. Cada casa aporta dos o tres luces de pared, y si
+    // entraran por cercania se quedaban con todos los cupos: el jardin tenia
+    // las farolas encendidas y el pasto a oscuras.
+    const farolas = candidatas.filter((c) => c.fuerza >= FUERZA_DE_FAROL).sort(porDistancia);
+    const deCasas = candidatas.filter((c) => c.fuerza < FUERZA_DE_FAROL).sort(porDistancia);
+
+    const cercanas = [...farolas, ...deCasas].slice(0, this.faroles.length);
 
     this.faroles.forEach((luz, i) => {
       const elegida = cercanas[i];
