@@ -265,6 +265,8 @@ export interface ContenidoRegalo {
   semillas?: Record<string, number>;
   comida?: Partial<Record<FoodId, number>>;
   farolas?: number;
+  /** obraId -> cantidad, como "beso": 1. Llegan guardadas, listas para poner. */
+  obras?: Record<string, number>;
   /** Animales ya adoptados. Sin variante, se elige una de la especie. */
   animales?: Array<{ especie: AnimalSpeciesId; nombre?: string; variante?: string }>;
   /** Islas nuevas, cada una con su caballo de la casa. */

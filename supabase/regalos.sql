@@ -84,6 +84,7 @@ grant execute on function public.marcar_regalo_cobrado(bigint) to authenticated;
 --        "tierra": 40,
 --        "islas": 1,
 --        "farolas": 2,
+--        "obras":    { "beso": 1, "noche": 1 },
 --        "semillas": { "rosa-roja": 5, "girasol-clasico": 3 },
 --        "comida":   { "heno": 6, "manzana": 4 },
 --        "animales": [
@@ -103,6 +104,7 @@ grant execute on function public.marcar_regalo_cobrado(bigint) to authenticated;
 --   tierra    celdas de tierra extra en la isla principal
 --   islas     islas nuevas; cada una trae su caballo de la casa
 --   farolas   farolas para poner
+--   obras     { "obra": cantidad }; cada cuadro llega en su atril, guardado
 --   semillas  { "variedad": cantidad }
 --   comida    { "comida": cantidad }
 --   animales  lista de { "especie", "nombre", "variante" }; llegan adoptados.
@@ -112,6 +114,7 @@ grant execute on function public.marcar_regalo_cobrado(bigint) to authenticated;
 --            rosa-roja, rosa-rosada, rosa-blanca, rosa-durazno,
 --            girasol-clasico, girasol-rojizo, margarita-blanca,
 --            margarita-rosada, lavanda-clasica, lavanda-azul
+-- Obras:     beso, noche, gioconda, ola, perla, grito, nenufares
 -- Comida:    nectar, alpiste, zanahoria, bayas, pescado, heno, manzana, grillos, migas
 -- Animales (especie -> variantes):
 --            mariposa -> mariposa-monarca, mariposa-azul, mariposa-blanca

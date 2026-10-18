@@ -15,6 +15,7 @@ import { ANIMAL_SPECIES, FLOWER_VARIANT_BY_ID, FOODS, variantsOfSpecies } from '
 import { asegurarCaballos } from './economia';
 import { celdaAleatoria, celdasExpandibles, crearIslaNueva } from './islas';
 import { BALANCE, celdaLocal } from './config';
+import { IDS_OBRAS, OBRAS, type ObraId } from './arte';
 import type {
   AnimalSpeciesId,
   AnimalState,
@@ -102,6 +103,17 @@ export function aplicarRegaloPersonal(
     estado.objetos = { ...estado.objetos, farola: (estado.objetos?.farola ?? 0) + farolas };
     resumen.push(farolas === 1 ? '1 farola' : `${farolas} farolas`);
   }
+
+  // Obras de arte: cada una llega en su atril, guardada para poner.
+  let obras = 0;
+  for (const [id, n] of Object.entries(c.obras ?? {})) {
+    const k = cantidad(n, TOPE_CANTIDAD);
+    if (k === 0 || !(IDS_OBRAS as readonly string[]).includes(id)) continue;
+    const prop = OBRAS[id as ObraId].prop;
+    estado.objetos = { ...estado.objetos, [prop]: (estado.objetos?.[prop] ?? 0) + k };
+    obras += k;
+  }
+  if (obras > 0) resumen.push(obras === 1 ? '1 cuadro' : `${obras} cuadros`);
 
   // Tierra antes que islas y animales: los animales pueden aparecer en ella.
   const tierra = cantidad(c.tierra, TOPE_TIERRA);

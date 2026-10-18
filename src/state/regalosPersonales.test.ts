@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { IDS_OBRAS } from './arte';
 import { ANIMAL_SPECIES, ANIMAL_VARIANTS, FLOWER_VARIANTS, FOODS } from './content';
 import { aplicarRegaloPersonal } from './regalosPersonales';
 import { crearEstadoInicial } from './sim';
@@ -32,6 +33,19 @@ describe('regalo personal', () => {
     expect(estado.comida.heno).toBe(4);
     expect(estado.objetos?.farola).toBe(2);
     expect(resumen).toEqual(['3000 monedas', '5 semillas', '4 comidas', '2 farolas']);
+  });
+
+  it('entrega cuadros guardados, uno por obra, y descarta las que no existen', () => {
+    const { estado, resumen } = aplicarRegaloPersonal(
+      crearEstadoInicial(),
+      regalo({ obras: { beso: 1, grito: 2, 'la-ultima-cena': 1, constructor: 1 } }),
+      AHORA,
+      fijo,
+    );
+
+    expect(estado.objetos?.atril).toBe(1);
+    expect(estado.objetos?.['atril-grito']).toBe(2);
+    expect(resumen).toEqual(['3 cuadros']);
   });
 
   it('entrega animales ya adoptados, con nombre y parados sobre tierra', () => {
@@ -125,7 +139,7 @@ describe('el ejemplo y la lista de supabase/regalos.sql', () => {
     const contenido = JSON.parse(json) as ContenidoRegalo;
     const { estado, resumen } = aplicarRegaloPersonal(crearEstadoInicial(), regalo(contenido), AHORA, fijo);
 
-    expect(resumen).toHaveLength(8);
+    expect(resumen).toHaveLength(9);
     expect(estado.animales.map((a) => a.nombre)).toEqual(expect.arrayContaining(['Canela', 'Michi']));
   });
 
@@ -139,6 +153,7 @@ describe('el ejemplo y la lista de supabase/regalos.sql', () => {
 
     expect(new Set(lista('Semillas:'))).toEqual(new Set(FLOWER_VARIANTS.map((v) => v.id)));
     expect(new Set(lista('Comida:'))).toEqual(new Set(Object.keys(FOODS)));
+    expect(new Set(lista('Obras:'))).toEqual(new Set(IDS_OBRAS));
     for (const especie of Object.keys(ANIMAL_SPECIES)) {
       const fila = comentarios.match(new RegExp(`${especie}\\s+-> (.+)`))?.[1] ?? '';
       expect(new Set(fila.split(/,\s*/)), especie).toEqual(
