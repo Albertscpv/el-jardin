@@ -54,7 +54,7 @@ import {
 import { comprarFarolas, propEn, usarFarola, usarObjeto, type ResultadoFarola } from './objetos';
 import { JUEGOS, comprarJuego as comprarJuegoPuro, esJuego, type JuegoId } from './juegos';
 import { ARBOLES, comprarArbol as comprarArbolPuro, esArbol } from './arboles';
-import { OBRAS, PROP_ATRIL, comprarObra as comprarObraPura, type ObraId } from './arte';
+import { OBRAS, comprarObra as comprarObraPura, esAtril, obraDeAtril, type ObraId } from './arte';
 import type { TipoArbol } from '../game/art/arboles';
 import {
   CASAS,
@@ -156,6 +156,9 @@ interface Store {
   /** La obra que se está mirando en grande, o null si el visor está cerrado. */
   obraAbierta: ObraId | null;
   abrirObra: (id: ObraId | null) => void;
+  /** La obra que pone la herramienta Arte. */
+  obraSeleccionada: ObraId;
+  setObra: (id: ObraId) => void;
   comprarObra: (id: ObraId) => void;
   /** Qué deja la herramienta Agua: agua, tierra otra vez o un nenúfar. */
   modoAgua: ModoAgua;
@@ -305,12 +308,14 @@ export const useGame = create<Store>()((set, get) => {
       if (obraAbierta) sonar('desplegar');
       set({ obraAbierta, panel: null });
     },
+    obraSeleccionada: 'beso',
+    setObra: (obraSeleccionada) => set({ obraSeleccionada, herramienta: 'arte' }),
 
     comprarObra(id) {
       const tras = comprarObraPura(get().estado, id);
       if (!tras) return get().avisar(unaDe(SIN_MONEDAS), 'aviso');
       mutar(() => tras);
-      set({ herramienta: 'arte' });
+      set({ herramienta: 'arte', obraSeleccionada: id });
       get().avisar(`${OBRAS[id].nombre}: ponelo en el pasto con la herramienta Arte 🖼️`, 'exito');
     },
     modoAgua: 'agua',
@@ -562,9 +567,10 @@ export const useGame = create<Store>()((set, get) => {
         get().moverAvatar(isla.ox + col + 0.5, isla.oz + row + 0.5);
       }
 
-      // Un atril se mira: con cualquier herramienta menos Arte, abre el cuadro.
-      if (!maceta && herramienta !== 'arte' && propEn(isla, col, row)?.tipo === PROP_ATRIL) {
-        return get().abrirObra('beso');
+      // Un atril se mira: con cualquier herramienta menos Arte, abre su cuadro.
+      const atril = maceta ? undefined : propEn(isla, col, row);
+      if (atril && herramienta !== 'arte' && esAtril(atril.tipo)) {
+        return get().abrirObra(obraDeAtril(atril.tipo));
       }
 
       const planta = estado.cultivos[id];
@@ -636,13 +642,19 @@ export const useGame = create<Store>()((set, get) => {
 
         case 'arte': {
           if (casaAca) return avisar(unaDe(AHI_HAY_CASA), 'aviso');
-          const { estado: tras, resultado } = usarObjeto(get().estado, PROP_ATRIL, islaId, col, row);
+          const puesto = propEn(isla, col, row);
+          // Tocar un atril lo guarda, sea cual sea la obra elegida en la barra.
+          const obra = puesto && esAtril(puesto.tipo) ? obraDeAtril(puesto.tipo) : get().obraSeleccionada;
+          const { estado: tras, resultado } = usarObjeto(get().estado, OBRAS[obra].prop, islaId, col, row);
           if (tras !== get().estado) mutar(() => tras);
           if (resultado === 'colocada') {
             sonar('poner');
             return avisar('El cuadro ya está en el jardín. Tocalo con Mirar para verlo de cerca', 'exito');
           }
-          if (resultado === 'guardada') return avisar('Atril guardado. Ponelo donde quieras', 'info');
+          if (resultado === 'guardada') {
+            set({ obraSeleccionada: obra });
+            return avisar('Cuadro guardado. Ponelo donde quieras', 'info');
+          }
           if (resultado === 'sin-farolas') return avisar('No tenés cuadros. Están en Construir, en Arte', 'aviso');
           return avisar(MENSAJE_JUEGO(resultado, 'columpio'), 'aviso');
         }

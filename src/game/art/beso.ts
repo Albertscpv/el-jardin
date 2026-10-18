@@ -15,6 +15,8 @@
  * dos de 0 a 1. El cuadro es cuadrado, como el original (180 x 180 cm).
  */
 
+import type { Ficha } from './obras/pincel';
+
 /** Lado del cuadro, en pixeles. */
 export const LADO_BESO = 96;
 
@@ -280,7 +282,7 @@ function color(u: number, v: number, x: number, y: number): string {
 }
 
 /** La ficha del cuadro, para el visor. */
-export const FICHA_BESO = {
+export const FICHA_BESO: Ficha = {
   titulo: 'El beso',
   original: 'Der Kuss',
   autor: 'Gustav Klimt',
@@ -288,4 +290,6 @@ export const FICHA_BESO = {
   tecnica: 'Óleo y pan de oro sobre lienzo',
   medidas: '180 × 180 cm',
   museo: 'Galería Belvedere, Viena',
-} as const;
+  texto:
+    'Una pareja abrazada al borde de un prado lleno de flores, envuelta en un manto de oro. El de él tiene rectángulos blancos y negros; el de ella, círculos de colores. Klimt usó pan de oro de verdad: de cerca, el cuadro brilla.',
+};

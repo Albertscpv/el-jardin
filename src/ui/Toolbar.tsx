@@ -5,12 +5,14 @@ import { CASA_ICONO, FAROLA_ICONO, PALETA_CASA_ICONO, PALETA_FAROLA_ICONO } from
 import { ICONO_JUEGO } from './icons';
 import { IDS_JUEGOS, JUEGOS } from '../state/juegos';
 import { ARBOLES, IDS_ARBOLES } from '../state/arboles';
+import { IDS_OBRAS, OBRAS } from '../state/arte';
 import { CASAS, TIPOS_CASA } from '../state/casas';
 import { totalCeldas } from '../state/islas';
 import { useGame } from '../state/store';
 import type { FoodId, ToolId } from '../state/types';
 import { iconoComida, iconoFlor } from './icons';
 import { PixelIcon } from './PixelIcon';
+import { MiniaturaDeObra } from './VisorDeObra';
 
 interface Herramienta {
   id: ToolId;
@@ -35,7 +37,7 @@ const HERRAMIENTAS: Herramienta[] = [
   { id: 'arar', icono: '🪓', nombre: 'Arar', ayuda: 'Pasto a tierra de siembra, o al revés' },
   { id: 'expandir', icono: '🧱', nombre: 'Terreno', ayuda: 'Tocá el borde verde para ganarle un pedazo al vacío' },
   { id: 'farola', icono: '🏮', nombre: 'Farola', ayuda: 'Tocá el pasto para ponerla · tocala de nuevo para levantarla' },
-  { id: 'arte', icono: '🖼️', nombre: 'Arte', ayuda: 'Tocá el pasto para poner el cuadro · tocalo de nuevo para guardarlo · con Mirar se abre' },
+  { id: 'arte', icono: '🖼️', nombre: 'Arte', ayuda: 'Tocá el pasto para poner el cuadro elegido · tocá un cuadro para guardarlo · con Mirar se abre' },
   { id: 'arbol', icono: '🌳', nombre: 'Árbol', ayuda: 'Tocá el pasto para plantar el árbol elegido · tocá un árbol para sacarlo' },
   { id: 'camino', icono: '🪨', nombre: 'Camino', ayuda: 'Tocá el pasto para poner una losa · tocala de nuevo para sacarla' },
   { id: 'agua', icono: '🌊', nombre: 'Agua', ayuda: 'Elegí qué dejar en cada lugar: agua, tierra otra vez o un nenúfar' },
@@ -129,6 +131,7 @@ export function Toolbar() {
           {herramienta === 'juego' && <TiraJuegos />}
           {herramienta === 'agua' && <TiraAgua />}
           {herramienta === 'arbol' && <TiraArboles />}
+          {herramienta === 'arte' && <TiraObras />}
         </>
       )}
     </div>
@@ -285,6 +288,43 @@ function TiraArboles() {
         </button>
       ))}
       <span className="tira-nota">{ARBOLES[activo].nombre}</span>
+    </div>
+  );
+}
+
+function TiraObras() {
+  const objetos = useGame((s) => s.estado.objetos);
+  const elegida = useGame((s) => s.obraSeleccionada);
+  const setObra = useGame((s) => s.setObra);
+  const setPanel = useGame((s) => s.setPanel);
+
+  const disponibles = IDS_OBRAS.filter((id) => (objetos?.[OBRAS[id].prop] ?? 0) > 0);
+  if (disponibles.length === 0) {
+    return (
+      <div className="tira vacia">
+        <span>No tenés cuadros para poner. Se compran en Construir, en Arte.</span>
+        <button className="boton suave" onClick={() => setPanel('construir')}>
+          Ir a Construir
+        </button>
+      </div>
+    );
+  }
+
+  const activa = disponibles.includes(elegida) ? elegida : disponibles[0];
+  return (
+    <div className="tira">
+      {disponibles.map((id) => (
+        <button
+          key={id}
+          className={activa === id ? 'item activo' : 'item'}
+          onClick={() => setObra(id)}
+          title={OBRAS[id].nombre}
+        >
+          <MiniaturaDeObra obra={id} lado={26} />
+          <span className="item-cantidad">{objetos?.[OBRAS[id].prop] ?? 0}</span>
+        </button>
+      ))}
+      <span className="tira-nota">{OBRAS[activa].nombre}</span>
     </div>
   );
 }

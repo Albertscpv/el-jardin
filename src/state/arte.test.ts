@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { COLORES_BESO, LADO_BESO, pixelesDelBeso } from '../game/art/beso';
-import { OBRAS, PROP_ATRIL, atrilesGuardados, comprarObra } from './arte';
+import { IDS_OBRAS, OBRAS, PROP_ATRIL, comprarObra, esAtril, obraDeAtril, obrasGuardadas } from './arte';
 import { celdaLocal } from './config';
 import { propEn, usarObjeto } from './objetos';
 import { crearEstadoInicial } from './sim';
@@ -77,7 +77,7 @@ describe('el atril en el jardín', () => {
   it('se compra, se pone y se guarda sin volver a pagar', () => {
     const e = comprarObra(jardin(), 'beso')!;
     expect(e.monedas).toBe(1000 - OBRAS.beso.precio);
-    expect(atrilesGuardados(e)).toBe(1);
+    expect(obrasGuardadas(e, 'beso')).toBe(1);
 
     const puesto = usarObjeto(e, PROP_ATRIL, e.islas[0].id, 2, 2);
     expect(puesto.resultado).toBe('colocada');
@@ -85,8 +85,24 @@ describe('el atril en el jardín', () => {
 
     const guardado = usarObjeto(puesto.estado, PROP_ATRIL, e.islas[0].id, 2, 2);
     expect(guardado.resultado).toBe('guardada');
-    expect(atrilesGuardados(guardado.estado)).toBe(1);
+    expect(obrasGuardadas(guardado.estado, 'beso')).toBe(1);
     expect(guardado.estado.monedas).toBe(puesto.estado.monedas);
+  });
+
+  it('cada obra tiene su propio atril, y del atril se sabe la obra', () => {
+    const props = IDS_OBRAS.map((id) => OBRAS[id].prop);
+    expect(new Set(props).size).toBe(IDS_OBRAS.length);
+    for (const id of IDS_OBRAS) {
+      expect(esAtril(OBRAS[id].prop)).toBe(true);
+      expect(obraDeAtril(OBRAS[id].prop)).toBe(id);
+    }
+    expect(esAtril('farola')).toBe(false);
+  });
+
+  it('comprar una obra no regala otra', () => {
+    const e = comprarObra(jardin(), 'grito')!;
+    expect(obrasGuardadas(e, 'grito')).toBe(1);
+    expect(obrasGuardadas(e, 'beso')).toBe(0);
   });
 
   it('sin monedas no se compra', () => {

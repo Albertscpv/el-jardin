@@ -112,7 +112,17 @@ export type PropTipo =
   | 'pino'
   | 'sauce'
   | 'cerezo'
-  | 'atril';
+  | PropAtril;
+
+/** Los atriles: uno por cada obra de arte, con su cuadro. */
+export type PropAtril =
+  | 'atril'
+  | 'atril-noche'
+  | 'atril-gioconda'
+  | 'atril-ola'
+  | 'atril-perla'
+  | 'atril-grito'
+  | 'atril-nenufares';
 
 export interface PropColocado {
   tipo: PropTipo;

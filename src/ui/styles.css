@@ -1941,8 +1941,9 @@ code {
 }
 
 .visor-ventana {
-  width: min(62vh, 58vw);
-  height: min(62vh, 58vw);
+  /* --ax y --ay: la proporción del cuadro, con el lado largo en 1. */
+  width: calc(min(62vh, 58vw) * var(--ax, 1));
+  height: calc(min(62vh, 58vw) * var(--ay, 1));
   overflow: hidden;
   background: #241a10;
   touch-action: none;
@@ -2006,8 +2007,8 @@ code {
   }
 
   .visor-ventana {
-    width: min(86vw, 52vh);
-    height: min(86vw, 52vh);
+    width: calc(min(86vw, 52vh) * var(--ax, 1));
+    height: calc(min(86vw, 52vh) * var(--ay, 1));
   }
 
   .visor-ficha {
@@ -2018,4 +2019,11 @@ code {
   .visor-ficha h2 {
     font-size: 24px;
   }
+}
+
+.miniatura-obra {
+  display: block;
+  image-rendering: pixelated;
+  box-shadow: 0 0 0 2px #b88a2e;
+  border-radius: 1px;
 }

@@ -5,10 +5,11 @@ import { perfilDe } from '../../state/estaciones';
 import { esCamino } from '../../state/caminos';
 import { esArbol } from '../../state/arboles';
 import { cajasArbol, type TipoArbol } from '../art/arboles';
-import { LADO_BESO, pixelesDelBeso } from '../art/beso';
+import { PINTURAS, pixelesDe } from '../art/obras';
+import { esAtril, obraDeAtril, type ObraId } from '../../state/arte';
 import { estacionDe } from '../../state/estaciones';
 import { bordesDeIsla, celdaEnMundo, esAgua, esParcela, ruidoCelda } from '../../state/islas';
-import type { CeldaId, IslaState, PropTipo } from '../../state/types';
+import type { CeldaId, IslaState, PropAtril, PropTipo } from '../../state/types';
 import * as P from '../art/props';
 import { cajasGeometry, materialVoxel, voxelGeometry, type Caja } from '../art/voxel';
 
@@ -23,25 +24,28 @@ const paleta = () => perfilDe();
 /** Piedras del camino: grises con distinto desgaste, para que no se repitan. */
 const PIEDRAS = ['#9aa0a6', '#8d939a', '#a6adb3', '#868d94', '#b0b6bb'];
 
-let texturaBeso: THREE.Texture | null = null;
+const texturasDeObras = new Map<ObraId, THREE.Texture>();
 
-/** "El beso" como textura: se pinta una sola vez y la comparten todos los atriles. */
-function texturaDelBeso(): THREE.Texture {
-  if (texturaBeso) return texturaBeso;
+/** Cada obra como textura: se pinta una sola vez y la comparten todos sus atriles. */
+function texturaDeObra(id: ObraId): THREE.Texture {
+  const hecha = texturasDeObras.get(id);
+  if (hecha) return hecha;
+  const { ancho, alto } = PINTURAS[id];
   const canvas = document.createElement('canvas');
-  canvas.width = LADO_BESO;
-  canvas.height = LADO_BESO;
+  canvas.width = ancho;
+  canvas.height = alto;
   const ctx = canvas.getContext('2d')!;
-  pixelesDelBeso().forEach((color, i) => {
+  pixelesDe(id).forEach((color, i) => {
     ctx.fillStyle = color;
-    ctx.fillRect(i % LADO_BESO, Math.floor(i / LADO_BESO), 1, 1);
+    ctx.fillRect(i % ancho, Math.floor(i / ancho), 1, 1);
   });
-  texturaBeso = new THREE.CanvasTexture(canvas);
-  texturaBeso.magFilter = THREE.NearestFilter;
-  texturaBeso.minFilter = THREE.NearestFilter;
-  texturaBeso.generateMipmaps = false;
-  texturaBeso.colorSpace = THREE.SRGBColorSpace;
-  return texturaBeso;
+  const textura = new THREE.CanvasTexture(canvas);
+  textura.magFilter = THREE.NearestFilter;
+  textura.minFilter = THREE.NearestFilter;
+  textura.generateMipmaps = false;
+  textura.colorSpace = THREE.SRGBColorSpace;
+  texturasDeObras.set(id, textura);
+  return textura;
 }
 
 /** Altura de la superficie del agua. */
@@ -114,7 +118,7 @@ interface ParteMovil {
 /** Objetos que salen de una matriz extruida. La farola se arma aparte, con cajas. */
 const MATRIZ_PROP: Record<
   // La farola, los arboles y el atril se arman aparte, no con un sprite extruido.
-  Exclude<PropTipo, 'farola' | TipoArbol | 'atril'>,
+  Exclude<PropTipo, 'farola' | TipoArbol | PropAtril>,
   {
     matriz: readonly string[];
     paleta: Record<string, string>;
@@ -572,8 +576,8 @@ export class Terrain {
         this.construirFarola(isla, prop.col, prop.row);
         continue;
       }
-      if (prop.tipo === 'atril') {
-        this.construirAtril(isla, prop.col, prop.row);
+      if (esAtril(prop.tipo)) {
+        this.construirAtril(isla, obraDeAtril(prop.tipo), prop.col, prop.row);
         continue;
       }
       if (esArbol(prop.tipo)) {
@@ -633,15 +637,23 @@ export class Terrain {
   }
 
   /**
-   * Un atril de madera con "El beso" apoyado. La pintura es una textura
+   * Un atril de madera con su cuadro apoyado. La pintura es una textura
    * aparte, con filtro de vecino mas cercano, para que se vea el pixel art
-   * y no una mancha dorada.
+   * y no una mancha de color. El marco toma la forma del cuadro: apaisado,
+   * vertical o cuadrado.
    */
-  private construirAtril(isla: IslaState, col: number, row: number): void {
+  private construirAtril(isla: IslaState, obra: ObraId, col: number, row: number): void {
     const { x, z } = celdaAMundo(isla, col, row);
     const celda = celdaId(isla.id, col, row);
     const MADERA = '#6b4a2f';
     const MADERA_CLARA = '#8a6440';
+    // El lado mas largo del cuadro mide siempre lo mismo.
+    const { ancho, alto } = PINTURAS[obra];
+    const escala = 0.8 / Math.max(ancho, alto);
+    const lienzoAncho = ancho * escala;
+    const lienzoAlto = alto * escala;
+    const marcoAncho = lienzoAncho + 0.08;
+    const marcoAlto = lienzoAlto + 0.08;
 
     const cajas = [
       // Las dos patas de adelante y la de atras, un poco abiertas.
@@ -651,7 +663,7 @@ export class Terrain {
       // El listón donde apoya el cuadro.
       { x: -0.46, y: 0.42, z: 0.0, ancho: 0.92, alto: 0.06, fondo: 0.12, color: MADERA_CLARA },
       // El marco: dorado, como el de un museo.
-      { x: -0.44, y: 0.47, z: 0.04, ancho: 0.88, alto: 0.88, fondo: 0.05, color: '#b88a2e' },
+      { x: -marcoAncho / 2, y: 0.47, z: 0.04, ancho: marcoAncho, alto: marcoAlto, fondo: 0.05, color: '#b88a2e' },
     ];
     const madera = new THREE.Mesh(cajasGeometry(cajas, 0.7), materialVoxel());
     madera.position.set(x, 0, z);
@@ -662,16 +674,16 @@ export class Terrain {
 
     // La pintura, apenas delante del marco.
     const lienzo = new THREE.Mesh(
-      new THREE.PlaneGeometry(0.8, 0.8),
+      new THREE.PlaneGeometry(lienzoAncho, lienzoAlto),
       // Un poco de luz propia: un cuadro se tiene que leer aunque este nublado.
       new THREE.MeshLambertMaterial({
-        map: texturaDelBeso(),
+        map: texturaDeObra(obra),
         emissive: '#ffffff',
-        emissiveMap: texturaDelBeso(),
+        emissiveMap: texturaDeObra(obra),
         emissiveIntensity: 0.45,
       }),
     );
-    lienzo.position.set(x, 0.47 + 0.44, z + 0.095);
+    lienzo.position.set(x, 0.47 + marcoAlto / 2, z + 0.095);
     lienzo.userData.celda = celda;
     this.grupo.add(lienzo);
 
