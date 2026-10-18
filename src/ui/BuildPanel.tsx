@@ -2,6 +2,7 @@ import { EventBus } from '../game/EventBus';
 import { BALANCE, costoProximaCelda } from '../state/config';
 import { IDS_JUEGOS, JUEGOS, type JuegoId } from '../state/juegos';
 import { ARBOLES, IDS_ARBOLES } from '../state/arboles';
+import { OBRAS } from '../state/arte';
 import type { TipoArbol } from '../game/art/arboles';
 import { totalCeldas } from '../state/islas';
 import { useGame } from '../state/store';
@@ -59,6 +60,15 @@ export function BuildPanel() {
         La cerca no se compra ni se pone: crece sola alrededor de cada isla y se acomoda cada
         vez que ganás terreno.
       </p>
+
+      <h3 className="seccion">Arte</h3>
+      <p className="fila-nota">
+        Un atril con una pintura. Se pone con la herramienta Arte, y tocándolo con Mirar se
+        despliega en grande para verla de cerca.
+      </p>
+      <ul className="lista">
+        <FilaObra />
+      </ul>
 
       <h3 className="seccion">Árboles</h3>
       <p className="fila-nota">
@@ -217,6 +227,43 @@ function FilaArbol({ id }: { id: TipoArbol }) {
       <div className="fila-acciones">
         <button className="boton" disabled={monedas < arbol.precio} onClick={() => comprar(id)}>
           {arbol.precio} 🪙
+        </button>
+      </div>
+    </li>
+  );
+}
+
+function FilaObra() {
+  const monedas = useGame((s) => s.estado.monedas);
+  const tengo = useGame((s) => s.estado.objetos?.atril ?? 0);
+  const comprar = useGame((s) => s.comprarObra);
+  const abrir = useGame((s) => s.abrirObra);
+  const obra = OBRAS.beso;
+
+  return (
+    <li className="fila">
+      <span className="tarjeta-icono" aria-hidden>
+        🖼️
+      </span>
+
+      <div className="fila-texto">
+        <div className="fila-titulo">
+          <strong>{obra.nombre}</strong>
+        </div>
+        <p className="fila-detalle">
+          {obra.descripcion}
+          {tengo > 0 && ` · tenés ${tengo} para poner`}
+        </p>
+        <p className="fila-nota">
+          <button className="enlace en-linea" onClick={() => abrir('beso')}>
+            Mirarlo antes de comprar
+          </button>
+        </p>
+      </div>
+
+      <div className="fila-acciones">
+        <button className="boton" disabled={monedas < obra.precio} onClick={() => comprar('beso')}>
+          {obra.precio} 🪙
         </button>
       </div>
     </li>

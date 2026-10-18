@@ -19,6 +19,7 @@ import { HelpPanel } from './HelpPanel';
 import { HUD } from './HUD';
 import { OrdersPanel } from './OrdersPanel';
 import { PhotoBar } from './PhotoBar';
+import { VisorDeObra } from './VisorDeObra';
 import { RangeScreen } from './RangeScreen';
 import { ShopPanel } from './ShopPanel';
 import { Toasts } from './Toasts';
@@ -148,6 +149,7 @@ export function App() {
       </AnimatePresence>
 
       <AdoptModal />
+      <VisorDeObra />
       <Toasts />
     </div>
   );

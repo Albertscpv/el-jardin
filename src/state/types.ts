@@ -111,7 +111,8 @@ export type PropTipo =
   | 'roble'
   | 'pino'
   | 'sauce'
-  | 'cerezo';
+  | 'cerezo'
+  | 'atril';
 
 export interface PropColocado {
   tipo: PropTipo;
@@ -369,7 +370,8 @@ export type ToolId =
   | 'agua'
   | 'juego'
   | 'camino'
-  | 'arbol';
+  | 'arbol'
+  | 'arte';
 
 export interface Toast {
   id: number;

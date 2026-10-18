@@ -5,6 +5,7 @@ import { perfilDe } from '../../state/estaciones';
 import { esCamino } from '../../state/caminos';
 import { esArbol } from '../../state/arboles';
 import { cajasArbol, type TipoArbol } from '../art/arboles';
+import { LADO_BESO, pixelesDelBeso } from '../art/beso';
 import { estacionDe } from '../../state/estaciones';
 import { bordesDeIsla, celdaEnMundo, esAgua, esParcela, ruidoCelda } from '../../state/islas';
 import type { CeldaId, IslaState, PropTipo } from '../../state/types';
@@ -21,6 +22,27 @@ const paleta = () => perfilDe();
 
 /** Piedras del camino: grises con distinto desgaste, para que no se repitan. */
 const PIEDRAS = ['#9aa0a6', '#8d939a', '#a6adb3', '#868d94', '#b0b6bb'];
+
+let texturaBeso: THREE.Texture | null = null;
+
+/** "El beso" como textura: se pinta una sola vez y la comparten todos los atriles. */
+function texturaDelBeso(): THREE.Texture {
+  if (texturaBeso) return texturaBeso;
+  const canvas = document.createElement('canvas');
+  canvas.width = LADO_BESO;
+  canvas.height = LADO_BESO;
+  const ctx = canvas.getContext('2d')!;
+  pixelesDelBeso().forEach((color, i) => {
+    ctx.fillStyle = color;
+    ctx.fillRect(i % LADO_BESO, Math.floor(i / LADO_BESO), 1, 1);
+  });
+  texturaBeso = new THREE.CanvasTexture(canvas);
+  texturaBeso.magFilter = THREE.NearestFilter;
+  texturaBeso.minFilter = THREE.NearestFilter;
+  texturaBeso.generateMipmaps = false;
+  texturaBeso.colorSpace = THREE.SRGBColorSpace;
+  return texturaBeso;
+}
 
 /** Altura de la superficie del agua. */
 export const NIVEL_AGUA = -0.18;
@@ -91,8 +113,8 @@ interface ParteMovil {
 
 /** Objetos que salen de una matriz extruida. La farola se arma aparte, con cajas. */
 const MATRIZ_PROP: Record<
-  // La farola y los arboles se arman con cajas, no con un sprite extruido.
-  Exclude<PropTipo, 'farola' | TipoArbol>,
+  // La farola, los arboles y el atril se arman aparte, no con un sprite extruido.
+  Exclude<PropTipo, 'farola' | TipoArbol | 'atril'>,
   {
     matriz: readonly string[];
     paleta: Record<string, string>;
@@ -550,6 +572,10 @@ export class Terrain {
         this.construirFarola(isla, prop.col, prop.row);
         continue;
       }
+      if (prop.tipo === 'atril') {
+        this.construirAtril(isla, prop.col, prop.row);
+        continue;
+      }
       if (esArbol(prop.tipo)) {
         this.construirArbol(isla, prop.tipo, prop.col, prop.row);
         continue;
@@ -604,6 +630,52 @@ export class Terrain {
     malla.userData.celda = celdaId(isla.id, col, row);
     this.grupo.add(malla);
     this.tocables.push(malla);
+  }
+
+  /**
+   * Un atril de madera con "El beso" apoyado. La pintura es una textura
+   * aparte, con filtro de vecino mas cercano, para que se vea el pixel art
+   * y no una mancha dorada.
+   */
+  private construirAtril(isla: IslaState, col: number, row: number): void {
+    const { x, z } = celdaAMundo(isla, col, row);
+    const celda = celdaId(isla.id, col, row);
+    const MADERA = '#6b4a2f';
+    const MADERA_CLARA = '#8a6440';
+
+    const cajas = [
+      // Las dos patas de adelante y la de atras, un poco abiertas.
+      { x: -0.42, y: 0, z: 0.02, ancho: 0.07, alto: 1.5, fondo: 0.07, color: MADERA },
+      { x: 0.35, y: 0, z: 0.02, ancho: 0.07, alto: 1.5, fondo: 0.07, color: MADERA },
+      { x: -0.035, y: 0, z: -0.42, ancho: 0.07, alto: 1.45, fondo: 0.07, color: MADERA },
+      // El listón donde apoya el cuadro.
+      { x: -0.46, y: 0.42, z: 0.0, ancho: 0.92, alto: 0.06, fondo: 0.12, color: MADERA_CLARA },
+      // El marco: dorado, como el de un museo.
+      { x: -0.44, y: 0.47, z: 0.04, ancho: 0.88, alto: 0.88, fondo: 0.05, color: '#b88a2e' },
+    ];
+    const madera = new THREE.Mesh(cajasGeometry(cajas, 0.7), materialVoxel());
+    madera.position.set(x, 0, z);
+    madera.castShadow = true;
+    madera.receiveShadow = true;
+    madera.userData.celda = celda;
+    this.grupo.add(madera);
+
+    // La pintura, apenas delante del marco.
+    const lienzo = new THREE.Mesh(
+      new THREE.PlaneGeometry(0.8, 0.8),
+      // Un poco de luz propia: un cuadro se tiene que leer aunque este nublado.
+      new THREE.MeshLambertMaterial({
+        map: texturaDelBeso(),
+        emissive: '#ffffff',
+        emissiveMap: texturaDelBeso(),
+        emissiveIntensity: 0.45,
+      }),
+    );
+    lienzo.position.set(x, 0.47 + 0.44, z + 0.095);
+    lienzo.userData.celda = celda;
+    this.grupo.add(lienzo);
+
+    this.tocables.push(madera, lienzo);
   }
 
   private construirFarola(isla: IslaState, col: number, row: number): void {

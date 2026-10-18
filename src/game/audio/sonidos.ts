@@ -126,6 +126,16 @@ export const SONIDOS = {
     notas: [{ hz: 300, hasta: 230, forma: 'triangle', duracion: 0.12, volumen: 0.25 }],
   },
 
+  /** Un cuadro que se despliega: un arpegio suave que sube. */
+  desplegar: {
+    notas: [
+      { hz: 392, forma: 'sine', duracion: 0.22, volumen: 0.22 },
+      { hz: 494, forma: 'sine', duracion: 0.22, volumen: 0.22, demora: 0.12 },
+      { hz: 587, forma: 'sine', duracion: 0.22, volumen: 0.22, demora: 0.24 },
+      { hz: 784, forma: 'sine', duracion: 0.6, volumen: 0.2, demora: 0.36 },
+    ],
+  },
+
   /** El jardín secreto. */
   secreto: {
     notas: [
